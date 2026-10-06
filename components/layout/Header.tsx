@@ -11,6 +11,7 @@ import { openCart } from '@/store/slices/cartSlice';
 import { soundEngine } from '@/lib/audio';
 import { scrollToLenis } from './SmoothScroll';
 import { hasIntroLoaded, subscribeIntroLoaded } from '@/lib/introState';
+import { animationState, subscribeScrollProgress } from '@/lib/animationState';
 import { HoverRollText } from '@/components/ui/HoverRollText';
 import { Premium3DButton } from '@/components/ui/Premium3DButton';
 
@@ -83,29 +84,69 @@ export const Header: React.FC<HeaderProps> = ({
   const displayCartCount = mounted ? totalCartCount : 0;
   const isUserAuthenticated = mounted && isAuthenticated && !!user;
 
-  // Track scroll for transparent dark glassmorphic navbar
+  // Track scroll for transparent dark glassmorphic navbar:
+  // On home page: DO NOT shrink or blur until reaching the Statement section (scrollProgress >= 0.43)
+  // On other pages: shrink when scrollY > 20
   useEffect(() => {
-    const handleScroll = () => {
-      const scrollY = window.scrollY;
-      setIsScrolled(scrollY > 20);
+    if (!isHome) {
+      const handleScroll = () => {
+        setIsScrolled(window.scrollY > 20);
+      };
+
+      window.addEventListener('scroll', handleScroll, { passive: true });
+      handleScroll();
+
+      let lenisUnsub: (() => void) | null = null;
+      const lenis = (window as any).__lenis;
+      if (lenis && typeof lenis.on === 'function') {
+        const onLenis = () => handleScroll();
+        lenis.on('scroll', onLenis);
+        lenisUnsub = () => lenis.off('scroll', onLenis);
+      }
+
+      return () => {
+        window.removeEventListener('scroll', handleScroll);
+        if (lenisUnsub) lenisUnsub();
+      };
+    }
+
+    // On Home Page:
+    // Statement section starts at scrollProgress >= 0.43 (Section 5: Zero Added Sugar)
+    const checkHomeScroll = (progress: number) => {
+      const subfooterEl = document.getElementById('home-subfooter');
+      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 900);
+      const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80;
+      const isAtStatementByProgress = progress >= 0.43;
+
+      setIsScrolled(isAtStatementByProgress || isPastStatementByScroll);
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
-    handleScroll();
+    // Initialize immediately
+    checkHomeScroll(animationState.scrollProgress);
+
+    const unsubProgress = subscribeScrollProgress((p) => {
+      checkHomeScroll(p);
+    });
+
+    const handleWindowScroll = () => {
+      checkHomeScroll(animationState.scrollProgress);
+    };
+
+    window.addEventListener('scroll', handleWindowScroll, { passive: true });
 
     let lenisUnsub: (() => void) | null = null;
     const lenis = (window as any).__lenis;
     if (lenis && typeof lenis.on === 'function') {
-      const onLenis = () => handleScroll();
-      lenis.on('scroll', onLenis);
-      lenisUnsub = () => lenis.off('scroll', onLenis);
+      lenis.on('scroll', handleWindowScroll);
+      lenisUnsub = () => lenis.off('scroll', handleWindowScroll);
     }
 
     return () => {
-      window.removeEventListener('scroll', handleScroll);
+      unsubProgress();
+      window.removeEventListener('scroll', handleWindowScroll);
       if (lenisUnsub) lenisUnsub();
     };
-  }, []);
+  }, [isHome]);
 
   // Close dropdown on outside click
   useEffect(() => {

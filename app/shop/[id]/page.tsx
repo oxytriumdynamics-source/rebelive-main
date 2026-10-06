@@ -159,7 +159,7 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
       <>
         <span className="block">Natural Caffeine</span>
         <span className="block text-white/50 font-normal my-0.5">&amp;</span>
-        <span className="block">Theanine</span>
+        <span className="block">L-Theanine</span>
       </>
     ),
     desc: (

@@ -12,7 +12,7 @@ import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 import { SubFooter } from '@/components/sections/SubFooter';
 import { FlavorNavigation } from '@/components/product/FlavorNavigation';
 import { AtmosphericBackground } from '@/components/effects/AtmosphericBackground';
-import { animationState } from '@/lib/animationState';
+import { animationState, updateScrollProgress } from '@/lib/animationState';
 import dynamic from 'next/dynamic';
 
 const LoadingScreen = dynamic(() => import('@/components/ui/LoadingScreen').then((m) => m.LoadingScreen), {
@@ -281,7 +281,7 @@ export default function App() {
       onUpdate: () => {
         const currentP = proxy.val;
         scrollProgressRef.current = currentP;
-        animationState.scrollProgress = currentP;
+        updateScrollProgress(currentP);
 
         // Hardware-accelerated direct GPU update for top progress line (0 React re-renders)
         if (progressLineRef.current) {
@@ -310,7 +310,7 @@ export default function App() {
       },
       onComplete: () => {
         scrollProgressRef.current = targetP;
-        animationState.scrollProgress = targetP;
+        updateScrollProgress(targetP);
         lastRenderedProgressRef.current = targetP;
         setScrollProgress(targetP);
 
@@ -367,7 +367,7 @@ export default function App() {
           const p = 0.88 + footerProgress * 0.12;
 
           scrollProgressRef.current = p;
-          animationState.scrollProgress = p;
+          updateScrollProgress(p);
           if (progressLineRef.current) {
             progressLineRef.current.style.transform = `scaleX(${Math.min(1, p)})`;
           }
@@ -379,7 +379,7 @@ export default function App() {
           }
           const p = 0.88;
           scrollProgressRef.current = p;
-          animationState.scrollProgress = p;
+          updateScrollProgress(p);
           if (progressLineRef.current) {
             progressLineRef.current.style.transform = `scaleX(${p})`;
           }

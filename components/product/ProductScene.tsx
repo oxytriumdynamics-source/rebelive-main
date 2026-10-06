@@ -134,10 +134,10 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
 
       <Canvas
         camera={{ position: [0, 0, 7.5], fov: 35, near: 0.1, far: 40 }}
-        dpr={isMobile ? [0.75, 1.0] : [1, 1.5]}
+        dpr={typeof window !== 'undefined' ? [1.5, Math.min(window.devicePixelRatio || 2, 2.25)] : [1, 2]}
         onCreated={() => setSceneReady(true)}
         gl={{
-          antialias: !isMobile,
+          antialias: true,
           alpha: true,
           powerPreference: 'high-performance',
           stencil: false,
@@ -183,12 +183,6 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
           while (diff < -numProducts / 2) diff += numProducts;
 
           const isSelected = Math.abs(diff) < 0.45;
-
-          // Mobile-first optimization: On mobile phones, render ONLY the selected can.
-          // Eliminates 66% of draw calls, GPU memory, and geometry processing on phones.
-          if (isMobile && !isSelected) {
-            return null;
-          }
 
           return (
             <EnergyCan

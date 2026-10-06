@@ -94,7 +94,7 @@ const FAQS: FaqItem[] = [
     number: '09',
     question: 'How much Rebelive can I have in a day?',
     answer:
-      'We recommend consuming **no more than 2 cans per day**. Each 250 ml can contains 50 mg of caffeine.',
+      'We recommend consuming **no more than 500 ml per day**. Each 250 ml can contains 50 mg of caffeine.',
   },
   {
     id: '10',
@@ -110,7 +110,7 @@ const FAQS: FaqItem[] = [
     number: '11',
     question: 'Anything else I should know before drinking Rebelive?',
     answer:
-      'Yep. Rebelive contains **caffeine, a non-caloric sweetener and nature-identical flavouring substances**. Please consume responsibly and within the recommended limit of **2 cans per day**.',
+      'Yep. Rebelive contains **caffeine, a non-caloric sweetener and nature-identical flavouring substances**. Please consume responsibly and within the recommended limit of **500 mladd  per day**.',
   },
 
   // ORDERS & DELIVERY

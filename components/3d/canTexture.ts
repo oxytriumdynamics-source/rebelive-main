@@ -25,21 +25,11 @@ export function getDeviceProfile(): DeviceProfile {
     window.innerWidth < 768 ||
     /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
-  const hwConcurrency = navigator.hardwareConcurrency || 4;
-  const devMemory = (navigator as unknown as { deviceMemory?: number }).deviceMemory || 4;
-  const isOlderDevice =
-    /iPhone OS (1[0-4]|9|8|7)_/i.test(navigator.userAgent) ||
-    /Android (6|7|8|9|10)\./i.test(navigator.userAgent);
-  const isLowEnd = isMobile && (hwConcurrency <= 4 || devMemory <= 4 || isOlderDevice);
-
-  const maxTextureSize = isLowEnd ? 1024 : 2048;
-  const anisotropy = isLowEnd ? 2 : isMobile ? 4 : 8;
-
   return {
     isMobile,
-    isLowEnd,
-    maxTextureSize,
-    anisotropy,
+    isLowEnd: false,
+    maxTextureSize: 2048,
+    anisotropy: 8,
   };
 }
 
@@ -49,7 +39,7 @@ export function getDeviceProfile(): DeviceProfile {
  */
 export function getCanTexture(product: Product): THREE.Texture {
   const profile = getDeviceProfile();
-  const cacheKey = `${product.id}_wrap_${profile.maxTextureSize}_v1`;
+  const cacheKey = `${product.id}_wrap_2048_v2`;
 
   if (textureCache[cacheKey]) {
     return textureCache[cacheKey];
@@ -60,8 +50,9 @@ export function getCanTexture(product: Product): THREE.Texture {
     return dummy;
   }
 
-  const width = profile.isLowEnd ? 1024 : 1600;
-  const height = profile.isLowEnd ? 758 : 1184;
+  // High-fidelity 2048x1516 canvas wrap: ultra-sharp text and razor-sharp contour lines on all screens
+  const width = 2048;
+  const height = 1516;
 
   const canvas = document.createElement('canvas');
   canvas.width = width;

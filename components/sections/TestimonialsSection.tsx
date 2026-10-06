@@ -1,10 +1,8 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
-import { Star, ChevronLeft, ChevronRight } from 'lucide-react';
-import { soundEngine } from '@/lib/audio';
 
 export interface Testimonial {
   id: string;
@@ -12,44 +10,28 @@ export interface Testimonial {
   quote: string;
   rating: number;
   image: string;
+  imagePosition?: string;
 }
 
 const TESTIMONIALS: Testimonial[] = [
   {
-    id: 'viraj',
-    name: 'VIRAJ',
-    quote: 'I can’t believe this has zero sugar and still keeps me dialed in for 3-hour marathon sessions without any crash.',
+    id: 'nishant',
+    name: 'NISHANT MISHRA',
+    quote: 'Clean sustained mental clarity through long coding sessions without any crash or anxiety. Rebelive is literally in a class of its own.',
     rating: 5,
-    image: '/testimonials/rebel-viraj.jpg',
+    image: '/testimonials/rebel-nishant.jpg',
+    imagePosition: 'center 15%',
   },
   {
-    id: 'meghna',
-    name: 'MEGHNA',
-    quote: 'Finally a functional drink that calms my nervous system without making me sluggish. The ashwagandha blend is pure magic.',
+    id: 'ashray',
+    name: 'ASHRAY VASU',
+    quote: 'The calm focus and zero-sugar formulation completely upgraded my workday routine. No jitters, pure natural flow state.',
     rating: 5,
-    image: '/testimonials/rebel-meghna.jpg',
+    image: '/testimonials/rebel-ashray.jpg',
+    imagePosition: 'center 15%',
   },
-  {
-    id: 'nishkarsh',
-    name: 'NISHKARSH',
-    quote: 'Replaced my afternoon coffee and jittery pre-workout completely. Clean, sustained energy from the very first sip.',
-    rating: 5,
-    image: '/testimonials/rebel-nishkarsh.jpg',
-  },
-  {
-    id: 'ananya',
-    name: 'ANANYA',
-    quote: 'My work schedule is chaotic, but Rebelive gives me razor-sharp focus for late-night design sprints. Truly obsessed.',
-    rating: 5,
-    image: '/testimonials/rebel-ananya.jpg',
-  },
-  {
-    id: 'aarav',
-    name: 'AARAV',
-    quote: 'The crisp citrus notes and electrolyte balance are unbelievable. Zero aftertaste, zero bullshit. It’s now essential in my gym bag.',
-    rating: 5,
-    image: '/testimonials/rebel-aarav.jpg',
-  },
+
+
 ];
 
 export interface TestimonialsSectionProps {
@@ -58,106 +40,52 @@ export interface TestimonialsSectionProps {
   subtitle?: string;
 }
 
+const TestimonialCard: React.FC<{ item: Testimonial; priority?: boolean }> = ({ item, priority = false }) => {
+  return (
+    <div
+      className="flex-shrink-0 w-[260px] sm:w-[280px] md:w-[300px] lg:w-[320px] h-[340px] sm:h-[360px] rounded-2xl sm:rounded-3xl relative overflow-hidden bg-neutral-950/70 hover:bg-neutral-900/90 border border-white/10 hover:border-white/25 backdrop-blur-xl transition-all duration-300 group/card p-6 sm:p-7 flex flex-col justify-between items-center text-center select-none hover:-translate-y-1 cursor-pointer"
+    >
+      {/* Top: Circular Photo with Grayscale to Color on Hover */}
+      <div className="flex flex-col items-center w-full">
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-30 md:h-30 rounded-full overflow-hidden border border-white/20 group-hover/card:border-white/50 transition-all duration-500 shrink-0">
+          <Image
+            src={item.image}
+            alt={`${item.name} Rebelive Review`}
+            fill
+            sizes="128px"
+            style={{ objectPosition: item.imagePosition || 'center 18%' }}
+            className="object-cover grayscale group-hover/card:grayscale-0 group-hover/card:scale-105 transition-all duration-500 ease-out"
+            priority={priority}
+          />
+        </div>
+      </div>
+
+      {/* Middle: Quote Text */}
+      <div className="my-auto py-3 w-full px-1">
+        <p className="text-[11px] sm:text-xs text-neutral-300 font-sans font-light leading-relaxed line-clamp-4 group-hover/card:text-white/95 transition-colors duration-200">
+          &ldquo;{item.quote}&rdquo;
+        </p>
+      </div>
+
+      {/* Bottom: Author Name */}
+      <div className="pt-3 border-t border-white/10 w-full flex items-center justify-center">
+        <span className="text-white/80 group-hover/card:text-white font-sans font-semibold text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors duration-200">
+          {item.name}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   className = '',
   title = 'OUR FIRST REBELS',
   subtitle = 'Tested and Tasted our pilot batch. Loved it from the first sip.',
 }) => {
-  const scrollRef = useRef<HTMLDivElement>(null);
   const [isPaused, setIsPaused] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const startXRef = useRef(0);
-  const scrollLeftRef = useRef(0);
-  const resumeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Smooth continuous auto-scroll
-  useEffect(() => {
-    let animFrame: number;
-    let lastTime = performance.now();
-
-    const step = (time: number) => {
-      const delta = time - lastTime;
-      lastTime = time;
-
-      if (!isPaused && !isDragging && scrollRef.current) {
-        const el = scrollRef.current;
-        const move = (delta / 16.67) * 0.45;
-        el.scrollLeft += move;
-
-        // Loop seamlessly when near end
-        if (el.scrollLeft + el.clientWidth >= el.scrollWidth - 10) {
-          el.scrollLeft = 0;
-        }
-      }
-      animFrame = requestAnimationFrame(step);
-    };
-
-    animFrame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animFrame);
-  }, [isPaused, isDragging]);
-
-  // Robust manual button scroll with temporary pause so smooth scroll animation completes cleanly
-  const scrollByAmount = useCallback((direction: 'left' | 'right') => {
-    if (!scrollRef.current) return;
-    try {
-      soundEngine.playClick(850);
-    } catch {
-      // Audio optional
-    }
-
-    // Pause auto-scroll immediately during manual scroll
-    setIsPaused(true);
-    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
-
-    const el = scrollRef.current;
-    const cardWidth = 340;
-    const scrollAmount = direction === 'left' ? -cardWidth : cardWidth;
-
-    el.scrollBy({
-      left: scrollAmount,
-      behavior: 'smooth',
-    });
-
-    // Resume auto-scroll after smooth transition settles
-    resumeTimeoutRef.current = setTimeout(() => {
-      setIsPaused(false);
-    }, 2200);
-  }, []);
-
-  // Cleanup timeout on unmount
-  useEffect(() => {
-    return () => {
-      if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
-    };
-  }, []);
-
-  // Drag-to-scroll functionality
-  const handleMouseDown = (e: React.MouseEvent) => {
-    if (!scrollRef.current) return;
-    setIsDragging(true);
-    setIsPaused(true);
-    startXRef.current = e.pageX - scrollRef.current.offsetLeft;
-    scrollLeftRef.current = scrollRef.current.scrollLeft;
-  };
-
-  const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !scrollRef.current) return;
-    e.preventDefault();
-    const x = e.pageX - scrollRef.current.offsetLeft;
-    const walk = (x - startXRef.current) * 1.4;
-    scrollRef.current.scrollLeft = scrollLeftRef.current - walk;
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    if (resumeTimeoutRef.current) clearTimeout(resumeTimeoutRef.current);
-    resumeTimeoutRef.current = setTimeout(() => {
-      setIsPaused(false);
-    }, 2000);
-  };
-
-  // Repeated items for seamless continuous looping
-  const displayItems = [...TESTIMONIALS, ...TESTIMONIALS, ...TESTIMONIALS];
+  // Double items per track so every track is expansive and seamless
+  const trackItems = [...TESTIMONIALS, ...TESTIMONIALS];
 
   return (
     <section
@@ -186,88 +114,40 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
         </motion.p>
       </div>
 
-      {/* ── Carousel Container with Floating Glass Navigation Arrows ── */}
-      <div className="relative w-full group/track flex-1 max-h-[500px] flex items-center">
-        {/* Floating Left Navigation Button */}
-        <button
-          onClick={() => scrollByAmount('left')}
-          aria-label="Previous card"
-          className="absolute left-2 sm:left-4 lg:left-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white backdrop-blur-md flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
-        >
-          <ChevronLeft className="w-5 h-5" />
-        </button>
+      {/* ── Infinite Marquee Container with Hover Pause & Edge Fades ── */}
+      <div
+        className="relative w-full marquee-container group overflow-hidden py-4"
+        onMouseEnter={() => setIsPaused(true)}
+        onMouseLeave={() => setIsPaused(false)}
+        onTouchStart={() => setIsPaused(true)}
+        onTouchEnd={() => setIsPaused(false)}
+      >
+        {/* Sleek edge masks for smooth appearance / exit */}
+        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-r from-black via-black/70 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-l from-black via-black/70 to-transparent" />
 
-        {/* Floating Right Navigation Button */}
-        <button
-          onClick={() => scrollByAmount('right')}
-          aria-label="Next card"
-          className="absolute right-2 sm:right-4 lg:right-6 top-1/2 -translate-y-1/2 z-30 w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-black/80 hover:bg-white text-white hover:text-black border border-white/20 hover:border-white backdrop-blur-md flex items-center justify-center transition-all duration-300 hover:scale-110 active:scale-95 cursor-pointer"
-        >
-          <ChevronRight className="w-5 h-5" />
-        </button>
+        {/* The Dual-Track Flex Row for 100% Mathematically Seamless Infinite Loop */}
+        <div className="flex w-max">
+          {/* Primary Track */}
+          <div
+            className="flex shrink-0 gap-6 sm:gap-8 md:gap-9 animate-marquee-smooth pr-6 sm:pr-8 md:pr-9"
+            style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+          >
+            {trackItems.map((item, idx) => (
+              <TestimonialCard key={`track1-${item.id}-${idx}`} item={item} priority={idx < 4} />
+            ))}
+          </div>
 
-        {/* ── Horizontal Scroll Track with Animated Cards ── */}
-        <div
-          ref={scrollRef}
-          onMouseEnter={() => setIsPaused(true)}
-          onMouseLeave={() => {
-            setIsPaused(false);
-            setIsDragging(false);
-          }}
-          onMouseDown={handleMouseDown}
-          onMouseMove={handleMouseMove}
-          onMouseUp={handleMouseUp}
-          className={`w-full h-full overflow-x-auto flex items-center gap-6 sm:gap-8 md:gap-9 px-8 sm:px-14 lg:px-18 scrollbar-none no-scrollbar cursor-grab active:cursor-grabbing will-change-scroll ${
-            isDragging ? 'select-none' : ''
-          }`}
-          style={{
-            scrollBehavior: isDragging ? 'auto' : 'smooth',
-            WebkitOverflowScrolling: 'touch',
-          }}
-        >
-          {displayItems.map((item, idx) => (
-            <motion.div
-              key={`${item.id}-${idx}`}
-              initial={{ opacity: 0, x: 45, scale: 0.98 }}
-              whileInView={{ opacity: 1, x: 0, scale: 1 }}
-              viewport={{ once: false, amount: 0.08 }}
-              transition={{
-                duration: 0.48,
-                delay: Math.min(0.2, (idx % TESTIMONIALS.length) * 0.05),
-                ease: [0.22, 1, 0.36, 1],
-              }}
-              whileHover={{ y: -4, transition: { duration: 0.2, ease: 'easeOut' } }}
-              className="flex-shrink-0 w-[260px] sm:w-[280px] md:w-[300px] lg:w-[320px] h-[340px] sm:h-[360px] rounded-2xl sm:rounded-3xl relative overflow-hidden bg-neutral-950/60 hover:bg-neutral-900/80 border border-white/10 hover:border-white/20 backdrop-blur-xl transition-all duration-300 group p-6 sm:p-7 flex flex-col justify-between items-center text-center select-none"
-            >
-              {/* Top: Bigger Circular Photo */}
-              <div className="flex flex-col items-center w-full">
-                <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-30 md:h-30 rounded-full overflow-hidden border border-white/20 group-hover:border-white/50 transition-all duration-500 shrink-0">
-                  <Image
-                    src={item.image}
-                    alt={`${item.name} Rebelive Review`}
-                    fill
-                    sizes="128px"
-                    className="object-cover object-[center_18%] grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500 ease-out"
-                    priority={idx < 4}
-                  />
-                </div>
-              </div>
-
-              {/* Middle: Quote Text */}
-              <div className="my-auto py-3 w-full px-1">
-                <p className="text-[11px] sm:text-xs text-neutral-300 font-sans font-light leading-relaxed line-clamp-4 group-hover:text-white/95 transition-colors duration-200">
-                  &ldquo;{item.quote}&rdquo;
-                </p>
-              </div>
-
-              {/* Bottom: Author Name */}
-              <div className="pt-3 border-t border-white/10 w-full flex items-center justify-center">
-                <span className="text-white/80 group-hover:text-white font-sans font-semibold text-[10px] sm:text-[11px] uppercase tracking-widest transition-colors duration-200">
-                  {item.name}
-                </span>
-              </div>
-            </motion.div>
-          ))}
+          {/* Secondary Clone Track (Mirrors Primary Track to Create Seamless Infinite Horizon) */}
+          <div
+            className="flex shrink-0 gap-6 sm:gap-8 md:gap-9 animate-marquee-smooth pr-6 sm:pr-8 md:pr-9"
+            style={{ animationPlayState: isPaused ? 'paused' : undefined }}
+            aria-hidden="true"
+          >
+            {trackItems.map((item, idx) => (
+              <TestimonialCard key={`track2-${item.id}-${idx}`} item={item} priority={false} />
+            ))}
+          </div>
         </div>
       </div>
     </section>

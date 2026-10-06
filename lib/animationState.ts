@@ -28,3 +28,29 @@ export const animationState = {
   /** Device type flag (synced from page.tsx resize handler) */
   isMobile: false,
 };
+
+export type ScrollProgressSubscriber = (progress: number) => void;
+const scrollProgressSubscribers = new Set<ScrollProgressSubscriber>();
+
+export const subscribeScrollProgress = (callback: ScrollProgressSubscriber) => {
+  scrollProgressSubscribers.add(callback);
+  try {
+    callback(animationState.scrollProgress);
+  } catch {
+    // ignore
+  }
+  return () => {
+    scrollProgressSubscribers.delete(callback);
+  };
+};
+
+export const updateScrollProgress = (progress: number) => {
+  animationState.scrollProgress = progress;
+  scrollProgressSubscribers.forEach((cb) => {
+    try {
+      cb(progress);
+    } catch {
+      // ignore
+    }
+  });
+};

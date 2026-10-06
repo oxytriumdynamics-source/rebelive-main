@@ -532,6 +532,26 @@ canvas {
 
 
 
+/* ─── Seamless Infinite Marquee with Hover Pause ─── */
+@keyframes marqueeScroll {
+  0% {
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    transform: translate3d(-100%, 0, 0);
+  }
+}
+
+.animate-marquee-smooth {
+  animation: marqueeScroll 42s linear infinite;
+  will-change: transform;
+}
+
+.marquee-container:hover .animate-marquee-smooth,
+.animate-marquee-smooth:hover {
+  animation-play-state: paused;
+}
+
 /* Lenis Butter-Smooth Momentum Scrolling */
 html.lenis,
 html.lenis body {

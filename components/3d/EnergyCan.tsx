@@ -6,6 +6,7 @@ import * as THREE from 'three';
 import gsap from 'gsap';
 import { Product } from '../../data/products';
 import { animationState } from '@/lib/animationState';
+import { hasIntroLoaded } from '@/lib/introState';
 import { getCanTexture, getCanNormalMap } from './canTexture';
 
 // Cache reduced-motion preference at module level
@@ -285,29 +286,45 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
   const isDragging = useRef<boolean>(false);
   const dragStartX = useRef<number>(0);
   const dragDeltaRotY = useRef<number>(0);
-  const basePos = useRef(new THREE.Vector3(0, 0, 0));
+  const basePos = useRef(
+    new THREE.Vector3(
+      diff * (isMobile ? 3.4 : 2.95),
+      isMobile ? -0.04 : (isSelected ? -0.05 : -0.14),
+      isSelected ? 0.15 : -1.45
+    )
+  );
   const smoothMouse = useRef({ x: 0, y: 0, rotX: 0, rotY: 0, rotZ: 0 });
+  const hasIntroRunRef = useRef(false);
 
-  // Initial load entrance animation (GSAP)
+  // Initial load entrance animation (GSAP) - only runs once on initial hero load for the selected can
   useEffect(() => {
     if (!intro.current) return;
+    if (!isSelected || hasIntroRunRef.current || hasIntroLoaded()) {
+      if (intro.current) {
+        intro.current.position.y = 0;
+        intro.current.rotation.y = 0;
+        intro.current.scale.set(1, 1, 1);
+      }
+      return;
+    }
+    hasIntroRunRef.current = true;
     const prefersReduced = _prefersReducedMotion;
     if (prefersReduced) return;
 
     const tween = gsap.fromTo(
       intro.current.position,
       { y: -1.2 },
-      { y: 0, duration: 2.0, ease: 'expo.out', delay: 0.3 }
+      { y: 0, duration: 1.8, ease: 'expo.out', delay: 0.2 }
     );
     const rotTween = gsap.fromTo(
       intro.current.rotation,
       { y: -1.4 },
-      { y: 0, duration: 2.4, ease: 'expo.out', delay: 0.3 }
+      { y: 0, duration: 2.2, ease: 'expo.out', delay: 0.2 }
     );
     const scaleTween = gsap.fromTo(
       intro.current.scale,
       { x: 0.75, y: 0.75, z: 0.75 },
-      { x: 1, y: 1, z: 1, duration: 2.0, ease: 'expo.out', delay: 0.3 }
+      { x: 1, y: 1, z: 1, duration: 1.8, ease: 'expo.out', delay: 0.2 }
     );
 
     return () => {
@@ -315,7 +332,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       rotTween.kill();
       scaleTween.kill();
     };
-  }, []);
+  }, [isSelected]);
 
   // Pure GPU-driven physics & trajectory loop - runs at native display refresh rate
   useFrame((state, delta) => {
@@ -345,12 +362,13 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
     const easeExit = tExit * tExit * (3 - 2 * tExit);
 
     // Hero coordinates (perfectly centered, balanced vertical spacing, upright posture)
-    const heroSpread = isMobile ? 2.35 : 2.95;
+    const heroSpread = isMobile ? 3.4 : 2.95;
     const heroX = diff * heroSpread;
-    const heroY = isSelected ? (isMobile ? -0.04 : -0.05) : isMobile ? -0.16 : -0.14;
+    // On small screen, keep Y level identical so can transitions horizontally from left/right with zero vertical hop
+    const heroY = isMobile ? -0.04 : (isSelected ? -0.05 : -0.14);
     const heroZ = isSelected ? 0.15 : -1.45;
     const heroScale = isSelected ? (isMobile ? 0.82 : 0.94) : isMobile ? 0.50 : 0.58;
-    const heroOpacity = isSelected ? 1.0 : 0.85;
+    const heroOpacity = isSelected ? 1.0 : (isMobile ? Math.max(0, 1 - Math.abs(diff) * 1.25) : 0.85);
 
     // Upright center can (heroRotZ = 0) perfectly concentric with upper fixture & lower podium
     const heroRotX = isSelected ? 0.04 : diff < 0 ? 0.06 : -0.02;
@@ -444,7 +462,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       dragDeltaRotY.current;
 
     // Smooth base position interpolation
-    const posSpeed = Math.min(1, delta * 9.5);
+    const posSpeed = Math.min(1, delta * (isMobile ? 11.5 : 9.5));
     basePos.current.x = THREE.MathUtils.lerp(basePos.current.x, targetX, posSpeed);
     basePos.current.y = THREE.MathUtils.lerp(basePos.current.y, targetY, posSpeed);
     basePos.current.z = THREE.MathUtils.lerp(basePos.current.z, targetZ, posSpeed);
