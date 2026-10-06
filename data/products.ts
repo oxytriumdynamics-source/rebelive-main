@@ -297,7 +297,7 @@ export const VARIETY_BUNDLE: Product = {
   flavor: 'APEX + AVIVA + CAPELLA',
   tagline: 'ALL 3 FLAGSHIP FLAVOURS IN ONE HIGH-CALIBER CRATE',
   description:
-    'Equal parts APEX (Dark Citrus), AVIVA (Exotic Lychee), and CAPELLA (Midnight Berry). The ultimate bio-energy allocation.',
+    'Rebelive functional beverage is a zero-added-sugar functional beverage crafted to support sustained energy, focus, stress management, hydration, and gut health. Powered by natural caffeine, L-theanine, Ashwagandha, magnesium, electrolytes, vitamins, prebiotics, and probiotics, it’s designed to help you stay energized, balanced, and ready for whatever comes next.',
   story:
     'Experience the complete spectrum of REBELIVE engineering. Every crate delivers 4 cans of APEX for razor sharpness, 4 cans of AVIVA for calm clarity, and 4 cans of CAPELLA for unbridled midnight intensity.',
   volume: '250 ML ',

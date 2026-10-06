@@ -85,7 +85,7 @@ export const Header: React.FC<HeaderProps> = ({
   const isUserAuthenticated = mounted && isAuthenticated && !!user;
 
   // Track scroll for transparent dark glassmorphic navbar:
-  // On home page: DO NOT shrink or blur until reaching the Statement section (scrollProgress >= 0.43)
+  // On home page: DO NOT shrink or blur through Hero, Details, and Statement sections; keep full width until SubFooter (scrollProgress >= 0.84)
   // On other pages: shrink when scrollY > 20
   useEffect(() => {
     if (!isHome) {
@@ -111,14 +111,15 @@ export const Header: React.FC<HeaderProps> = ({
     }
 
     // On Home Page:
-    // Statement section starts at scrollProgress >= 0.43 (Section 5: Zero Added Sugar)
+    // Keep header full width through Hero, Details, and Statement sections.
+    // Only shrink/pill when leaving Statement section into SubFooter / Testimonials (scrollProgress >= 0.84 or scrollY near subfooter)
     const checkHomeScroll = (progress: number) => {
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 900);
-      const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80;
-      const isAtStatementByProgress = progress >= 0.43;
+      const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80 && progress >= 0.80;
+      const isPastStatementByProgress = progress >= 0.84;
 
-      setIsScrolled(isAtStatementByProgress || isPastStatementByScroll);
+      setIsScrolled(isPastStatementByProgress || isPastStatementByScroll);
     };
 
     // Initialize immediately
