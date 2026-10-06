@@ -85,17 +85,9 @@ function PersonaContent() {
   }
 
   return (
-    <div
-      className={`w-full bg-black text-white relative flex flex-col justify-between pt-20 ${
-        stage === 'landing' ? 'h-screen overflow-hidden' : 'min-h-screen overflow-x-hidden'
-      }`}
-    >
+    <div className="w-full bg-black text-white relative flex flex-col justify-between pt-20 min-h-screen overflow-x-hidden">
       {/* ── Stage Machine ── */}
-      <main
-        className={`flex-1 w-full flex flex-col relative z-10 ${
-          stage === 'landing' ? 'h-full overflow-hidden' : ''
-        }`}
-      >
+      <main className="flex-1 w-full flex flex-col relative z-10 min-h-[calc(100vh-5rem)]">
         <AnimatePresence mode="wait">
           {stage === "landing" && (
             <LandingStage key="landing" onStart={startTest} />

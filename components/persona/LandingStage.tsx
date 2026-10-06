@@ -22,7 +22,7 @@ export default function LandingStage({
       animate={{ opacity: 1 }}
       exit={{ opacity: 0, y: -10 }}
       transition={{ duration: 0.5 }}
-      className="relative flex w-full flex-1 flex-col justify-between overflow-hidden select-none text-white px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 py-4 sm:py-6 lg:py-8 h-full"
+      className="relative flex w-full flex-1 flex-col justify-between select-none text-white px-6 sm:px-10 md:px-14 lg:px-20 xl:px-24 py-4 sm:py-6 lg:py-8 min-h-[calc(100vh-5rem)]"
     >
       {/* ── Background Patterns ── */}
       <EverestPattern strokeColor="rgba(255, 255, 255, 0.45)" opacity={0.5} />

@@ -116,15 +116,15 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
       {/* ── Infinite Marquee Container with Hover Pause & Edge Fades ── */}
       <div
-        className="relative w-full marquee-container group overflow-hidden py-4"
+        className="relative w-full marquee-container group overflow-hidden py-4 flex items-center"
         onMouseEnter={() => setIsPaused(true)}
         onMouseLeave={() => setIsPaused(false)}
         onTouchStart={() => setIsPaused(true)}
         onTouchEnd={() => setIsPaused(false)}
       >
-        {/* Sleek edge masks for smooth appearance / exit */}
-        <div className="pointer-events-none absolute left-0 top-0 bottom-0 w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-r from-black via-black/70 to-transparent" />
-        <div className="pointer-events-none absolute right-0 top-0 bottom-0 w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-l from-black via-black/70 to-transparent" />
+        {/* Sleek edge masks matching exact card height */}
+        <div className="pointer-events-none absolute left-0 top-1/2 -translate-y-1/2 h-[340px] sm:h-[360px] w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-r from-black via-black/80 to-transparent" />
+        <div className="pointer-events-none absolute right-0 top-1/2 -translate-y-1/2 h-[340px] sm:h-[360px] w-12 sm:w-24 md:w-36 z-20 bg-gradient-to-l from-black via-black/80 to-transparent" />
 
         {/* The Dual-Track Flex Row for 100% Mathematically Seamless Infinite Loop */}
         <div className="flex w-max">

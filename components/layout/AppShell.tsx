@@ -36,11 +36,8 @@ export function AppShell({ children }: AppShellProps) {
     );
   }
 
-  // Do not show footer on persona discovery stage so it stays true full page
-  const hideFooter =
-    isAuthPage ||
-    pathname === '/persona' ||
-    pathname?.startsWith('/persona');
+  // Only hide footer on authentication pages
+  const hideFooter = isAuthPage;
 
   return (
     <div className="min-h-screen flex flex-col justify-between relative bg-black text-white select-none">
