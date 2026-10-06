@@ -115,8 +115,8 @@ const StatementBackdropInner: React.FC<StatementBackdropProps> = ({
           transform: `translate3d(0, ${exitOffsetY}vh, 0)`,
         }}
       >
-        {/* On mobile and tablet screens, shift text down so it sits cleanly at bottom below the 3D can */}
-        <div className="w-full flex flex-col items-center justify-center transition-transform duration-300 ease-out translate-y-[21vh] sm:translate-y-[22vh] lg:translate-y-0">
+        {/* On mobile and tablet screens, shift text down so it sits cleanly below the 3D can */}
+        <div className="w-full flex flex-col items-center justify-center transition-transform duration-300 ease-out translate-y-[17vh] sm:translate-y-[18vh] lg:translate-y-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={`statement-${current.id}`}

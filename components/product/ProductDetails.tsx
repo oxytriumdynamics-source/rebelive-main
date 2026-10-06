@@ -114,10 +114,10 @@ const ProductDetailsInner: React.FC<ProductDetailsProps> = ({
   return (
     <div className="fixed inset-0 z-25 flex items-center justify-between pointer-events-none select-none px-4 sm:px-6 md:px-10 lg:px-14">
       {/* ── Center Stage: Desktop side-by-side / Mobile & Tablet details anchored at bottom ── */}
-      <div className="flex-1 h-full max-w-7xl mx-auto flex items-end lg:items-center justify-between px-2 md:px-4 pointer-events-none relative pb-16 sm:pb-20 lg:pb-0">
+      <div className="flex-1 h-full max-w-7xl mx-auto flex items-end lg:items-center justify-between px-2 md:px-4 pointer-events-none relative pb-20 sm:pb-24 lg:pb-0">
 
         {/* DETAILS CARD: On mobile & tablet, anchored at bottom with sleek frosted glass; on desktop, spacious left column */}
-        <div className="w-full lg:w-[44%] max-w-[540px] flex flex-col justify-center pointer-events-none pl-0 lg:pl-4 mx-auto lg:mx-0">
+        <div className="w-full lg:w-[44%] max-w-[540px] flex flex-col justify-center pointer-events-none pl-0 lg:pl-4 mx-auto lg:mx-0 mb-2 sm:mb-3 lg:mb-0">
           <div
             key={currentFeature.index}
             className="relative pointer-events-auto rounded-2xl bg-neutral-950/80 backdrop-blur-xl border border-white/12 p-4 sm:p-5 shadow-[0_16px_45px_rgba(0,0,0,0.9),inset_0_1px_0_rgba(255,255,255,0.12)] lg:bg-transparent lg:backdrop-blur-none lg:border-0 lg:p-2 sm:lg:p-4 lg:shadow-none animate-fadeIn transition-all duration-500 ease-out"

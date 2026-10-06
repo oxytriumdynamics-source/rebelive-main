@@ -393,8 +393,8 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       // Mobile and Tablet: can at middle (x = 0), vertically positioned above the bottom text
       // Desktop (lg+): can on right (x = 1.02)
       const detailX = isSmall ? 0 : 1.02;
-      const detailY = isSmall ? 0.38 : -0.02;
-      const detailScale = isSmall ? 0.56 : 0.96;
+      const detailY = isSmall ? 0.425 : -0.02;
+      const detailScale = isSmall ? 0.63 : 0.96;
       const detailZ = isSmall ? 0.20 : 0.25;
 
       targetX = THREE.MathUtils.lerp(0, detailX, easeH2D);
@@ -409,8 +409,8 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       // In Statement section:
       // Mobile and Tablet: in middle (x = 0), vertically centered above bottom text, scaled responsively!
       // Desktop: centered (x = 0), monumental scale
-      const stmtBaseScale = isSmall ? 0.44 : 0.75;
-      const stmtY = isSmall ? 0.30 : -0.025;
+      const stmtBaseScale = isSmall ? 0.50 : 0.75;
+      const stmtY = isSmall ? 0.29 : -0.025;
 
       if (sp >= 0.12 && sp < 0.39) {
         const detailOscDamp = 1 - THREE.MathUtils.clamp((sp - 0.34) / 0.05, 0, 1);
