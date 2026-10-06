@@ -325,7 +325,7 @@ export const Footer: React.FC<FooterProps> = ({
                   </li>
                   <li>
                     <Link
-                      href="/shop"
+                      href="/shop/variety"
                       className="text-neutral-400 hover:text-white transition-colors block cursor-pointer"
                     >
                       Build Your Own Pack

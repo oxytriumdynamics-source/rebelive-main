@@ -77,7 +77,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 <HoverRollText text="HOME" />
               </div>
             </div>
-            <span className="text-[10px] font-mono text-white/40 group-hover:text-white/80">[INDEX]</span>
+            <span className="text-[10px] font-mono text-white/40 group-hover:text-white/80"></span>
           </Link>
 
           {/* SHOP */}
@@ -122,7 +122,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     </div>
                   </div>
                 </div>
-                <span className="text-[9.5px] font-mono text-amber-400/90">[ONLINE]</span>
+                <span className="text-[9.5px] font-mono text-amber-400/90">ONLINE</span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-1">
@@ -158,7 +158,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                   <HoverRollText text="PROFILE" />
                 </div>
               </div>
-              <span className="text-[9.5px] font-mono text-white/40 group-hover:text-white/80">[SIGN IN]</span>
+              <span className="text-[9.5px] font-mono text-white/40 group-hover:text-white/80">SIGN IN</span>
             </Link>
           )}
 
@@ -245,8 +245,8 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
         {/* Footer */}
         <div className="p-6 md:px-8 py-4 border-t border-white/10 text-[9.5px] font-tech text-white/35 tracking-widest flex items-center justify-between shrink-0 bg-[#070709]">
-          <span>TOKYO / BERLIN LABS</span>
-          <span>© 2026 REBELIVE™</span>
+          <span>OXYTRIUM PVT LTD</span>
+          <span>© {new Date().getFullYear()} REBELIVE</span>
         </div>
       </div>
     </div>

@@ -448,8 +448,8 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           )}
 
-          {/* 3D Glass Pill Contact Button with live status beacon & outgoing action arrow */}
-          <div className="hidden sm:block">
+          {/* 3D Glass Pill Contact Button - ONLY visible on desktop (lg+), hidden on mobile & tablet */}
+          <div className="hidden lg:block">
             <Premium3DButton
               href={'/contact'}
               text="CONTACT"
