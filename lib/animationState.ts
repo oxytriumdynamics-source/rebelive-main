@@ -27,6 +27,7 @@ export const animationState = {
 
   /** Device type flag (synced from page.tsx resize handler) */
   isMobile: false,
+  isTablet: false,
 };
 
 export type ScrollProgressSubscriber = (progress: number) => void;

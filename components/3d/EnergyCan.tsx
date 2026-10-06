@@ -47,6 +47,7 @@ interface EnergyCanProps {
   isSelected?: boolean;
   diff?: number;
   isMobile?: boolean;
+  isTablet?: boolean;
   onCanClick?: () => void;
 }
 
@@ -272,6 +273,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
   isSelected = false,
   diff = 0,
   isMobile = false,
+  isTablet = false,
   onCanClick,
 }) => {
   const outerRef = useRef<THREE.Group>(null);
@@ -288,7 +290,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
   const dragDeltaRotY = useRef<number>(0);
   const basePos = useRef(
     new THREE.Vector3(
-      diff * (isMobile ? 3.4 : 2.95),
+      diff * (isMobile ? 3.4 : isTablet ? 3.15 : 2.95),
       isMobile ? -0.04 : (isSelected ? -0.05 : -0.14),
       isSelected ? 0.15 : -1.45
     )
@@ -361,14 +363,16 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
     const tExit = THREE.MathUtils.clamp((sp - 0.76) / 0.04, 0, 1);
     const easeExit = tExit * tExit * (3 - 2 * tExit);
 
+    const isSmall = isMobile || isTablet;
+
     // Hero coordinates (perfectly centered, balanced vertical spacing, upright posture)
-    const heroSpread = isMobile ? 3.4 : 2.95;
+    const heroSpread = isMobile ? 3.4 : isTablet ? 3.15 : 2.95;
     const heroX = diff * heroSpread;
     // On small screen, keep Y level identical so can transitions horizontally from left/right with zero vertical hop
-    const heroY = isMobile ? -0.04 : (isSelected ? -0.05 : -0.14);
+    const heroY = isMobile ? -0.04 : isTablet ? -0.05 : (isSelected ? -0.05 : -0.14);
     const heroZ = isSelected ? 0.15 : -1.45;
-    const heroScale = isSelected ? (isMobile ? 0.82 : 0.94) : isMobile ? 0.50 : 0.58;
-    const heroOpacity = isSelected ? 1.0 : (isMobile ? Math.max(0, 1 - Math.abs(diff) * 1.25) : 0.85);
+    const heroScale = isSelected ? (isMobile ? 0.82 : isTablet ? 0.78 : 0.94) : (isMobile ? 0.50 : 0.56);
+    const heroOpacity = isSelected ? 1.0 : (isSmall ? Math.max(0, 1 - Math.abs(diff) * 1.25) : 0.85);
 
     // Upright center can (heroRotZ = 0) perfectly concentric with upper fixture & lower podium
     const heroRotX = isSelected ? 0.04 : diff < 0 ? 0.06 : -0.02;
@@ -385,22 +389,28 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
     let targetOpacity = heroOpacity;
 
     if (isSelected) {
-      const detailX = isMobile ? 0 : 1.02;
-      const detailY = isMobile ? 0.50 : -0.02;
-      const detailScale = isMobile ? 0.74 : 0.96;
-      const detailZ = 0.25;
+      // In Details section:
+      // Mobile and Tablet: can at middle (x = 0), vertically positioned above the bottom text
+      // Desktop (lg+): can on right (x = 1.02)
+      const detailX = isSmall ? 0 : 1.02;
+      const detailY = isSmall ? 0.38 : -0.02;
+      const detailScale = isSmall ? 0.56 : 0.96;
+      const detailZ = isSmall ? 0.20 : 0.25;
 
       targetX = THREE.MathUtils.lerp(0, detailX, easeH2D);
       targetY = THREE.MathUtils.lerp(heroY, detailY, easeH2D);
       targetZ = THREE.MathUtils.lerp(heroZ, detailZ, easeH2D);
       targetScale = THREE.MathUtils.lerp(heroScale, detailScale, easeH2D);
 
-      targetRotX = THREE.MathUtils.lerp(heroRotX, isMobile ? -0.04 : -0.09, easeH2D);
-      targetRotZ = THREE.MathUtils.lerp(heroRotZ, isMobile ? -0.06 : -0.18, easeH2D);
+      targetRotX = THREE.MathUtils.lerp(heroRotX, isSmall ? -0.04 : -0.09, easeH2D);
+      targetRotZ = THREE.MathUtils.lerp(heroRotZ, isSmall ? -0.06 : -0.18, easeH2D);
       targetRotY = THREE.MathUtils.lerp(heroRotY, Math.PI * 1.5, easeH2D);
 
-      const stmtBaseScale = isMobile ? 0.50 : 0.75;
-      const stmtY = isMobile ? 0.32 : -0.025;
+      // In Statement section:
+      // Mobile and Tablet: in middle (x = 0), vertically centered above bottom text, scaled responsively!
+      // Desktop: centered (x = 0), monumental scale
+      const stmtBaseScale = isSmall ? 0.44 : 0.75;
+      const stmtY = isSmall ? 0.30 : -0.025;
 
       if (sp >= 0.12 && sp < 0.39) {
         const detailOscDamp = 1 - THREE.MathUtils.clamp((sp - 0.34) / 0.05, 0, 1);
@@ -409,10 +419,10 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
         targetZ = detailZ;
         targetRotY = Math.PI * 1.5 + pDetails * (Math.PI * 2.5);
         targetRotZ =
-          (isMobile ? -0.06 : -0.18) +
-          Math.sin(pDetails * Math.PI * 3.2) * (isMobile ? 0.04 : 0.08) * detailOscDamp;
+          (isSmall ? -0.06 : -0.18) +
+          Math.sin(pDetails * Math.PI * 3.2) * (isSmall ? 0.04 : 0.08) * detailOscDamp;
         targetRotX =
-          (isMobile ? -0.04 : -0.09) +
+          (isSmall ? -0.04 : -0.09) +
           Math.cos(pDetails * Math.PI * 2.2) * 0.04 * detailOscDamp;
         targetY = detailY + Math.sin(pDetails * Math.PI * 3.6) * 0.025 * detailOscDamp;
       } else if (sp >= 0.39 && sp < 0.46) {
@@ -420,8 +430,8 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
         targetY = THREE.MathUtils.lerp(detailY, stmtY, easeD2S);
         targetZ = THREE.MathUtils.lerp(detailZ, 0.22, easeD2S);
         targetScale = THREE.MathUtils.lerp(detailScale, stmtBaseScale, easeD2S);
-        targetRotX = THREE.MathUtils.lerp(isMobile ? -0.04 : -0.09, 0.02, easeD2S);
-        targetRotZ = THREE.MathUtils.lerp(isMobile ? -0.06 : -0.18, 0.0, easeD2S);
+        targetRotX = THREE.MathUtils.lerp(isSmall ? -0.04 : -0.09, 0.02, easeD2S);
+        targetRotZ = THREE.MathUtils.lerp(isSmall ? -0.06 : -0.18, 0.0, easeD2S);
         targetRotY = THREE.MathUtils.lerp(Math.PI * 4.0, Math.PI * 6.0, easeD2S);
       } else if (sp >= 0.46 && tExit === 0) {
         targetRotY = Math.PI * 6.0;
@@ -442,7 +452,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
         targetOpacity = Math.max(0, 1 - easeExit * 1.5);
       }
     } else {
-      const exitX = diff < 0 ? (isMobile ? -6.5 : -8.5) : isMobile ? 6.5 : 8.5;
+      const exitX = diff < 0 ? (isSmall ? -6.5 : -8.5) : isSmall ? 6.5 : 8.5;
       targetX = THREE.MathUtils.lerp(heroX, exitX, easeH2D);
       targetZ = THREE.MathUtils.lerp(heroZ, -4, easeH2D);
       targetOpacity = Math.max(0, heroOpacity * (1 - easeH2D * 1.5));
@@ -617,6 +627,7 @@ export const EnergyCan = React.memo(EnergyCanInner, (prev, next) => {
     prev.product.id === next.product.id &&
     prev.isSelected === next.isSelected &&
     prev.diff === next.diff &&
-    prev.isMobile === next.isMobile
+    prev.isMobile === next.isMobile &&
+    prev.isTablet === next.isTablet
   );
 });

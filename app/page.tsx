@@ -93,6 +93,7 @@ export default function App() {
   const [rotationVelocity, setRotationVelocity] = useState(0);
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isMobile, setIsMobile] = useState(false);
+  const [isTablet, setIsTablet] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
   // Sync sound status with SoundEngine singleton
@@ -158,16 +159,23 @@ export default function App() {
   const prevFeatureIdxRef = useRef<number>(-1);
   const prevStmtIdxRef = useRef<number>(-1);
 
-  // ── Resize / mobile (debounced to avoid layout thrashing on mobile browser bar resize) ────
+  // ── Resize / mobile & tablet (debounced to avoid layout thrashing on mobile browser bar resize) ────
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
+    const updateDimensions = () => {
+      const w = window.innerWidth;
+      const mobile = w < 500;
+      const tablet = w >= 500 && w < 1024;
+      setIsMobile(mobile);
+      setIsTablet(tablet);
+      animationState.isMobile = mobile;
+      animationState.isTablet = tablet;
+    };
     const onResize = () => {
       if (timer) clearTimeout(timer);
-      timer = setTimeout(() => {
-        setIsMobile(window.innerWidth < 768);
-      }, 120);
+      timer = setTimeout(updateDimensions, 120);
     };
-    setIsMobile(window.innerWidth < 768);
+    updateDimensions();
     window.addEventListener('resize', onResize, { passive: true });
     return () => {
       if (timer) clearTimeout(timer);
@@ -689,6 +697,7 @@ export default function App() {
         mousePosition={mousePosition}
         product={currentProduct}
         isMobile={isMobile}
+        isTablet={isTablet}
       />
 
       {/* ── Fixed Podium Overlays (Top & Down Podiums with Black Gradients) ── */}
@@ -729,6 +738,7 @@ export default function App() {
         rotationVelocity={rotationVelocity}
         mousePosition={mousePosition}
         isMobile={isMobile}
+        isTablet={isTablet}
         isPageReady={isPageReady}
         onSelectFlavor={handleSelectFlavor}
       />

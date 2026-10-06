@@ -12,6 +12,7 @@ interface StatementBackdropProps {
   opacity: number;
   scrollProgress?: number;
   isMobile?: boolean;
+  isTablet?: boolean;
   mousePosition?: { x: number; y: number };
   product?: Product;
 }
@@ -82,6 +83,7 @@ const StatementBackdropInner: React.FC<StatementBackdropProps> = ({
   opacity,
   scrollProgress = 0,
   isMobile = false,
+  isTablet = false,
 }) => {
   if (opacity <= 0.005) return null;
 
@@ -113,8 +115,8 @@ const StatementBackdropInner: React.FC<StatementBackdropProps> = ({
           transform: `translate3d(0, ${exitOffsetY}vh, 0)`,
         }}
       >
-        {/* On mobile phone screens, shift text down so it sits cleanly below the 3D can */}
-        <div className={`w-full flex flex-col items-center justify-center transition-transform duration-300 ease-out ${isMobile ? 'translate-y-[21vh]' : 'translate-y-[21vh] sm:translate-y-0'}`}>
+        {/* On mobile and tablet screens, shift text down so it sits cleanly at bottom below the 3D can */}
+        <div className="w-full flex flex-col items-center justify-center transition-transform duration-300 ease-out translate-y-[21vh] sm:translate-y-[22vh] lg:translate-y-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={`statement-${current.id}`}
@@ -190,7 +192,8 @@ export const StatementBackdrop = React.memo(
     (prev.opacity <= 0.005 && next.opacity <= 0.005) ||
     (Math.abs(prev.opacity - next.opacity) < 0.004 &&
       Math.abs((prev.scrollProgress || 0) - (next.scrollProgress || 0)) < 0.002 &&
-      prev.isMobile === next.isMobile)
+      prev.isMobile === next.isMobile &&
+      prev.isTablet === next.isTablet)
 );
 
 export const StatementSection: React.FC<StatementSectionProps> = () => {

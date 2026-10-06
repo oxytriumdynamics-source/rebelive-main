@@ -15,6 +15,7 @@ interface ProductSceneProps {
   selectedIndex: number;
   carouselOffset: number;
   isMobile: boolean;
+  isTablet?: boolean;
   isPageReady?: boolean;
   onSelectFlavor: (index: number) => void;
   scrollProgress?: number;
@@ -27,23 +28,25 @@ const HERO_TO_DETAIL_START = 0.05;
 const HERO_TO_DETAIL_END = 0.16;
 
 // Camera controller with smooth damping & calibrated parallax
-function CameraRig({ isMobile }: { isMobile: boolean }) {
+function CameraRig({ isMobile, isTablet }: { isMobile: boolean; isTablet?: boolean }) {
   useFrame((state, delta) => {
     const sp = animationState.scrollProgress;
     const prefersReduced =
       typeof window !== 'undefined' &&
       window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+    const isSmall = isMobile || isTablet;
+
     // Calibrated mouse parallax (locked strictly dead-center on hero stage so can stays concentric with podiums)
     const heroParallaxLock = THREE.MathUtils.clamp((sp - 0.03) / 0.06, 0, 1);
-    const parallaxFactorX = isMobile || prefersReduced ? 0 : THREE.MathUtils.lerp(0, 0.16, heroParallaxLock);
-    const parallaxFactorY = isMobile || prefersReduced ? 0 : THREE.MathUtils.lerp(0, 0.10, heroParallaxLock);
+    const parallaxFactorX = isSmall || prefersReduced ? 0 : THREE.MathUtils.lerp(0, 0.16, heroParallaxLock);
+    const parallaxFactorY = isSmall || prefersReduced ? 0 : THREE.MathUtils.lerp(0, 0.10, heroParallaxLock);
     const px = animationState.mouseX * parallaxFactorX;
     const py = -animationState.mouseY * parallaxFactorY;
 
     // Camera targets calibrated for fov 35
-    const heroZ = isMobile ? 8.2 : 7.6;
-    const detailZ = isMobile ? 4.9 : 4.4;
+    const heroZ = isMobile ? 8.2 : isTablet ? 8.0 : 7.6;
+    const detailZ = isSmall ? 5.1 : 4.4;
 
     const heroToDetail = Math.min(
       1,
@@ -58,12 +61,12 @@ function CameraRig({ isMobile }: { isMobile: boolean }) {
     const detailToStmt = THREE.MathUtils.clamp((sp - 0.39) / 0.07, 0, 1);
     const easeCamD2S = detailToStmt * detailToStmt * (3 - 2 * detailToStmt);
     const baseCamX = THREE.MathUtils.lerp(
-      THREE.MathUtils.lerp(0, isMobile ? 0 : 0.05, heroToDetail),
+      THREE.MathUtils.lerp(0, isSmall ? 0 : 0.05, heroToDetail),
       0,
       easeCamD2S
     );
     const baseCamY = THREE.MathUtils.lerp(
-      THREE.MathUtils.lerp(0, isMobile ? 0.15 : -0.02, heroToDetail),
+      THREE.MathUtils.lerp(0, isSmall ? 0.12 : -0.02, heroToDetail),
       0,
       easeCamD2S
     );
@@ -90,6 +93,7 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
   selectedIndex,
   carouselOffset,
   isMobile,
+  isTablet = false,
   isPageReady = true,
   onSelectFlavor,
   scrollProgress = 0,
@@ -147,7 +151,7 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
         }}
         shadows={false}
       >
-        <CameraRig isMobile={isMobile} />
+        <CameraRig isMobile={isMobile} isTablet={isTablet} />
 
         {/* All-white clean studio lighting */}
         <ambientLight intensity={0.35} color="#ffffff" />
@@ -191,6 +195,7 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
               isSelected={isSelected}
               diff={diff}
               isMobile={isMobile}
+              isTablet={isTablet}
               onCanClick={() => {
                 if (!isSelected) {
                   onSelectFlavor(idx);
@@ -209,6 +214,7 @@ export const ProductScene = React.memo(ProductSceneInner, (prev, next) => {
     prev.selectedIndex === next.selectedIndex &&
     prev.carouselOffset === next.carouselOffset &&
     prev.isMobile === next.isMobile &&
+    prev.isTablet === next.isTablet &&
     prev.isPageReady === next.isPageReady &&
     prev.products === next.products &&
     ((prev.scrollProgress ?? 0) >= 0.80) === ((next.scrollProgress ?? 0) >= 0.80)
