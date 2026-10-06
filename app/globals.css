@@ -1,26 +1,568 @@
+/* Decorative Persona & Display Fonts (display=swap for zero render blocking) */
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Oswald:wght@600;700&family=Teko:wght@600;700&family=Bebas+Neue&family=Protest+Revolution&family=Orbitron:wght@600;700;800;900&family=Syne:wght@700;800&display=swap');
+@import url('https://fonts.cdnfonts.com/css/nasalization');
 @import "tailwindcss";
 
+@font-face {
+  font-family: 'PF Fuel';
+  src: url('/fonts/PFFuelPro.woff2') format('woff2'),
+    url('/fonts/PFFuelPro.otf') format('opentype'),
+    url('/fonts/PFFuelPro.ttf') format('truetype'),
+    local('PF Fuel Pro'), local('PF Fuel');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'PF Fuel Pro';
+  src: url('/fonts/PFFuelPro.woff2') format('woff2'),
+    url('/fonts/PFFuelPro.otf') format('opentype'),
+    url('/fonts/PFFuelPro.ttf') format('truetype'),
+    local('PF Fuel Pro');
+  font-weight: 100 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+/* ─── Code Next Trial (self-hosted from /fonts/) ─── */
+@font-face {
+  font-family: 'Code Next';
+  src: url('/fonts/CodeNext-Trial-Regular.otf') format('opentype'),
+    url('/fonts/CodeNext-Trial-Regular.ttf') format('truetype');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Next';
+  src: url('/fonts/CodeNext-Trial-SemiBold.otf') format('opentype'),
+    url('/fonts/CodeNext-Trial-SemiBold.ttf') format('truetype');
+  font-weight: 600;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Next';
+  src: url('/fonts/CodeNext-Trial-Bold.otf') format('opentype'),
+    url('/fonts/CodeNext-Trial-Bold.ttf') format('truetype');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Code Next';
+  src: url('/fonts/CodeNext-Trial-ExtraBold.otf') format('opentype'),
+    url('/fonts/CodeNext-Trial-ExtraBold.ttf') format('truetype');
+  font-weight: 800 900;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --ink: #0a0a0a;
+  --ink-2: #131313;
+  --paper: #f3f2ee;
+  --paper-2: #e9e8e3;
+  --paper-bg: #f0efeb;
+  --line: #6b6b68;
+  --line-dim: #2c2c2a;
+  --mist: #c9c9c4;
+  --ash: #7a7a76;
+  --ash-dark: #59595a;
+  --gold: #d8ac52;
+
+  --font-display: 'Code Next', sans-serif;
+  --font-heading: 'Code Next', sans-serif;
+  --font-heading-weight: 700;
+  --font-body: 'Poppins', sans-serif;
+  --font-mono: 'Poppins', sans-serif;
+  --font-tech: 'Poppins', sans-serif;
+  --font-tall: 'Barlow Condensed', 'Oswald', 'Teko', sans-serif;
+
+  /* Persona Typography: Authentic Persona Fonts */
+  --font-apex: "PF Fuel", "PF Fuel Pro", 'Code Next', sans-serif;
+  --font-capella: "Nasalization", "Nasalization Rg", "Orbitron", "Syne", sans-serif;
+  --font-aviva: "Protest Revolution", "Sedgwick Ave Display", cursive, sans-serif;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-ink: var(--ink);
+  --color-ink-2: var(--ink-2);
+  --color-paper: var(--paper);
+  --color-paper-2: var(--paper-2);
+  --color-paper-bg: var(--paper-bg);
+  --color-line: var(--line);
+  --color-line-dim: var(--line-dim);
+  --color-mist: var(--mist);
+  --color-ash: var(--ash);
+  --color-ash-dark: var(--ash-dark);
+  --color-gold: var(--gold);
+  --font-apex: var(--font-apex);
+  --font-capella: var(--font-capella);
+  --font-aviva: var(--font-aviva);
+  --font-tech: var(--font-tech);
+  --font-tall: var(--font-tall);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+.font-tech {
+  font-family: var(--font-tech), 'Poppins', sans-serif;
+}
+
+.font-tall {
+  font-family: var(--font-tall), 'Barlow Condensed', 'Oswald', 'Teko', sans-serif;
+  font-weight: 900;
+}
+
+@keyframes floatY {
+
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+
+  50% {
+    transform: translateY(-12px);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@keyframes glowPulse {
+
+  0%,
+  100% {
+    opacity: 0.35;
+  }
+
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes driftLines {
+  0% {
+    transform: translate(0, 0) rotate(0deg);
+  }
+  100% {
+    transform: translate(-50px, -35px) rotate(1deg);
+  }
+}
+
+@keyframes driftSlow {
+  0% {
+    transform: translate(0, 0);
+  }
+  50% {
+    transform: translate(-20px, -15px);
+  }
+  100% {
+    transform: translate(0, 0);
+  }
+}
+
+@keyframes pulseRing {
+  0% {
+    transform: scale(0.6);
+    opacity: 0.55;
+  }
+  100% {
+    transform: scale(2.6);
+    opacity: 0;
+  }
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.25;
+    transform: scale(0.85);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+@keyframes scanLine {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.4;
+  }
+  90% {
+    opacity: 0.4;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
+@keyframes bgFloat {
+  0%,
+  100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(-8px, -6px) scale(1.005);
+  }
+  66% {
+    transform: translate(6px, -10px) scale(0.998);
+  }
+}
+
+@keyframes textReveal {
+  0% {
+    clip-path: inset(0 100% 0 0);
+  }
+  100% {
+    clip-path: inset(0 0% 0 0);
+  }
+}
+
+@keyframes fogDrift1 {
+  0% {
+    transform: translate3d(-10%, 0, 0) scale(1.1);
+  }
+  50% {
+    transform: translate3d(5%, -15px, 0) scale(1.15);
+  }
+  100% {
+    transform: translate3d(20%, 0, 0) scale(1.1);
+  }
+}
+
+@keyframes fogDrift2 {
+  0% {
+    transform: translate3d(15%, -10px, 0) scale(1.12);
+  }
+  50% {
+    transform: translate3d(-5%, 15px, 0) scale(1.18);
+  }
+  100% {
+    transform: translate3d(-20%, -10px, 0) scale(1.12);
+  }
+}
+
+@keyframes cloudDriftSlow {
+  0% {
+    transform: translate3d(-80px, 0, 0);
+  }
+  50% {
+    transform: translate3d(60px, -20px, 0);
+  }
+  100% {
+    transform: translate3d(120px, 0, 0);
+  }
+}
+
+@keyframes capellaCorona {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.85;
+  }
+  50% {
+    transform: scale(1.22) rotate(180deg);
+    opacity: 1;
+  }
+}
+
+@keyframes capellaRays {
+  0%,
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 0.9;
+  }
+  50% {
+    transform: scale(1.3) rotate(45deg);
+    opacity: 1;
+  }
+}
+
+@keyframes capellaBeacon {
+  0%,
+  100% {
+    box-shadow: 0 0 25px 8px rgba(254, 240, 138, 0.7), 0 0 60px 20px rgba(245, 158, 11, 0.4), 0 0 100px 35px rgba(234, 179, 8, 0.2);
+  }
+  50% {
+    box-shadow: 0 0 35px 12px rgba(254, 240, 138, 0.95), 0 0 80px 30px rgba(245, 158, 11, 0.55), 0 0 130px 50px rgba(234, 179, 8, 0.3);
+  }
+}
+
+@keyframes bwGradientPulse {
+
+  0%,
+  100% {
+    transform: scale(1) translate(0, 0);
+    opacity: 0.85;
+  }
+
+  50% {
+    transform: scale(1.08) translate(-1%, 2%);
+    opacity: 1;
+  }
+}
+
+@keyframes specularBeam {
+
+  0%,
+  100% {
+    transform: rotate(-15deg) translateY(-20%);
+    opacity: 0.12;
+  }
+
+  50% {
+    transform: rotate(-10deg) translateY(10%);
+    opacity: 0.22;
+  }
+}
+
+/* ── Statement Section ("ZERO BULLSHIT") Studio Ambient Lighting ── */
+@keyframes statementCorePulse {
+
+  0%,
+  100% {
+    transform: translate(-50%, -50%) scale(0.95);
+    opacity: 0.65;
+  }
+
+  50% {
+    transform: translate(-50%, -50%) scale(1.06);
+    opacity: 0.95;
+  }
+}
+
+/* ── Statement Section Typography Glowing & Motion ── */
+@keyframes statementTextGlow {
+
+  0%,
+  100% {
+    filter: drop-shadow(0 0 12px rgba(255, 255, 255, 0.35)) drop-shadow(0 0 35px rgba(255, 255, 255, 0.18));
+    opacity: 0.90;
+  }
+
+  50% {
+    filter: drop-shadow(0 0 24px rgba(255, 255, 255, 0.70)) drop-shadow(0 0 55px rgba(255, 255, 255, 0.38)) drop-shadow(0 0 90px rgba(255, 255, 255, 0.20));
+    opacity: 1;
+  }
+}
+
+@keyframes textFloatLeft {
+  0% {
+    transform: translate3d(-8px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(8px, -3px, 0);
+  }
+}
+
+@keyframes textFloatRight {
+  0% {
+    transform: translate3d(8px, 0, 0);
+  }
+
+  100% {
+    transform: translate3d(-8px, 3px, 0);
+  }
+}
+
+@layer base {
+  html {
+    background-color: #000000;
+    color: #FFFFFF;
+    font-family: var(--font-body);
+  }
+
+  /* Lenis smooth scrolling rules */
+  html.lenis,
+  html.lenis body {
+    height: auto;
+  }
+
+  .lenis.lenis-smooth {
+    scroll-behavior: auto !important;
+  }
+
+  .lenis.lenis-smooth [data-lenis-prevent] {
+    overscroll-behavior: contain;
+  }
+
+  .lenis.lenis-stopped {
+    overflow: clip;
+  }
+
+  .lenis.lenis-smooth iframe {
+    pointer-events: none;
+  }
+
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #08080a;
+    color: #FFFFFF;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    font-family: var(--font-body);
+  }
+
+  /* Hide scrollbar for immersive scroll-jacked layout */
+  html,
+  body {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  ::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Typography utilities: Code Next and Poppins only */
+  .font-display {
+    font-family: 'Code Next', sans-serif !important;
+  }
+
+  .font-heading {
+    font-family: 'Code Next', sans-serif !important;
+  }
+
+  .font-tech,
+  .font-mono {
+    font-family: 'Poppins', sans-serif !important;
+  }
+
+  .font-sans,
+  .font-body {
+    font-family: 'Poppins', sans-serif !important;
+  }
+
+  .font-apex {
+    font-family: var(--font-apex) !important;
+    font-style: normal !important;
+    font-synthesis: none !important;
+  }
+
+  .font-capella {
+    font-family: var(--font-capella) !important;
+  }
+
+  .font-aviva {
+    font-family: var(--font-aviva) !important;
+  }
+
+  /* Noise grain texture - ultra-lightweight 1-octave grain */
+  .grain-overlay {
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='1' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 128px 128px;
+  }
+}
+
+@layer utilities {
+
+  /* glass morphism card - dark luxury version */
+  .glass-card {
+    background: rgba(18, 18, 22, 0.72);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.45);
+  }
+
+  /* Smooth spring transition */
+  .transition-spring {
+    transition: all 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+
+  /* Hover lift effect */
+  .hover-lift {
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* Three.js canvas background - transparent so page bg shows through */
+canvas {
+  display: block;
+  background: transparent !important;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.45s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Animated Dotted Chevron Pulse matching reference */
+@keyframes dotPulse {
+
+  0%,
+  100% {
+    opacity: 0.40;
+    transform: scale(0.92);
+  }
+
+  50% {
+    opacity: 1;
+    transform: scale(1.15);
+  }
+}
+
+
+
+/* Lenis Butter-Smooth Momentum Scrolling */
+html.lenis,
+html.lenis body {
+  height: auto;
+}
+
+.lenis.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+.lenis.lenis-smooth [data-lenis-prevent] {
+  overscroll-behavior: contain;
+}
+
+.lenis.lenis-stopped {
+  overflow: hidden;
+}
+
+.lenis.lenis-scrolling iframe {
+  pointer-events: none;
+}
+
+/* Accessibility: Respect prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
