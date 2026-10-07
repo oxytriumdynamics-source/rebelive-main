@@ -400,7 +400,7 @@ export default function ProductDetailPage() {
   // ── Dropdown Accordions (Description & Additional Info) ──
   const [isDescOpen, setIsDescOpen] = useState<boolean>(false);
   const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState<boolean>(false);
-  const [trioNutrientTab, setTrioNutrientTab] = useState<'combined' | 'all' | 'apex' | 'capella' | 'aviva'>('combined');
+  const [trioNutrientTab, setTrioNutrientTab] = useState<'apex' | 'capella' | 'aviva'>('apex');
 
   // ── Benefits Horizontal Carousel Ref ──
   const benefitsCarouselRef = useRef<HTMLDivElement>(null);
@@ -863,7 +863,7 @@ export default function ProductDetailPage() {
                               DESCRIPTION
                             </span>
                             <span className="text-[10px] text-white/40 uppercase font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
-                              {isVariety ? '12 × 250 ml' : '250 ml'}
+                              {'250 ml'}
                             </span>
                           </div>
                           <ChevronDown
@@ -889,7 +889,7 @@ export default function ProductDetailPage() {
                                   Net Quantity
                                 </span>
                                 <span className="text-xs font-bold text-white font-mono">
-                                  {isVariety ? '12 × 250 ml (3000 ml)' : '250 ml'}
+                                  {'250 ml'}
                                 </span>
                               </div>
                             </div>
@@ -1028,34 +1028,13 @@ export default function ProductDetailPage() {
                                   <div className="space-y-2">
                                     {/* Flavor Selector Tabs for Trio Pack */}
                                     <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/10 overflow-x-auto [scrollbar-width:none]">
-                                      <button
-                                        type="button"
-                                        onClick={() => setTrioNutrientTab('combined')}
-                                        className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                                          trioNutrientTab === 'combined'
-                                            ? 'bg-white text-black font-bold shadow-sm'
-                                            : 'text-white/60 hover:text-white hover:bg-white/5'
-                                        }`}
-                                      >
-                                        3-in-1 Compare
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={() => setTrioNutrientTab('all')}
-                                        className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                                          trioNutrientTab === 'all'
-                                            ? 'bg-white text-black font-bold shadow-sm'
-                                            : 'text-white/60 hover:text-white hover:bg-white/5'
-                                        }`}
-                                      >
-                                        All 3 Panels
-                                      </button>
+                                   
                                       <button
                                         type="button"
                                         onClick={() => setTrioNutrientTab('apex')}
                                         className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                                           trioNutrientTab === 'apex'
-                                            ? 'bg-amber-400 text-black font-bold shadow-sm'
+                                            ? 'bg-white text-black font-bold shadow-sm'
                                             : 'text-white/60 hover:text-white hover:bg-white/5'
                                         }`}
                                       >
@@ -1066,7 +1045,7 @@ export default function ProductDetailPage() {
                                         onClick={() => setTrioNutrientTab('capella')}
                                         className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                                           trioNutrientTab === 'capella'
-                                            ? 'bg-cyan-400 text-black font-bold shadow-sm'
+                                            ? 'bg-white text-black font-bold shadow-sm'
                                             : 'text-white/60 hover:text-white hover:bg-white/5'
                                         }`}
                                       >
@@ -1077,7 +1056,7 @@ export default function ProductDetailPage() {
                                         onClick={() => setTrioNutrientTab('aviva')}
                                         className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                                           trioNutrientTab === 'aviva'
-                                            ? 'bg-rose-400 text-black font-bold shadow-sm'
+                                            ? 'bg-white text-black font-bold shadow-sm'
                                             : 'text-white/60 hover:text-white hover:bg-white/5'
                                         }`}
                                       >
@@ -1085,21 +1064,12 @@ export default function ProductDetailPage() {
                                       </button>
                                     </div>
 
-                                    {/* Active Tab View */}
-                                    {trioNutrientTab === 'combined' && renderTrioCombined()}
-                                    {trioNutrientTab === 'all' && (
-                                      <div className="space-y-2">
-                                        {renderCompactTable(PRODUCT_ADDITIONAL_INFO.apex, 'APEX (Citrus)')}
-                                        {renderCompactTable(PRODUCT_ADDITIONAL_INFO.capella, 'CAPELLA (Berry)')}
-                                        {renderCompactTable(PRODUCT_ADDITIONAL_INFO.aviva, 'AVIVA (Lychee)')}
-                                      </div>
-                                    )}
                                     {trioNutrientTab === 'apex' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.apex, 'APEX (Citrus)')}
+                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.apex, 'APEX')}
                                     {trioNutrientTab === 'capella' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.capella, 'CAPELLA (Berry)')}
+                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.capella, 'CAPELLA')}
                                     {trioNutrientTab === 'aviva' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.aviva, 'AVIVA (Lychee)')}
+                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.aviva, 'AVIVA')}
                                   </div>
                                 );
                               }

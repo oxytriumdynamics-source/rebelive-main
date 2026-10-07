@@ -54,7 +54,7 @@ const TestimonialCard: React.FC<{ item: Testimonial; priority?: boolean }> = ({ 
             fill
             sizes="128px"
             style={{ objectPosition: item.imagePosition || 'center 18%' }}
-            className="object-cover grayscale group-hover/card:grayscale-0 group-hover/card:scale-105 transition-all duration-500 ease-out"
+            className="object-cover  transition-all duration-500 ease-out"
             priority={priority}
           />
         </div>

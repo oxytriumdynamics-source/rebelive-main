@@ -212,42 +212,6 @@ const ProductDetailsInner: React.FC<ProductDetailsProps> = ({
           })}
         </div>
       </div>
-
-      {/* ── Bottom Floating Quick Bar ── */}
-      <div className="absolute bottom-3.5 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 sm:gap-4 pointer-events-auto z-30">
-        {/* Flavor Selector Dots with Translucent Glass */}
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-neutral-950/50 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
-          {products.map((p, idx) => (
-            <button
-              key={p.id}
-              onClick={() => {
-                setManualFeatureIndex(null);
-                onSelectFlavor(idx);
-              }}
-              className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
-                idx === selectedIndex ? 'w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]' : 'w-2 bg-white/30 hover:bg-white/60'
-              }`}
-              title={p.name}
-            />
-          ))}
-          <span
-            className="text-[10px] text-white/80 tracking-wider font-semibold ml-1.5 uppercase"
-            style={{ fontFamily: "'Poppins', sans-serif" }}
-          >
-            {product.name}
-          </span>
-        </div>
-
-        {/* Order button (Poppins) */}
-        <button
-          onClick={onOrderNow}
-          className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white text-black text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase hover:bg-neutral-200 hover:scale-105 transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.35)]"
-          style={{ fontFamily: "'Poppins', sans-serif" }}
-        >
-          <span>ORDER</span>
-          <ArrowUpRight className="w-3.5 h-3.5" />
-        </button>
-      </div>
     </div>
   );
 };

@@ -1,7 +1,8 @@
 'use client';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowUpRight } from 'lucide-react';
 import { PRODUCTS } from '@/data/products';
 import { ProductScene } from '@/components/product/ProductScene';
 import { FlavorCarouselOverlay } from '@/components/hero/FlavorCarouselOverlay';
@@ -327,8 +328,8 @@ export default function App() {
         }
 
         if (clamped <= 6) {
-          if (typeof window !== 'undefined' && window.scrollY !== 0) {
-            window.scrollTo(0, 0);
+          if (typeof window !== 'undefined' && window.scrollY > 20) {
+            window.scrollTo({ top: 0, behavior: 'instant' as any });
           }
         }
         setTimeout(() => {
@@ -475,75 +476,136 @@ export default function App() {
     };
   }, [isSpecsOpen, isMenuOpen, isContactOpen, isOrderOpen, goToNext, goToPrev, goToSection]);
 
-  // ── Touch Swipe Gestures (Mobile) ────────────────────────────────────
+  // ── Touch Swipe Gestures (Mobile Smooth Scroll & Pull-to-Refresh Guard) ────
   useEffect(() => {
     let touchStartY = 0;
     let touchStartX = 0;
+    let touchStartTime = 0;
+    let hasSwipedInCurrentGesture = false;
 
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       touchStartY = e.touches[0].clientY;
       touchStartX = e.touches[0].clientX;
+      touchStartTime = Date.now();
+      hasSwipedInCurrentGesture = false;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (isSpecsOpen || isMenuOpen || isContactOpen || isOrderOpen) return;
       if (e.touches.length !== 1) return;
-      if ((e.target as HTMLElement)?.closest?.('[role="dialog"], .modal')) return;
+      if ((e.target as HTMLElement)?.closest?.('[role="dialog"], .modal, input, textarea')) return;
 
-      const deltaY = touchStartY - e.touches[0].clientY;
-      const deltaX = touchStartX - e.touches[0].clientX;
-
-      // Ignore horizontal swipes
-      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.4) return;
-      if (Math.abs(deltaY) < 28) return;
-
-      if (isAnimatingRef.current) {
-        e.preventDefault();
-        return;
-      }
+      const currentY = e.touches[0].clientY;
+      const currentX = e.touches[0].clientX;
+      const deltaY = touchStartY - currentY;
+      const deltaX = touchStartX - currentX;
+      const absDeltaY = Math.abs(deltaY);
+      const absDeltaX = Math.abs(deltaX);
 
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
       const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
 
+      // In the SubFooter and Footer zone: allow natural smooth Lenis scrolling
       if (isAtOrPastSubfooter) {
         if (deltaY > 0) {
-          // Swiping up (scrolling down): let Lenis scroll smoothly
+          // Swiping up (scrolling down): let Lenis scroll naturally
           return;
         } else {
           // Swiping down (scrolling up):
-          if (window.scrollY > subfooterTop + 20) {
+          if (window.scrollY > subfooterTop + 15) {
             return;
           }
-          e.preventDefault();
+          if (e.cancelable) e.preventDefault();
+          if (hasSwipedInCurrentGesture) return;
           const now = Date.now();
           if (now - lastScrollTimeRef.current < 450) return;
+          hasSwipedInCurrentGesture = true;
           goToSection(6);
           return;
         }
       }
 
-      e.preventDefault();
-
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < 650) return;
-
-      touchStartY = e.touches[0].clientY;
-
-      if (deltaY > 0) {
-        goToNext();
-      } else {
-        goToPrev();
+      // CRITICAL FOR MOBILE: Inside 3D Stage (Sections 0-6),
+      // Prevent browser default pull-to-refresh on vertical drag immediately on the very first frame!
+      if (absDeltaY > 3 && absDeltaY >= absDeltaX * 0.75) {
+        if (e.cancelable) {
+          e.preventDefault();
+        }
       }
+
+      // Ignore horizontal swipes (preserved for horizontal flavor navigation)
+      if (absDeltaX > absDeltaY * 1.3) return;
+
+      // Prevent multi-triggering while finger is still moving
+      if (hasSwipedInCurrentGesture || isAnimatingRef.current) {
+        return;
+      }
+
+      // Calibrated threshold for intentional, smooth section stepping
+      const SWIPE_THRESHOLD = 45;
+      if (absDeltaY >= SWIPE_THRESHOLD) {
+        const now = Date.now();
+        if (now - lastScrollTimeRef.current < 500) return;
+
+        hasSwipedInCurrentGesture = true;
+        if (deltaY > 0) {
+          goToNext();
+        } else {
+          goToPrev();
+        }
+      }
+    };
+
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (hasSwipedInCurrentGesture) {
+        hasSwipedInCurrentGesture = false;
+        return;
+      }
+
+      if (isSpecsOpen || isMenuOpen || isContactOpen || isOrderOpen) return;
+      if (isAnimatingRef.current) return;
+
+      const subfooterEl = document.getElementById('home-subfooter');
+      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
+      const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
+      if (isAtOrPastSubfooter) return;
+
+      // Check for quick flick gesture
+      const changedTouch = e.changedTouches[0];
+      if (!changedTouch) return;
+
+      const deltaY = touchStartY - changedTouch.clientY;
+      const deltaX = touchStartX - changedTouch.clientX;
+      const absDeltaY = Math.abs(deltaY);
+      const absDeltaX = Math.abs(deltaX);
+      const elapsed = Date.now() - touchStartTime;
+
+      if (elapsed < 300 && absDeltaY >= 25 && absDeltaY > absDeltaX * 1.2) {
+        const now = Date.now();
+        if (now - lastScrollTimeRef.current >= 450) {
+          if (deltaY > 0) {
+            goToNext();
+          } else {
+            goToPrev();
+          }
+        }
+      }
+
+      hasSwipedInCurrentGesture = false;
     };
 
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
+    window.addEventListener('touchcancel', handleTouchEnd, { passive: true });
 
     return () => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
+      window.removeEventListener('touchcancel', handleTouchEnd);
     };
   }, [isSpecsOpen, isMenuOpen, isContactOpen, isOrderOpen, goToNext, goToPrev, goToSection]);
 
@@ -802,6 +864,53 @@ export default function App() {
           onOrderNow={handleOrderNow}
         />
       </div>
+
+      {/* ── Fixed Floating Quick Bar (Flavor Dots + Order CTA) across Details & Statement phases (z-30) ── */}
+      <AnimatePresence>
+        {scrollProgress >= 0.12 && scrollProgress <= 0.82 && (
+          <motion.div
+            initial={{ opacity: 0, y: 16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 16 }}
+            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            className="fixed bottom-3.5 sm:bottom-6 md:bottom-8 left-1/2 -translate-x-1/2 flex items-center gap-3 sm:gap-4 pointer-events-auto z-30 select-none"
+          >
+            {/* Flavor Selector Dots with Translucent Glass */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-neutral-950/70 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
+              {PRODUCTS.map((p, idx) => (
+                <button
+                  key={p.id}
+                  onClick={() => handleSelectFlavor(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 cursor-pointer ${
+                    idx === selectedIndex
+                      ? 'w-7 bg-white shadow-[0_0_10px_rgba(255,255,255,0.7)]'
+                      : 'w-2 bg-white/30 hover:bg-white/60'
+                  }`}
+                  title={p.name}
+                  aria-label={p.name}
+                />
+              ))}
+              <span
+                className="text-[10px] text-white/80 tracking-wider font-semibold ml-1.5 uppercase"
+                style={{ fontFamily: "'Poppins', sans-serif" }}
+              >
+                {currentProduct.name}
+              </span>
+            </div>
+
+            {/* Order button (Poppins) */}
+            <button
+              onClick={handleOrderNow}
+              className="flex items-center gap-1.5 px-3.5 sm:px-4 py-1.5 sm:py-2 rounded-full bg-white text-black text-[10px] sm:text-[11px] font-semibold tracking-wider uppercase hover:bg-neutral-200 hover:scale-105 active:scale-95 transition-all cursor-pointer shadow-[0_0_20px_rgba(255,255,255,0.35)]"
+              style={{ fontFamily: "'Poppins', sans-serif" }}
+              aria-label="Order Rebelive"
+            >
+              <span>ORDER</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* ── 3D Stage Anchor (100vh): contains Hero, Details, and Statement stages ── */}
       <div className="relative pointer-events-none h-screen w-full" aria-hidden="true" />

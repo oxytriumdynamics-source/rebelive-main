@@ -379,6 +379,8 @@
     background-color: #000000;
     color: #FFFFFF;
     font-family: var(--font-body);
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
   }
 
   /* Lenis smooth scrolling rules */
@@ -409,6 +411,9 @@
     background-color: #08080a;
     color: #FFFFFF;
     overflow-x: hidden;
+    overscroll-behavior-y: none;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-family: var(--font-body);

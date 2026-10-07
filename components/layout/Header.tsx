@@ -37,16 +37,11 @@ export const Header: React.FC<HeaderProps> = ({
   const isContact = pathname === '/contact';
 
   // Completely hide header while initial loading screen is active
-  // On home page, starts false on both SSR and client hydration so header is NEVER shown during loading
-  const [isIntroComplete, setIsIntroComplete] = useState<boolean>(() => !isHome);
+  // On home page, starts false only on very first initial load if intro has not loaded yet
+  const [isIntroComplete, setIsIntroComplete] = useState<boolean>(() => !isHome || (typeof window !== 'undefined' && hasIntroLoaded()));
 
   useEffect(() => {
-    if (!isHome) {
-      setIsIntroComplete(true);
-      return;
-    }
-
-    if (hasIntroLoaded()) {
+    if (!isHome || hasIntroLoaded()) {
       setIsIntroComplete(true);
       return;
     }
@@ -85,8 +80,10 @@ export const Header: React.FC<HeaderProps> = ({
   const isUserAuthenticated = mounted && isAuthenticated && !!user;
 
   // Track scroll for transparent dark glassmorphic navbar:
-  // On home page: DO NOT shrink or blur through Hero, Details, and Statement sections; keep full width until SubFooter (scrollProgress >= 0.84)
-  // On other pages: shrink when scrollY > 20
+  // On mobile screens: shrink to fixed glassmorphic pill as soon as user scrolls (progress > 0.04 or scrollY > 20)
+  // so the fixed section is ALWAYS clearly visible, crisp, and prominent above content no matter how much the user scrolls.
+  // On desktop home page: keep full width through Hero, Details, and Statement sections, shrinking only at SubFooter (scrollProgress >= 0.84).
+  // On other pages: shrink when scrollY > 20.
   useEffect(() => {
     if (!isHome) {
       const handleScroll = () => {
@@ -111,15 +108,20 @@ export const Header: React.FC<HeaderProps> = ({
     }
 
     // On Home Page:
-    // Keep header full width through Hero, Details, and Statement sections.
-    // Only shrink/pill when leaving Statement section into SubFooter / Testimonials (scrollProgress >= 0.84 or scrollY near subfooter)
     const checkHomeScroll = (progress: number) => {
+      const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 768;
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 900);
       const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80 && progress >= 0.80;
       const isPastStatementByProgress = progress >= 0.84;
 
-      setIsScrolled(isPastStatementByProgress || isPastStatementByScroll);
+      if (isMobileScreen) {
+        // On mobile screen: shrink to floating pill as soon as scrolled past initial top
+        setIsScrolled(progress > 0.04 || (typeof window !== 'undefined' && window.scrollY > 20));
+      } else {
+        // Desktop retains full-width transparent header until reaching subfooter
+        setIsScrolled(isPastStatementByProgress || isPastStatementByScroll);
+      }
     };
 
     // Initialize immediately
@@ -134,6 +136,7 @@ export const Header: React.FC<HeaderProps> = ({
     };
 
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
+    window.addEventListener('resize', handleWindowScroll, { passive: true });
 
     let lenisUnsub: (() => void) | null = null;
     const lenis = (window as any).__lenis;
@@ -145,6 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
     return () => {
       unsubProgress();
       window.removeEventListener('scroll', handleWindowScroll);
+      window.removeEventListener('resize', handleWindowScroll);
       if (lenisUnsub) lenisUnsub();
     };
   }, [isHome]);
