@@ -38,6 +38,14 @@ const TESTIMONIALS: Testimonial[] = [
     image: '/testimonials/rebel-vaibhav.webp',
     imagePosition: 'center 18%',
   },
+  {
+    id: 'dhirendra',
+    name: 'DHIRENDRA SINGH KAUSHIK',
+    quote: 'Game-changing endurance and crisp mental sharpness. Zero jitters, no crash, just pure sustained high performance all day long.',
+    rating: 5,
+    image: '/testimonials/rebel-dhirendra.webp',
+    imagePosition: 'center 20%',
+  },
 ];
 
 export interface TestimonialsSectionProps {

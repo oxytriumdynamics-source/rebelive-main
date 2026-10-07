@@ -255,7 +255,7 @@ export default function App() {
       : isStatementTransition
         ? 0.75
         : (isSubFooterTransition || isFooterTransition)
-          ? 0.75
+          ? 0.85
           : (clamped === 0 ? 0.75 : 0.60);
 
     // Direct smooth scroll to section anchor using Lenis
@@ -263,7 +263,7 @@ export default function App() {
       // Target: SubFooter / Testimonials
       const subfooterEl = document.getElementById('home-subfooter');
       const targetScrollY = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 0);
-      scrollToLenis(targetScrollY, { duration: 0.75 });
+      scrollToLenis(targetScrollY, { duration: isSubFooterTransition ? 0.85 : 0.75 });
     } else if (clamped === 8) {
       // Target: Main Footer
       const footerEl = document.getElementById('main-footer') || document.querySelector('footer');
@@ -274,7 +274,7 @@ export default function App() {
       scrollToLenis(targetScrollY, { duration: 0.80 });
     } else if (clamped <= 6) {
       // Target: 3D stage (Hero, Details, Statement)
-      scrollToLenis(0, { duration: 0.65 });
+      scrollToLenis(0, { duration: isSubFooterTransition ? 0.85 : 0.65 });
     }
 
     if (activeTweenRef.current) {
@@ -286,7 +286,7 @@ export default function App() {
     activeTweenRef.current = gsap.to(proxy, {
       val: targetP,
       duration,
-      ease: prefersReducedMotion ? 'none' : 'power2.out',
+      ease: prefersReducedMotion ? 'none' : isSubFooterTransition ? 'power2.inOut' : 'power2.out',
       onUpdate: () => {
         const currentP = proxy.val;
         scrollProgressRef.current = currentP;
@@ -359,6 +359,7 @@ export default function App() {
   // ── Sync scroll position with activeSection & scrollProgress in SubFooter / Footer zone ──
   useEffect(() => {
     const handleScrollSync = () => {
+      if (isAnimatingRef.current) return;
       const subfooterEl = document.getElementById('home-subfooter');
       const footerEl = document.getElementById('main-footer') || document.querySelector('footer');
       if (!subfooterEl) return;
@@ -744,20 +745,26 @@ export default function App() {
   const detailsOpacity = detailsIn * (1 - detailsOut);
 
   const stmtIn = lerpClamp(scrollProgress, PHASES.STATEMENT_IN, PHASES.STATEMENT_IN + 0.05);
-  const stmtOut = lerpClamp(scrollProgress, PHASES.STATEMENT_OUT, PHASES.STATEMENT_GONE);
-  // Force statement opacity to 0 if we are in subfooter section or scrolled down
-  const isPastStatementForced = activeSection >= 7 || (typeof window !== 'undefined' && window.scrollY > 15);
-  const statementOpacity = isPastStatementForced ? 0 : stmtIn * (1 - stmtOut);
+  // Statement smoothly dissolves between 0.76 (statement-2) and 0.83
+  const stmtOut = lerpClamp(scrollProgress, 0.76, 0.83);
+  const statementOpacity =
+    scrollProgress >= 0.83 || (typeof window !== 'undefined' && window.scrollY >= 150 && activeSection >= 7)
+      ? 0
+      : stmtIn * (1 - stmtOut);
 
+  // SubFooter is visible during transition and throughout subfooter/footer
   const isSubFooterVisible =
+    scrollProgress >= 0.77 ||
     activeSection >= 7 ||
-    scrollProgress >= 0.78 ||
-    (typeof window !== 'undefined' && window.scrollY > 15);
+    (typeof window !== 'undefined' && window.scrollY >= 50);
 
+  // SubFooter smoothly cross-fades in from 0.78 to 0.86 (and in reverse from 0.86 down to 0.78)
   const subFooterOpacity =
-    activeSection >= 7 || (typeof window !== 'undefined' && window.scrollY >= 20)
+    scrollProgress >= 0.86 || (typeof window !== 'undefined' && window.scrollY >= 150 && activeSection >= 7)
       ? 1
-      : lerpClamp(scrollProgress, 0.78, 0.86);
+      : scrollProgress <= 0.78
+        ? 0
+        : lerpClamp(scrollProgress, 0.78, 0.86);
 
 
   const activeFeatureIndex =

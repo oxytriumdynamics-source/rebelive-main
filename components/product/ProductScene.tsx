@@ -101,7 +101,7 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
   const [sceneReady, setSceneReady] = useState(false);
   const numProducts = products.length;
   const currentProduct = products[selectedIndex];
-  const isPastStatement = scrollProgress >= 0.785;
+  const isPastStatement = scrollProgress >= 0.86;
 
   return (
     <div
@@ -217,6 +217,6 @@ export const ProductScene = React.memo(ProductSceneInner, (prev, next) => {
     prev.isTablet === next.isTablet &&
     prev.isPageReady === next.isPageReady &&
     prev.products === next.products &&
-    ((prev.scrollProgress ?? 0) >= 0.80) === ((next.scrollProgress ?? 0) >= 0.80)
+    ((prev.scrollProgress ?? 0) >= 0.86) === ((next.scrollProgress ?? 0) >= 0.86)
   );
 });

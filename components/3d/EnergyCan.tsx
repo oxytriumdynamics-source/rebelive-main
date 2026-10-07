@@ -359,8 +359,8 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       tDetailToStmt *
       (tDetailToStmt * (tDetailToStmt * 6 - 15) + 10);
 
-    // ── 4. Statement exit before SubFooter (0.76 -> 0.80) ──
-    const tExit = THREE.MathUtils.clamp((sp - 0.76) / 0.04, 0, 1);
+    // ── 4. Statement exit & entry across SubFooter transition (0.76 <-> 0.85) ──
+    const tExit = THREE.MathUtils.clamp((sp - 0.76) / 0.09, 0, 1);
     const easeExit = tExit * tExit * (3 - 2 * tExit);
 
     const isSmall = isMobile || isTablet;
@@ -442,14 +442,14 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
         targetZ = 0.22;
         targetScale = stmtBaseScale;
       } else if (tExit > 0) {
-        // Swift cinematic ascension out of frame before SubFooter section
+        // Smooth cinematic ascension & descent across SubFooter transition
         targetX = 0;
-        targetY = THREE.MathUtils.lerp(stmtY, 4.0, easeExit);
-        targetZ = THREE.MathUtils.lerp(0.22, -1.0, easeExit);
-        targetRotX = THREE.MathUtils.lerp(0.02, 0.14, easeExit);
-        targetRotY = Math.PI * 6.0 + easeExit * Math.PI * 0.75;
-        targetScale = THREE.MathUtils.lerp(stmtBaseScale, stmtBaseScale * 0.8, easeExit);
-        targetOpacity = Math.max(0, 1 - easeExit * 1.5);
+        targetY = THREE.MathUtils.lerp(stmtY, 3.2, easeExit);
+        targetZ = THREE.MathUtils.lerp(0.22, -0.6, easeExit);
+        targetRotX = THREE.MathUtils.lerp(0.02, 0.12, easeExit);
+        targetRotY = Math.PI * 6.0 + easeExit * Math.PI * 0.6;
+        targetScale = THREE.MathUtils.lerp(stmtBaseScale, stmtBaseScale * 0.85, easeExit);
+        targetOpacity = Math.max(0, 1 - easeExit * 1.15);
       }
     } else {
       const exitX = diff < 0 ? (isSmall ? -6.5 : -8.5) : isSmall ? 6.5 : 8.5;
@@ -545,7 +545,7 @@ const EnergyCanInner: React.FC<EnergyCanProps> = ({
       currentRotZ.current + smoothMouse.current.rotZ
     );
     outerRef.current.scale.set(targetScale, targetScale, targetScale);
-    outerRef.current.visible = targetOpacity > 0.01 && sp < 0.80;
+    outerRef.current.visible = targetOpacity > 0.005 && sp < 0.86;
   });
 
   return (

@@ -40,6 +40,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className="h-full antialiased bg-black text-white" suppressHydrationWarning>
+      <head>
+        <link rel="preload" href="/models/soda-can1.glb" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/draco/gltf/draco_decoder.wasm" as="fetch" crossOrigin="anonymous" />
+        <link rel="preload" href="/brand/podup.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/brand/poddown.webp" as="image" type="image/webp" />
+        <link rel="preload" href="/products/apex.webp" as="image" type="image/webp" />
+      </head>
       <body className="min-h-full flex flex-col antialiased bg-black text-white" suppressHydrationWarning>
         <StoreProvider>
           <AuthProvider>

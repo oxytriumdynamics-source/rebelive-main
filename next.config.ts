@@ -21,11 +21,51 @@ const nextConfig: NextConfig = {
   },
   headers: async () => [
     {
-      source: '/:all*(svg|jpg|png|webp|avif|woff2|woff|ttf|otf)',
+      source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff2|woff|ttf|otf)',
       headers: [
         {
           key: 'Cache-Control',
           value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/:all*(glb|gltf|bin|wasm)',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+        {
+          key: 'Access-Control-Allow-Origin',
+          value: '*',
+        },
+      ],
+    },
+    {
+      source: '/:all*(mp3|wav|ogg)',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/_next/static/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/_next/image/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=2592000, stale-while-revalidate=86400',
         },
       ],
     },
