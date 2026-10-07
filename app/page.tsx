@@ -63,8 +63,8 @@ const PHASES = {
   FEAT_4: 0.37,             // Feature 04 slides in
 
   STATEMENT_IN: 0.43,     // Statement section fades in (100% solid before Break 5 at 0.49)
-  STATEMENT_OUT: 0.82,    // Statement section stays solid through statement-2 (0.76)
-  STATEMENT_GONE: 0.86,   // Statement section fully dissolved before SubFooter settles at 0.88
+  STATEMENT_OUT: 0.762,    // Statement section begins fading immediately when scrolling past statement-2 (0.76)
+  STATEMENT_GONE: 0.785,   // Statement section fully dissolved before SubFooter settles at 0.88
 };
 
 /** Discrete section targets for strict 1-section scroll snapping */
@@ -253,17 +253,17 @@ export default function App() {
     const duration = prefersReducedMotion
       ? 0.05
       : isStatementTransition
-        ? 0.85
+        ? 0.75
         : (isSubFooterTransition || isFooterTransition)
-          ? 0.65
-          : (clamped === 0 ? 0.80 : 0.65);
+          ? 0.75
+          : (clamped === 0 ? 0.75 : 0.60);
 
     // Direct smooth scroll to section anchor using Lenis
     if (clamped === 7) {
-      // Target: SubFooter
+      // Target: SubFooter / Testimonials
       const subfooterEl = document.getElementById('home-subfooter');
       const targetScrollY = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 0);
-      scrollToLenis(targetScrollY, { duration: 0.65 });
+      scrollToLenis(targetScrollY, { duration: 0.75 });
     } else if (clamped === 8) {
       // Target: Main Footer
       const footerEl = document.getElementById('main-footer') || document.querySelector('footer');
@@ -331,6 +331,11 @@ export default function App() {
           if (typeof window !== 'undefined' && window.scrollY > 20) {
             window.scrollTo({ top: 0, behavior: 'instant' as any });
           }
+        } else if (clamped === 7) {
+          const subfooterEl = document.getElementById('home-subfooter');
+          if (subfooterEl && typeof window !== 'undefined' && Math.abs(window.scrollY - subfooterEl.offsetTop) > 15) {
+            window.scrollTo({ top: subfooterEl.offsetTop, behavior: 'instant' as any });
+          }
         }
         setTimeout(() => {
           isAnimatingRef.current = false;
@@ -362,8 +367,27 @@ export default function App() {
       const footerTop = footerEl ? footerEl.offsetTop : subfooterTop + subfooterEl.offsetHeight;
       const scrollY = window.scrollY;
 
+      // Scrolling between 3D stage (0) and SubFooter (subfooterTop)
+      if (scrollY > 0 && scrollY < subfooterTop - 40) {
+        const subfooterProgress = Math.min(1, Math.max(0, scrollY / subfooterTop));
+        const p = 0.76 + subfooterProgress * (0.88 - 0.76);
+
+        scrollProgressRef.current = p;
+        updateScrollProgress(p);
+        if (progressLineRef.current) {
+          progressLineRef.current.style.transform = `scaleX(${Math.min(1, p)})`;
+        }
+        setScrollProgress(p);
+
+        if (activeSectionRef.current !== 7 && !isAnimatingRef.current && subfooterProgress > 0.4) {
+          activeSectionRef.current = 7;
+          setActiveSection(7);
+        }
+        return;
+      }
+
       // In or past the SubFooter zone
-      if (scrollY >= subfooterTop - 60) {
+      if (scrollY >= subfooterTop - 40) {
         if (scrollY >= footerTop - 80) {
           if (activeSectionRef.current !== 8 && !isAnimatingRef.current) {
             activeSectionRef.current = 8;
@@ -424,26 +448,19 @@ export default function App() {
       const delta = e.deltaY;
       if (Math.abs(delta) < 14) return;
 
-      // CRITICAL: Block wheel inputs while transition is running so Lenis is NEVER interrupted or stopped in the middle
-      if (isAnimatingRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
-      const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
+      const isPastStatementScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
+      const isInSubFooterZone = (activeSectionRef.current >= 7 && isPastStatementScroll) || (typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40);
 
-      // In the SubFooter and Footer zone: allow natural, buttery-smooth Lenis scrolling
-      if (isAtOrPastSubfooter) {
+      // In the SubFooter and Footer zone: allow natural, buttery-smooth Lenis scrolling without blocking
+      if (isInSubFooterZone) {
         if (delta > 0) {
           // Scrolling down: let Lenis smoothly scroll through subfooter and footer without interruption
           return;
         } else {
           // Scrolling up:
-          // If we haven't reached the top of SubFooter yet, allow smooth scrolling upward
-          if (window.scrollY > subfooterTop + 20) {
+          if (typeof window !== 'undefined' && window.scrollY > subfooterTop + 20) {
             return;
           }
           // If user reached the very top of SubFooter and scrolls up further,
@@ -457,11 +474,18 @@ export default function App() {
         }
       }
 
+      // CRITICAL: Block wheel inputs while transition is running inside 3D stage
+      if (isAnimatingRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
       e.preventDefault();
       e.stopPropagation();
 
       const now = Date.now();
-      if (now - lastScrollTimeRef.current < 650) return;
+      if (now - lastScrollTimeRef.current < 550) return;
 
       if (delta > 0) {
         goToNext();
@@ -505,20 +529,23 @@ export default function App() {
 
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
-      const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
+      const isSettledInSubFooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
+      const isInSubFooterZone = activeSectionRef.current >= 7 && isSettledInSubFooter;
 
-      // In the SubFooter and Footer zone: allow natural smooth Lenis scrolling
-      if (isAtOrPastSubfooter) {
+      // In the SubFooter and Footer zone: allow natural, continuous smooth scrolling
+      if (isInSubFooterZone) {
         if (deltaY > 0) {
-          // Swiping up (scrolling down): let Lenis scroll naturally
+          // Swiping up (scrolling down): let Lenis & browser scroll naturally without blocking
           return;
         } else {
           // Swiping down (scrolling up):
-          if (window.scrollY > subfooterTop + 15) {
+          // If still scrolled down within testimonials/footer, allow smooth scrolling upward
+          if (typeof window !== 'undefined' && window.scrollY > subfooterTop + 25) {
             return;
           }
+          // Reached the absolute top of SubFooter and swiping down to return to Statement:
           if (e.cancelable) e.preventDefault();
-          if (hasSwipedInCurrentGesture) return;
+          if (hasSwipedInCurrentGesture || isAnimatingRef.current) return;
           const now = Date.now();
           if (now - lastScrollTimeRef.current < 450) return;
           hasSwipedInCurrentGesture = true;
@@ -527,8 +554,14 @@ export default function App() {
         }
       }
 
-      // CRITICAL FOR MOBILE: Inside 3D Stage (Sections 0-6),
-      // Prevent browser default pull-to-refresh on vertical drag immediately on the very first frame!
+      // CRITICAL: Block touch inputs while section transition animation is running
+      if (isAnimatingRef.current) {
+        if (e.cancelable) e.preventDefault();
+        return;
+      }
+
+      // Inside 3D Stage (Sections 0-6):
+      // Prevent browser default pull-to-refresh on vertical drag immediately on the very first frame
       if (absDeltaY > 3 && absDeltaY >= absDeltaX * 0.75) {
         if (e.cancelable) {
           e.preventDefault();
@@ -538,16 +571,17 @@ export default function App() {
       // Ignore horizontal swipes (preserved for horizontal flavor navigation)
       if (absDeltaX > absDeltaY * 1.3) return;
 
-      // Prevent multi-triggering while finger is still moving
-      if (hasSwipedInCurrentGesture || isAnimatingRef.current) {
+      // Prevent multi-triggering while finger is still moving in current gesture
+      if (hasSwipedInCurrentGesture) {
+        if (e.cancelable) e.preventDefault();
         return;
       }
 
       // Calibrated threshold for intentional, smooth section stepping
-      const SWIPE_THRESHOLD = 45;
+      const SWIPE_THRESHOLD = 40;
       if (absDeltaY >= SWIPE_THRESHOLD) {
         const now = Date.now();
-        if (now - lastScrollTimeRef.current < 500) return;
+        if (now - lastScrollTimeRef.current < 450) return;
 
         hasSwipedInCurrentGesture = true;
         if (deltaY > 0) {
@@ -569,6 +603,17 @@ export default function App() {
 
       const subfooterEl = document.getElementById('home-subfooter');
       const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
+
+      // Auto-settle if user stopped halfway in transition between 3D stage and SubFooter
+      if (typeof window !== 'undefined' && window.scrollY > 20 && window.scrollY < subfooterTop - 30) {
+        if (window.scrollY < subfooterTop * 0.45) {
+          goToSection(6);
+        } else {
+          goToSection(7);
+        }
+        return;
+      }
+
       const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
       if (isAtOrPastSubfooter) return;
 
@@ -700,13 +745,19 @@ export default function App() {
 
   const stmtIn = lerpClamp(scrollProgress, PHASES.STATEMENT_IN, PHASES.STATEMENT_IN + 0.05);
   const stmtOut = lerpClamp(scrollProgress, PHASES.STATEMENT_OUT, PHASES.STATEMENT_GONE);
-  const statementOpacity = stmtIn * (1 - stmtOut);
+  // Force statement opacity to 0 if we are in subfooter section or scrolled down
+  const isPastStatementForced = activeSection >= 7 || (typeof window !== 'undefined' && window.scrollY > 15);
+  const statementOpacity = isPastStatementForced ? 0 : stmtIn * (1 - stmtOut);
 
-  const isSubFooterVisible = activeSection >= 7 || scrollProgress >= 0.76;
+  const isSubFooterVisible =
+    activeSection >= 7 ||
+    scrollProgress >= 0.78 ||
+    (typeof window !== 'undefined' && window.scrollY > 15);
+
   const subFooterOpacity =
-    activeSection >= 7 && typeof window !== 'undefined' && window.scrollY >= 40
+    activeSection >= 7 || (typeof window !== 'undefined' && window.scrollY >= 20)
       ? 1
-      : lerpClamp(scrollProgress, 0.76, 0.88);
+      : lerpClamp(scrollProgress, 0.78, 0.86);
 
 
   const activeFeatureIndex =
@@ -867,7 +918,7 @@ export default function App() {
 
       {/* ── Fixed Floating Quick Bar (Flavor Dots + Order CTA) across Details & Statement phases (z-30) ── */}
       <AnimatePresence>
-        {scrollProgress >= 0.12 && scrollProgress <= 0.82 && (
+        {scrollProgress >= 0.12 && scrollProgress <= 0.77 && activeSection <= 6 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -918,14 +969,14 @@ export default function App() {
       {/* ── Post-Statement Experience (Testimonials & Nutrition SubFooter) ── */}
       <div
         id="home-subfooter"
-        className="relative z-20 w-full min-h-screen flex flex-col items-center justify-start pt-10 sm:pt-14 pb-12 transition-opacity duration-300 ease-out"
+        className="relative z-20 w-full min-h-screen flex flex-col items-center justify-start pb-12 transition-opacity duration-300 ease-out"
         style={{
           visibility: isSubFooterVisible ? 'visible' : 'hidden',
           opacity: subFooterOpacity,
           pointerEvents: isSubFooterVisible ? 'auto' : 'none',
         }}
       >
-        <TestimonialsSection className="!pt-8 sm:!pt-12 !pb-8 sm:!pb-12" />
+        <TestimonialsSection className="!pb-8 sm:!pb-12" />
         <SubFooter />
       </div>
 

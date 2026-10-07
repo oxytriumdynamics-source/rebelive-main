@@ -310,7 +310,7 @@ export default function AuthPageShell() {
           <div className="absolute inset-0 flex items-center justify-center" style={{ zIndex: 2 }}>
             <div style={{ position: "relative", width: 150, height: 150 }}>
               <Image
-                src="/brand/panther_white_icon-transparent.png"
+                src="/brand/panther_white_icon-transparent.webp"
                 alt="REBELIVE Mascot"
                 fill
                 sizes="150px"

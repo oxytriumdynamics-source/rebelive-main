@@ -26,8 +26,7 @@ import {
   Layers,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import { motion } from 'framer-motion';
-import { LampContainer } from '@/components/ui/lamp';
+
 
 const MenuDrawer = dynamic(() => import('@/components/ui/MenuDrawer').then((m) => m.MenuDrawer), {
   ssr: false,
@@ -152,8 +151,8 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
   {
     id: 'caffeine-theanine',
     icons: [
-      '/benifits/Rebelive Corporate Pilot (7).png',
-      '/benifits/Rebelive Corporate Pilot (6).png',
+      '/benifits/Rebelive Corporate Pilot (7).webp',
+      '/benifits/Rebelive Corporate Pilot (6).webp',
     ],
     title: (
       <>
@@ -171,8 +170,8 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
   {
     id: 'ashwagandha-magnesium',
     icons: [
-      '/benifits/Rebelive Corporate Pilot (5).png',
-      '/benifits/Rebelive Corporate Pilot (4).png',
+      '/benifits/Rebelive Corporate Pilot (5).webp',
+      '/benifits/Rebelive Corporate Pilot (4).webp',
     ],
     title: (
       <>
@@ -189,7 +188,7 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
   },
   {
     id: 'gut-health',
-    icons: ['/benifits/Rebelive Corporate Pilot (3) (1).png'],
+    icons: ['/benifits/Rebelive Corporate Pilot (3) (1).webp'],
     title: (
       <>
         <span className="block">Prebiotics</span>
@@ -206,8 +205,8 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
   {
     id: 'vitamins-potassium',
     icons: [
-      '/benifits/Rebelive Corporate Pilot.png',
-      '/benifits/Rebelive Corporate Pilot (1).png',
+      '/benifits/Rebelive Corporate Pilot.webp',
+      '/benifits/Rebelive Corporate Pilot (1).webp',
     ],
     title: (
       <>
@@ -224,7 +223,7 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
   },
   {
     id: 'zero-sugar',
-    icons: ['/benifits/Rebelive Corporate Pilot (2).png'],
+    icons: ['/benifits/Rebelive Corporate Pilot (2).webp'],
     title: (
       <>
         <div>
@@ -603,7 +602,7 @@ export default function ProductDetailPage() {
                     <div className="relative w-full h-full flex items-center justify-center">
                       <div className="relative w-24 xs:w-28 sm:w-36 h-36 xs:h-44 sm:h-56 -mr-8 xs:-mr-12 sm:-mr-16 -rotate-6 z-10 transition-transform duration-500 group-hover:-translate-x-3 group-hover:-rotate-12">
                         <Image
-                          src="/products/aviva.png"
+                          src="/products/aviva.webp"
                           alt="AVIVA"
                           fill
                           sizes="(max-width: 640px) 120px, 180px"
@@ -612,7 +611,7 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="relative w-28 xs:w-34 sm:w-44 h-42 xs:h-50 sm:h-64 z-20 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-2">
                         <Image
-                          src="/products/apex.png"
+                          src="/products/apex.webp"
                           alt="APEX"
                           fill
                           sizes="(max-width: 640px) 140px, 200px"
@@ -622,7 +621,7 @@ export default function ProductDetailPage() {
                       </div>
                       <div className="relative w-24 xs:w-28 sm:w-36 h-36 xs:h-44 sm:h-56 -ml-8 xs:-ml-12 sm:-ml-16 rotate-6 z-10 transition-transform duration-500 group-hover:translate-x-3 group-hover:rotate-12">
                         <Image
-                          src="/products/capella.png"
+                          src="/products/capella.webp"
                           alt="CAPELLA"
                           fill
                           sizes="(max-width: 640px) 120px, 180px"
@@ -1455,7 +1454,7 @@ export default function ProductDetailPage() {
                   <div className="h-[120px] sm:h-[142px] md:h-[166px] rounded-t-2xl sm:rounded-t-3xl bg-gradient-to-b from-white/[0.14] to-white/[0.08] border-t border-x border-white/30 px-2 sm:px-4 flex flex-col items-center justify-center text-center shadow-[0_-12px_35px_rgba(255,255,255,0.06)] relative">
                     <div className="relative w-32 xs:w-40 sm:w-48 md:w-56 h-8 sm:h-10 md:h-14 drop-shadow-[0_0_20px_rgba(255,255,255,0.5)] max-w-[90%]">
                       <Image
-                        src="/brand/REBELIVE Logo Black.png"
+                        src="/brand/REBELIVE Logo Black.webp"
                         alt="REBELIVE"
                         fill
                         className="object-contain invert"
@@ -1545,6 +1544,13 @@ export default function ProductDetailPage() {
                       )}
                     </div>
                   ))}
+
+                  {/* Column Footnote */}
+                  <div className="pt-2 sm:pt-3 text-center">
+                    <p className="text-[10px] sm:text-[11px] font-mono text-white/40 leading-snug">
+                      *Based on leading commercial energy drinks
+                    </p>
+                  </div>
                 </div>
 
                 {/* ── Column 4: Premium Coffee Drink** ── */}
@@ -1586,14 +1592,15 @@ export default function ProductDetailPage() {
                       )}
                     </div>
                   ))}
+
+                  {/* Column Footnote */}
+                  <div className="pt-2 sm:pt-3 text-center">
+                    <p className="text-[10px] sm:text-[11px] font-mono text-white/40 leading-snug">
+                      **Based on leading commercial seasonal sweetened coffee drinks
+                    </p>
+                  </div>
                 </div>
               </div>
-            </div>
-
-            {/* Footnotes */}
-            <div className="mt-4 flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/40 flex-wrap gap-2 px-2">
-              <p>*Based on leading commercial energy drinks</p>
-              <p>**Based on leading commercial seasonal sweetened coffee drinks</p>
             </div>
           </div>
 

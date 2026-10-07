@@ -23,7 +23,7 @@ export default function NavLogo({
       style={{ width, height: width * 0.32 }}
     >
       <Image
-        src="/brand/REBELIVE Logo Black.png"
+        src="/brand/REBELIVE Logo Black.webp"
         alt="REBELIVE"
         fill
         priority

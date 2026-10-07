@@ -173,7 +173,7 @@ function generateFallbackUser(email: string, firstName?: string, lastName?: stri
         id: 'pt-apex',
         name: 'APEX',
         slug: 'apex',
-        cardImage: '/brand/APEX.png',
+        cardImage: '/brand/APEX.webp',
         colorHex: '#d8ac52',
         description: 'You are Built to climb. Driven to go further.',
         tagline: 'The Summit Chaser',

@@ -171,7 +171,7 @@ export const Header: React.FC<HeaderProps> = ({
     }
   };
 
-  const userAvatar = user?.avatarUrl || '/brand/panther_white_icon-transparent.png';
+  const userAvatar = user?.avatarUrl || '/brand/panther_white_icon-transparent.webp';
   const displayName = user?.firstName || 'Operator';
   const rebelId = user?.id || 'REBEL-0000';
   const personaSlug = user?.preferences?.personalityType?.slug || 'apex';
@@ -267,7 +267,7 @@ export const Header: React.FC<HeaderProps> = ({
                 }`}
             >
               <Image
-                src="/brand/REBELIVE Logo Black.png"
+                src="/brand/REBELIVE Logo Black.webp"
                 alt="REBELIVE"
                 fill
                 priority

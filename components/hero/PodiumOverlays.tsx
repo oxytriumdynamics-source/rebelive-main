@@ -53,7 +53,7 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
       }}
     >
       {/* ─────────────────────────────────────────────────────────────
-          1. UPPER PODIUM: /brand/podup.png (Smooth In / Out)
+          1. UPPER PODIUM: /brand/podup.webp (Smooth In / Out)
       ───────────────────────────────────────────────────────────── */}
       <div className="absolute inset-x-0 top-[-8px] sm:top-[-10px] md:top-[-20px] flex flex-col items-center pointer-events-none">
         <motion.div
@@ -76,9 +76,10 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
         >
           <div className="relative w-[165px] sm:w-[220px] md:w-[275px] lg:w-[320px] aspect-[16/9] flex items-center justify-center">
             <Image
-              src="/brand/podup.png"
+              src="/brand/podup.webp"
               alt="Upper Studio Lighting Fixture"
               fill
+              sizes="(max-width: 640px) 165px, (max-width: 768px) 220px, (max-width: 1024px) 275px, 320px"
               priority
               className="object-contain opacity-95 brightness-[1.12] contrast-[1.12] drop-shadow-[0_16px_36px_rgba(0,0,0,0.95)]"
             />
@@ -87,7 +88,7 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
       </div>
 
       {/* ─────────────────────────────────────────────────────────────
-          2. DOWN PODIUM: /brand/poddown.png (Smooth In / Out)
+          2. DOWN PODIUM: /brand/poddown.webp (Smooth In / Out)
       ───────────────────────────────────────────────────────────── */}
       <div className="absolute inset-x-0 bottom-[-10px] sm:bottom-[-16px] md:bottom-[-22px] flex flex-col items-center pointer-events-none">
         <motion.div
@@ -119,9 +120,10 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
             />
 
             <Image
-              src="/brand/poddown.png"
+              src="/brand/poddown.webp"
               alt="Lower Studio Podium"
               fill
+              sizes="(max-width: 640px) 175px, (max-width: 768px) 235px, (max-width: 1024px) 295px, 340px"
               priority
               className="object-contain opacity-55 brightness-[0.70] contrast-[1.1] drop-shadow-[0_-12px_28px_rgba(0,0,0,0.95)]"
             />

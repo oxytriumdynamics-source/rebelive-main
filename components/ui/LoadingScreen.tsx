@@ -87,7 +87,7 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
               <div className="flex flex-col items-center gap-1 mb-6">
                 <div className="relative" style={{ width: 150, height: 48 }}>
                   <Image
-                    src="/brand/REBELIVE Logo Black.png"
+                    src="/brand/REBELIVE Logo Black.webp"
                     alt="REBELIVE"
                     fill
                     priority

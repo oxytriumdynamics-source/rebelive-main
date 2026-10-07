@@ -106,7 +106,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                 <div className="flex items-center gap-3.5">
                   <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-amber-400/60 bg-black shrink-0">
                     <Image
-                      src={user.avatarUrl || '/brand/panther_white_icon-transparent.png'}
+                      src={user.avatarUrl || '/brand/panther_white_icon-transparent.webp'}
                       alt={user.firstName || 'User'}
                       fill
                       sizes="32px"

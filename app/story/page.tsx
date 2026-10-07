@@ -512,7 +512,7 @@ export default function StoryPage() {
                 <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 select-none flex items-center justify-center">
                   <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
                   <Image
-                    src="/brand/panther_white_icon-transparent.png"
+                    src="/brand/panther_white_icon-transparent.webp"
                     alt="Rebelive Panther"
                     fill
                     sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"
@@ -581,7 +581,7 @@ export default function StoryPage() {
                 <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 select-none flex items-center justify-center">
                   <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
                   <Image
-                    src="/brand/panther_white_icon-transparent.png"
+                    src="/brand/panther_white_icon-transparent.webp"
                     alt="Rebelive Panther"
                     fill
                     sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"
@@ -718,7 +718,7 @@ export default function StoryPage() {
 
                     <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-60 md:h-60 flex items-center justify-center">
                       <Image
-                        src="/brand/panther_white_icon-transparent.png"
+                        src="/brand/panther_white_icon-transparent.webp"
                         alt="Rebelive Brand Panther"
                         fill
                         sizes="(max-width: 768px) 220px, 300px"
@@ -729,7 +729,7 @@ export default function StoryPage() {
 
                     <div className="relative w-40 sm:w-52 h-10 mt-4 opacity-90 group-hover:opacity-100 transition-opacity">
                       <Image
-                        src="/brand/rebelive-white.png"
+                        src="/brand/rebelive-white.webp"
                         alt="REBELIVE Brand Logo"
                         fill
                         sizes="240px"
@@ -813,7 +813,7 @@ export default function StoryPage() {
               <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 flex items-center justify-center select-none">
                 <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
                 <Image
-                  src="/brand/panther_white_icon-transparent.png"
+                  src="/brand/panther_white_icon-transparent.webp"
                   alt="Rebelive Panther"
                   fill
                   sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"

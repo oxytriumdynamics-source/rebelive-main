@@ -101,7 +101,7 @@ const ProductSceneInner: React.FC<ProductSceneProps> = ({
   const [sceneReady, setSceneReady] = useState(false);
   const numProducts = products.length;
   const currentProduct = products[selectedIndex];
-  const isPastStatement = scrollProgress >= 0.80;
+  const isPastStatement = scrollProgress >= 0.785;
 
   return (
     <div

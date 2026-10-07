@@ -267,7 +267,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: target.id,
           name: target.name,
           slug: s,
-          cardImage: `/brand/${target.name}.png`,
+          cardImage: `/brand/${target.name}.webp`,
           colorHex: target.color,
           description: target.desc,
           tagline: target.tagline,

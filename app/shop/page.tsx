@@ -145,7 +145,7 @@ export default function ShopPage() {
                         <div className="relative w-full h-full flex items-center justify-center">
                           <div className="relative w-24 h-36 -mr-10 -rotate-6 z-10 transition-transform duration-500 group-hover:-translate-x-2 group-hover:-rotate-12">
                             <Image
-                              src="/products/aviva.png"
+                              src="/products/aviva.webp"
                               alt="AVIVA"
                               fill
                               sizes="120px"
@@ -154,7 +154,7 @@ export default function ShopPage() {
                           </div>
                           <div className="relative w-28 h-40 z-20 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
                             <Image
-                              src="/products/apex.png"
+                              src="/products/apex.webp"
                               alt="APEX"
                               fill
                               sizes="140px"
@@ -163,7 +163,7 @@ export default function ShopPage() {
                           </div>
                           <div className="relative w-24 h-36 -ml-10 rotate-6 z-10 transition-transform duration-500 group-hover:translate-x-2 group-hover:rotate-12">
                             <Image
-                              src="/products/capella.png"
+                              src="/products/capella.webp"
                               alt="CAPELLA"
                               fill
                               sizes="120px"

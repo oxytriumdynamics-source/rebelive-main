@@ -19,7 +19,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'NISHANT MISHRA',
     quote: 'Clean sustained mental clarity through long coding sessions without any crash or anxiety. Rebelive is literally in a class of its own.',
     rating: 5,
-    image: '/testimonials/rebel-nishant.jpg',
+    image: '/testimonials/rebel-nishant.webp',
     imagePosition: 'center 15%',
   },
   {
@@ -27,11 +27,17 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'ASHRAY VASU',
     quote: 'The calm focus and zero-sugar formulation completely upgraded my workday routine. No jitters, pure natural flow state.',
     rating: 5,
-    image: '/testimonials/rebel-ashray.jpg',
+    image: '/testimonials/rebel-ashray.webp',
     imagePosition: 'center 15%',
   },
-
-
+  {
+    id: 'vaibhav',
+    name: 'VAIBHAV MITTAL',
+    quote: 'Unmatched sustained energy that keeps me dialed in and sharp throughout the day. Zero sugar crash, just pure cognitive momentum.',
+    rating: 5,
+    image: '/testimonials/rebel-vaibhav.webp',
+    imagePosition: 'center 18%',
+  },
 ];
 
 export interface TestimonialsSectionProps {
@@ -89,26 +95,26 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
   return (
     <section
-      className={`relative w-full flex flex-col justify-center items-center py-14 sm:py-20 md:py-24 overflow-hidden select-none bg-transparent text-white ${className}`}
+      className={`relative w-full flex flex-col justify-center items-center pt-24 min-[400px]:pt-28 sm:pt-32 md:pt-36 lg:pt-40 pb-12 sm:pb-16 md:pb-20 overflow-hidden select-none bg-transparent text-white ${className}`}
     >
       {/* ── Centered Header with Staggered Scroll Intro Animation ── */}
-      <div className="max-w-4xl mx-auto px-6 text-center space-y-2 mb-8 sm:mb-12 relative z-10 flex-shrink-0">
+      <div className="w-full max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-2 sm:space-y-3 mb-6 sm:mb-10 relative z-10 flex-shrink-0">
         <motion.h2
-          initial={{ opacity: 0, y: 36, filter: 'blur(10px)' }}
-          whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
-          className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-sans font-black tracking-tight uppercase leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400"
+          initial={{ opacity: 0, y: 18 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.05 }}
+          transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
+          className="text-2xl min-[400px]:text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-sans font-black tracking-tight uppercase leading-tight sm:leading-none text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400"
         >
           {title}
         </motion.h2>
 
         <motion.p
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 14 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: false, amount: 0.2 }}
-          transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-          className="text-xs sm:text-sm md:text-base text-neutral-300 font-sans font-light max-w-xl mx-auto leading-relaxed"
+          viewport={{ once: true, amount: 0.05 }}
+          transition={{ duration: 0.65, delay: 0.08, ease: [0.16, 1, 0.3, 1] }}
+          className="text-xs sm:text-sm md:text-base text-neutral-300 font-sans font-light max-w-xl mx-auto leading-relaxed px-2"
         >
           {subtitle}
         </motion.p>

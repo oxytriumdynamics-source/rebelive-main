@@ -39,7 +39,7 @@ export const DEMO_USER: AuthUser = {
   phone: "+1 800-REBELIVE",
   role: "MEMBER",
   emailVerified: true,
-  avatarUrl: "/brand/panther_white_icon-transparent.png",
+  avatarUrl: "/brand/panther_white_icon-transparent.webp",
   authProvider: "local",
   createdAt: "2025-11-14T09:20:00.000Z",
   preferences: {
@@ -50,7 +50,7 @@ export const DEMO_USER: AuthUser = {
       id: "APEX",
       name: "APEX",
       slug: "apex",
-      cardImage: "/brand/APEX.png",
+      cardImage: "/brand/APEX.webp",
       colorHex: "#d8ac52",
       description: "You are Built to climb. Driven to go further. The peak isn't the end. It's proof you can go higher.",
       tagline: "Ascend Without Limits",

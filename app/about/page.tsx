@@ -321,7 +321,7 @@ export default function AboutPage() {
             >
               <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
                 <Image
-                  src="/brand/founder_portrait.jpg"
+                  src="/brand/founder_portrait.webp"
                   alt="Krishna and Sai Vaishno - Co-Founders"
                   fill
                   sizes="(max-width: 768px) 100vw, 420px"
@@ -420,7 +420,7 @@ export default function AboutPage() {
                   <div className="absolute inset-0 rounded-full bg-white/[0.05] blur-3xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
                   <div className="relative w-full h-full p-6 flex items-center justify-center">
                     <Image
-                      src="/brand/panther_white_icon-transparent.png"
+                      src="/brand/panther_white_icon-transparent.webp"
                       alt="Rebelive Panther Emblem"
                       fill
                       sizes="(max-width: 768px) 240px, 300px"
@@ -454,7 +454,7 @@ export default function AboutPage() {
             >
               <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
                 <Image
-                  src="/brand/oxytrium_dynamics.jpg"
+                  src="/brand/oxytrium_dynamics.webp"
                   alt="Oxytrium Dynamics Innovation Studio"
                   fill
                   sizes="(max-width: 768px) 100vw, 420px"

@@ -215,7 +215,7 @@ export default function MemberCard({
               {isApex && (
                 <div className="relative h-full w-full opacity-90">
                   <Image
-                    src="/brand/APEX.png"
+                    src="/brand/APEX.webp"
                     alt="APEX Topography"
                     fill
                     priority
@@ -229,7 +229,7 @@ export default function MemberCard({
               {isCapella && (
                 <div className="relative h-full w-full opacity-95">
                   <Image
-                    src="/brand/Capella.png"
+                    src="/brand/Capella.webp"
                     alt="Capella Constellation"
                     fill
                     priority
@@ -242,7 +242,7 @@ export default function MemberCard({
               {isAviva && (
                 <div className="relative h-full w-full">
                   <Image
-                    src="/brand/Aviva.png"
+                    src="/brand/Aviva.webp"
                     alt="Aviva Sakura & Fuji"
                     fill
                     priority
@@ -258,7 +258,7 @@ export default function MemberCard({
             <div className={`relative z-10 flex items-center justify-between ${compact ? "p-3.5" : "p-6"}`}>
               <div className={`relative ${compact ? "h-6 w-28" : "h-8 w-36"}`}>
                 <Image
-                  src="/brand/REBELIVE Logo Black.png"
+                  src="/brand/REBELIVE Logo Black.webp"
                   alt="REBELIVE"
                   fill
                   priority
@@ -282,8 +282,8 @@ export default function MemberCard({
                   <Image
                     src={
                       isApex
-                        ? "/brand/panther_white_icon-transparent.png"
-                        : "/brand/panther white icon.jpeg"
+                        ? "/brand/panther_white_icon-transparent.webp"
+                        : "/brand/panther white icon.webp"
                     }
                     alt="Panther Emblem"
                     fill
@@ -449,7 +449,7 @@ export default function MemberCard({
             {isApex && (
               <div className="pointer-events-none absolute inset-0 opacity-[0.08]">
                 <Image
-                  src="/brand/APEX.png"
+                  src="/brand/APEX.webp"
                   alt="Watermark"
                   fill
                   sizes="340px"
@@ -460,7 +460,7 @@ export default function MemberCard({
             {isCapella && (
               <div className="pointer-events-none absolute inset-0 opacity-[0.06]">
                 <Image
-                  src="/brand/Capella.png"
+                  src="/brand/Capella.webp"
                   alt="Watermark"
                   fill
                   sizes="340px"
@@ -471,7 +471,7 @@ export default function MemberCard({
             {isAviva && (
               <div className="pointer-events-none absolute inset-0 opacity-[0.06]">
                 <Image
-                  src="/brand/Aviva.png"
+                  src="/brand/Aviva.webp"
                   alt="Watermark"
                   fill
                   sizes="340px"
@@ -489,7 +489,7 @@ export default function MemberCard({
             >
               <div className={`relative ${compact ? "h-5 w-24" : "h-7 w-32"}`}>
                 <Image
-                  src="/brand/REBELIVE Logo Black.png"
+                  src="/brand/REBELIVE Logo Black.webp"
                   alt="REBELIVE"
                   fill
                   priority
@@ -642,7 +642,7 @@ export default function MemberCard({
 
               <div className={`relative ${compact ? "h-4 w-4" : "h-6 w-6"} opacity-70`}>
                 <Image
-                  src="/brand/panther_white_icon-transparent.png"
+                  src="/brand/panther_white_icon-transparent.webp"
                   alt="Seal"
                   fill
                   sizes="24px"

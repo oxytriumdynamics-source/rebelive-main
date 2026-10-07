@@ -92,13 +92,14 @@ const StatementBackdropInner: React.FC<StatementBackdropProps> = ({
   // Statement 02: NO ARTIFICIAL COLORS (around 0.72)
   const activeIndex = scrollProgress < 0.62 ? 0 : 1;
 
-  // Direct clean physical exit when transitioning to SubFooter (0.80 -> 0.96)
-  const exitProgress = Math.min(1, Math.max(0, (scrollProgress - 0.80) / 0.16));
+  // Direct clean physical exit when transitioning to SubFooter (0.76 -> 0.785)
+  // Statement 2 is at 0.76. Once scrolling moves past 0.76, immediately dissolve out cleanly
+  const exitProgress = Math.min(1, Math.max(0, (scrollProgress - 0.76) / 0.022));
   const easeExit = exitProgress * exitProgress * (3 - 2 * exitProgress);
   const exitOffsetY = -easeExit * 14;
-  const finalOpacity = opacity * Math.max(0, 1 - easeExit * 1.25);
+  const finalOpacity = opacity * Math.max(0, 1 - easeExit * 1.5);
 
-  if (finalOpacity <= 0.005) return null;
+  if (finalOpacity <= 0.005 || scrollProgress >= 0.785) return null;
 
   const current = STATEMENTS[activeIndex] || STATEMENTS[0];
 
