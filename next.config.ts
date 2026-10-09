@@ -1,9 +1,13 @@
 import type { NextConfig } from "next";
+import path from "path";
 
 const nextConfig: NextConfig = {
   compress: true,
   poweredByHeader: false,
   reactStrictMode: true,
+  turbopack: {
+    root: path.resolve(process.cwd(), ".."),
+  },
   images: {
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days cache for static assets
@@ -48,24 +52,6 @@ const nextConfig: NextConfig = {
         {
           key: 'Cache-Control',
           value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-    {
-      source: '/_next/static/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=31536000, immutable',
-        },
-      ],
-    },
-    {
-      source: '/_next/image/:path*',
-      headers: [
-        {
-          key: 'Cache-Control',
-          value: 'public, max-age=2592000, stale-while-revalidate=86400',
         },
       ],
     },

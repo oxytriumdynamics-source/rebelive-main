@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import {
@@ -32,10 +32,37 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
   onClose,
 }) => {
   const { user, isAuthenticated, logoutUser } = useAuth();
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    // Lock background page scroll while menu drawer is open
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const lenis = (window as any).__lenis;
+    if (lenis && typeof lenis.stop === 'function') {
+      lenis.stop();
+    }
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      if (lenis && typeof lenis.start === 'function') {
+        lenis.start();
+      }
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[100] select-none">
+    <div className="fixed inset-0 z-[100] select-none overflow-hidden">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-black/80 backdrop-blur-md transition-opacity cursor-pointer"
@@ -43,15 +70,29 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
       />
 
       {/* Drawer Panel */}
-      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#070709] border-l border-white/15 flex flex-col justify-between shadow-2xl z-10 text-white animate-in slide-in-from-right duration-300">
+      <div
+        data-lenis-prevent
+        className="fixed right-0 top-0 bottom-0 h-full h-[100dvh] max-h-[100dvh] w-full max-w-md bg-[#070709] border-l border-white/15 flex flex-col shadow-2xl z-10 text-white animate-in slide-in-from-right duration-300 overflow-hidden"
+      >
         {/* Header */}
         <div className="flex items-center justify-between p-6 md:px-8 pb-5 border-b border-white/10 shrink-0">
-          <div className="flex items-center gap-2.5">
-            <span className="font-display font-black text-xl tracking-tight text-white">REBELIVE</span>
-            <span className="text-[9px] font-tech px-2 py-0.5 rounded-full bg-white/10 text-white/80 border border-white/20 tracking-wider">
-              MENU
-            </span>
-          </div>
+          <Link
+            href="/"
+            onClick={onClose}
+            className="flex items-center gap-2.5 group cursor-pointer"
+            aria-label="REBELIVE Homepage"
+          >
+            <div className="relative w-[125px] sm:w-[140px] h-[26px] sm:h-[30px]">
+              <Image
+                src="/brand/REBELIVE Logo Black.webp"
+                alt="REBELIVE"
+                fill
+                priority
+                sizes="160px"
+                className="object-contain object-left brightness-0 invert drop-shadow-[0_2px_12px_rgba(255,255,255,0.25)] transition-opacity group-hover:opacity-80"
+              />
+            </div>
+          </Link>
           <button
             onClick={onClose}
             className="p-1.5 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
@@ -62,7 +103,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
         </div>
 
         {/* Navigation Content */}
-        <div className="flex-1 overflow-y-auto px-6 md:px-8 py-6 space-y-3">
+        <div
+          data-lenis-prevent
+          className="flex-1 min-h-0 overflow-y-auto overscroll-contain px-5 sm:px-6 md:px-8 py-5 space-y-3 touch-pan-y [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.2)_transparent]"
+        >
           {/* HOME */}
           <Link
             href="/"
@@ -245,7 +289,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
         {/* Footer */}
         <div className="p-6 md:px-8 py-4 border-t border-white/10 text-[9.5px] font-tech text-white/35 tracking-widest flex items-center justify-between shrink-0 bg-[#070709]">
-          <span>OXYTRIUM PVT LTD</span>
+          <span>OXYTRIUM DYNAMICS PRIVATE LIMITED</span>
           <span>© {new Date().getFullYear()} REBELIVE</span>
         </div>
       </div>

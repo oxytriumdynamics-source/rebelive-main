@@ -235,28 +235,7 @@ export default function FaqPage() {
               Everything you need to know about the product, persona experience, safety guidelines, orders &amp; delivery.
             </p>
 
-            {/* Search Bar */}
-            <div className="mt-7 max-w-md mx-auto relative">
-              <div className="relative flex items-center">
-                <Search className="w-4 h-4 text-white/40 absolute left-4 pointer-events-none" />
-                <input
-                  type="text"
-                  placeholder="Search questions or keywords..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full bg-white/[0.04] hover:bg-white/[0.06] border border-white/10 rounded-full pl-11 pr-10 py-3 text-xs sm:text-sm text-white placeholder-white/40 focus:outline-none focus:border-white/30 focus:bg-white/[0.08] transition-all"
-                />
-                {searchQuery && (
-                  <button
-                    onClick={() => setSearchQuery('')}
-                    className="absolute right-3.5 text-white/40 hover:text-white p-1 rounded-full hover:bg-white/10 transition-colors cursor-pointer"
-                    aria-label="Clear search"
-                  >
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                )}
-              </div>
-            </div>
+        
 
             {/* Category Filter Tabs */}
             <div className="mt-7 flex flex-wrap items-center justify-center gap-2">

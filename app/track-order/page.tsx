@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Search, Package, CheckCircle2, Truck, Clock, AlertCircle, MessageSquare } from 'lucide-react';
 import SubpageShell from '@/components/layout/SubpageShell';
+import { Skeleton } from '@/components/ui/Skeleton';
 
 const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
@@ -76,7 +77,28 @@ export default function TrackOrderPage() {
 
           {/* Tracking Result View */}
           <div className="mx-auto max-w-3xl px-6 py-12 sm:px-12 sm:py-16">
-            {hasSearched ? (
+            {isLoading ? (
+              <div className="border border-white/10 rounded-2xl bg-[#0e0e0e] p-6 sm:p-8 space-y-6">
+                <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                  <div className="space-y-2">
+                    <Skeleton className="h-3 w-28 rounded" />
+                    <Skeleton className="h-6 w-40 rounded-lg" />
+                  </div>
+                  <Skeleton className="h-7 w-32 rounded-full" />
+                </div>
+                <div className="space-y-5 pt-2">
+                  {[1, 2, 3, 4].map((i) => (
+                    <div key={i} className="flex items-start gap-4">
+                      <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-48 rounded" />
+                        <Skeleton className="h-3.5 w-64 rounded" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : hasSearched ? (
               <div className="border border-white/10 rounded-2xl bg-white/[0.02] p-6 sm:p-8 space-y-8">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-3">
                   <div>

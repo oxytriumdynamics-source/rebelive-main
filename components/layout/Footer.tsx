@@ -159,7 +159,7 @@ export const Footer: React.FC<FooterProps> = ({
     >
       {/* ── "WAKE. FUEL. REBEL." SECTION (Replaces white logo) ── */}
       {/* Initially 100% full, uncovered and animated; covered 30% by lower footer on full bottom scroll */}
-      <div className="relative w-full flex flex-col items-center justify-center pt-4 pb-0 sm:pt-6 sm:pb-0 z-10 select-none overflow-visible">
+      <div className="relative w-full flex flex-col items-center justify-center pt-1 pb-0 sm:pt-2 sm:pb-0 z-10 select-none overflow-visible">
         {/* ── Ultra-Smooth Premium White Ambient Backlight Glow System ── */}
         <div className="absolute inset-0 pointer-events-none -z-10 overflow-visible">
           {/* Core luminous soft aura behind WAKE. FUEL. REBEL. */}

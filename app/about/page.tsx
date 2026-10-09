@@ -292,23 +292,16 @@ export default function AboutPage() {
                   </p>
 
                   <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                    <div>
+                   <div>
                       <p className="text-white font-bold text-sm sm:text-base tracking-wide">
                         Krishna &amp; Sai Vaishno
                       </p>
                       <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-0.5">
                         Co-Founders
                       </p>
-                    </div>
+                   </div>
 
-                    <button
-                      type="button"
-                      onClick={goToNext}
-                      className="inline-flex items-center gap-2 text-xs font-mono text-white/70 hover:text-white transition-colors cursor-pointer"
-                    >
-                      <span>NEXT CHAPTER</span>
-                      <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
-                    </button>
+                  
                   </div>
                 </div>
               </motion.div>
@@ -329,12 +322,7 @@ export default function AboutPage() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
-                <div className="absolute bottom-3.5 left-4 right-4 p-2.5 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-between">
-                  <span className="text-[11px] font-mono uppercase tracking-wider text-white">
-                    KRISHNA &amp; SAI VAISHNO
-                  </span>
-                  <span className="text-[10px] font-mono text-white/50">CO-FOUNDERS</span>
-                </div>
+                
               </div>
             </motion.div>
           </motion.div>
@@ -399,16 +387,7 @@ export default function AboutPage() {
                   </p>
                 </motion.div>
 
-                <motion.div variants={fadeUpItem} className="pt-2 flex items-center gap-4">
-                  <button
-                    type="button"
-                    onClick={goToNext}
-                    className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-mono text-xs uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-2"
-                  >
-                    <span>EXPLORE INCUBATOR</span>
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                </motion.div>
+               
               </div>
 
               {/* Right: Panther Emblem Artwork */}
@@ -505,16 +484,7 @@ export default function AboutPage() {
                 </p>
               </motion.div>
 
-              <motion.div variants={fadeUpItem} className="pt-2 flex items-center gap-4">
-                <button
-                  type="button"
-                  onClick={goToNext}
-                  className="px-5 py-2.5 rounded-full bg-white/10 hover:bg-white/20 border border-white/20 text-white font-mono text-xs uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-2"
-                >
-                  <span>EXPLORE PATHWAYS</span>
-                  <ChevronDown className="w-3.5 h-3.5" />
-                </button>
-              </motion.div>
+           
             </div>
           </motion.div>
         </section>
@@ -545,9 +515,7 @@ export default function AboutPage() {
                 </span>
               </motion.h2>
 
-              <motion.p variants={fadeUpItem} className="text-xs sm:text-sm text-neutral-400 font-light max-w-xl mx-auto">
-                Explore our scientifically calibrated functional blends, read our detailed founding chronicles, or connect directly with our desk.
-              </motion.p>
+           
             </div>
 
             {/* 3 Pathway Action Cards */}
@@ -610,34 +578,7 @@ export default function AboutPage() {
               </Link>
             </motion.div>
 
-            {/* Bottom Actions Bar */}
-            <motion.div
-              variants={fadeUpItem}
-              className="flex flex-wrap items-center justify-center gap-3 pt-2"
-            >
-              <button
-                type="button"
-                onClick={() => goToSection(0)}
-                className="px-5 py-2.5 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/20 text-xs font-mono uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-2 text-white/70 hover:text-white"
-              >
-                <span>BACK TO TOP</span>
-                <ArrowUp className="w-3.5 h-3.5" />
-              </button>
-
-              <button
-                type="button"
-                onClick={() => {
-                  const footerEl = document.querySelector('footer');
-                  if (footerEl) {
-                    footerEl.scrollIntoView({ behavior: 'smooth' });
-                  }
-                }}
-                className="px-5 py-2.5 rounded-full bg-white/[0.05] hover:bg-white/[0.12] border border-white/20 text-xs font-mono uppercase tracking-wider transition-all cursor-pointer inline-flex items-center gap-2 text-white/70 hover:text-white"
-              >
-                <span>VIEW FOOTER</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </button>
-            </motion.div>
+       
           </motion.div>
         </section>
       </div>

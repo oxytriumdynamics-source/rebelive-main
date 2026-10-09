@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 export const SubFooter: React.FC = () => {
     return (
-        <section className="relative w-full pt-8 pb-10 sm:pt-12 sm:pb-14 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
+        <section className="relative w-full pt-3 pb-3 sm:pt-5 sm:pb-4 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
             {/* Subtle atmospheric radial spotlight centered on content */}
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
@@ -15,7 +15,7 @@ export const SubFooter: React.FC = () => {
                 }}
             />
 
-            <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center justify-center my-auto py-2 sm:py-4">
+            <div className="relative z-10 max-w-4xl mx-auto flex flex-col items-center justify-center py-1">
                 <motion.h2
                     initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
                     whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
@@ -31,7 +31,7 @@ export const SubFooter: React.FC = () => {
                     whileInView={{ opacity: 1, y: 0 }}
                     viewport={{ once: false, amount: 0.25 }}
                     transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
-                    className="text-sm sm:text-base md:text-lg text-neutral-300 font-sans mt-5 max-w-2xl mx-auto tracking-normal leading-relaxed space-y-2"
+                    className="text-sm sm:text-base md:text-lg text-neutral-300 font-sans mt-3 sm:mt-4 max-w-2xl mx-auto tracking-normal leading-relaxed space-y-1 sm:space-y-1.5"
                 >
                     <p>We believe feeling your best shouldn’t be complicated.</p>
                     <p>
@@ -44,7 +44,7 @@ export const SubFooter: React.FC = () => {
                     whileInView={{ opacity: 1, y: 0, scale: 1 }}
                     viewport={{ once: false, amount: 0.25 }}
                     transition={{ duration: 0.75, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
-                    className="mt-8 flex justify-center"
+                    className="mt-5 sm:mt-6 flex justify-center"
                 >
                     <Link
                         href="/shop"
