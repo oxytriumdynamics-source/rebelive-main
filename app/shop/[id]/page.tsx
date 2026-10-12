@@ -38,9 +38,6 @@ const CartDrawer = dynamic(() => import('@/components/shop/CartDrawer').then((m)
 import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
 
 import {
-  getProductById,
-  ALL_PRODUCTS,
-  PRODUCTS,
   Product,
   PRICES,
   PackSize,
@@ -49,6 +46,8 @@ import { fetchProducts, fetchProductBySlug } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
 import { FastrrCheckoutModal } from '@/components/shop/FastrrCheckoutModal';
+import { NotFoundState } from '@/components/ui/NotFoundState';
+import { ProductDetailSkeleton } from '@/components/ui/Skeleton';
 
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
@@ -400,19 +399,50 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const productId = (params?.id as string) || 'apex';
 
-  const [product, setProduct] = useState<Product>(() => {
-    return getProductById(productId) || ALL_PRODUCTS[0];
-  });
-  const [allProductsList, setAllProductsList] = useState<Product[]>(ALL_PRODUCTS);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [allProductsList, setAllProductsList] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
+
+  const loadProductData = async () => {
+    try {
+      setIsError(false);
+      const [serverProd, list] = await Promise.all([
+        fetchProductBySlug(productId, true),
+        fetchProducts(true).catch(() => []),
+      ]);
+
+      if (serverProd) {
+        setProduct(serverProd);
+        setIsError(false);
+      } else {
+        setProduct(null);
+        setIsError(true);
+      }
+
+      if (list && list.length > 0) {
+        setAllProductsList(list);
+      }
+    } catch (err) {
+      console.error('Failed to load product from backend:', err);
+      setProduct(null);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+      setIsRetrying(false);
+    }
+  };
 
   useEffect(() => {
-    fetchProductBySlug(productId, true).then((serverProd) => {
-      if (serverProd) setProduct(serverProd);
-    });
-    fetchProducts(true).then((list) => {
-      if (list && list.length > 0) setAllProductsList(list);
-    });
+    setIsLoading(true);
+    loadProductData();
   }, [productId]);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    loadProductData();
+  };
 
   const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
@@ -445,6 +475,7 @@ export default function ProductDetailPage() {
   }, [productId]);
 
   const galleryList = useMemo(() => {
+    if (!product) return [];
     if (product.gallery && product.gallery.length > 0) {
       return product.gallery;
     }
@@ -457,13 +488,20 @@ export default function ProductDetailPage() {
     ];
   }, [product]);
 
-  const activePhoto = galleryList[selectedPhotoIndex] || galleryList[0];
+  const activePhoto = galleryList[selectedPhotoIndex] || galleryList[0] || {
+    id: 'placeholder',
+    label: 'Formula',
+    src: '',
+    type: 'render' as const,
+  };
 
   const handleNextPhoto = () => {
+    if (galleryList.length === 0) return;
     setSelectedPhotoIndex((prev) => (prev + 1) % galleryList.length);
   };
 
   const handlePrevPhoto = () => {
+    if (galleryList.length === 0) return;
     setSelectedPhotoIndex((prev) => (prev - 1 + galleryList.length) % galleryList.length);
   };
 
@@ -491,14 +529,16 @@ export default function ProductDetailPage() {
 
   const pricing = PRICES[packSize];
   const totalPrice = pricing.price * quantity;
-  const isVariety = product.id === 'variety';
+  const isVariety = product?.id === 'variety';
 
   // Other products for "Explore Other Flavors" section
   const otherProducts = useMemo(() => {
+    if (!product) return [];
     return allProductsList.filter((p) => p.id !== product.id);
-  }, [allProductsList, product.id]);
+  }, [allProductsList, product]);
 
   const handleAddToCart = () => {
+    if (!product) return;
     setIsAddedAnimation(true);
     setTimeout(() => setIsAddedAnimation(false), 1200);
 
@@ -518,6 +558,28 @@ export default function ProductDetailPage() {
   const handleQuickBuy = () => {
     setIsFastrrModalOpen(true);
   };
+
+  if (isLoading) {
+    return <ProductDetailSkeleton />;
+  }
+
+  if (isError || !product) {
+    return (
+      <main className="min-h-screen bg-black text-white pt-24 sm:pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto relative z-10 flex items-center justify-center">
+        <NotFoundState
+          code="404"
+          badge="PRODUCT_NOT_FOUND"
+          title="Product Not Found"
+          description={`The product "${productId}" could not be retrieved from the database. It may not exist or the backend service is currently unreachable.`}
+          onRetry={handleRetry}
+          isRetrying={isRetrying}
+          actionHref="/shop"
+          actionLabel="Explore Shop"
+          showHomeButton={true}
+        />
+      </main>
+    );
+  }
 
   return (
     <>

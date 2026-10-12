@@ -17,10 +17,12 @@ import {
   Check,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ALL_PRODUCTS, PRODUCTS, PRICES, PackSize, Product } from '@/data/products';
+import { PRICES, PackSize, Product } from '@/data/products';
 import { fetchProducts } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
+import { NotFoundState } from '@/components/ui/NotFoundState';
+import { ShopSkeleton } from '@/components/ui/Skeleton';
 
 const CartDrawer = dynamic(() => import('@/components/shop/CartDrawer').then((m) => m.CartDrawer), {
   ssr: false,
@@ -34,7 +36,10 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'single' | 'bundle'>('all');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [productsList, setProductsList] = useState<Product[]>(ALL_PRODUCTS);
+  const [productsList, setProductsList] = useState<Product[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isError, setIsError] = useState<boolean>(false);
+  const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
   // Quick-Add Modal Popup State
   const [quickAddProduct, setQuickAddProduct] = useState<Product | null>(null);
@@ -46,14 +51,36 @@ export default function ShopPage() {
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.pricePerUnit * item.quantity, 0);
 
-  // Load products from backend database
-  React.useEffect(() => {
-    fetchProducts(true).then((data) => {
+  const loadProducts = async () => {
+    try {
+      setIsError(false);
+      const data = await fetchProducts(true);
       if (data && data.length > 0) {
         setProductsList(data);
+        setIsError(false);
+      } else {
+        setProductsList([]);
+        setIsError(true);
       }
-    });
+    } catch (err) {
+      console.error('Failed to load products from database:', err);
+      setProductsList([]);
+      setIsError(true);
+    } finally {
+      setIsLoading(false);
+      setIsRetrying(false);
+    }
+  };
+
+  // Load products strictly from backend database
+  React.useEffect(() => {
+    loadProducts();
   }, []);
+
+  const handleRetry = () => {
+    setIsRetrying(true);
+    loadProducts();
+  };
 
   const filteredProducts = productsList.filter((p) => {
     if (selectedCategory === 'single') return p.id !== 'variety';
@@ -83,6 +110,28 @@ export default function ShopPage() {
     setQuickAddProduct(null);
     dispatch(openCart());
   };
+
+  if (isLoading) {
+    return <ShopSkeleton />;
+  }
+
+  if (isError || productsList.length === 0) {
+    return (
+      <main className="min-h-screen bg-black text-white pt-24 sm:pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto relative z-10 flex items-center justify-center">
+        <NotFoundState
+          code="404"
+          badge="CATALOG_UNAVAILABLE"
+          title="Products Unavailable"
+          description="Unable to load products from the backend server. The database may be disconnected or undergoing updates. Please try again."
+          onRetry={handleRetry}
+          isRetrying={isRetrying}
+          actionHref="/"
+          actionLabel="Return Home"
+          showHomeButton={false}
+        />
+      </main>
+    );
+  }
 
   return (
     <>

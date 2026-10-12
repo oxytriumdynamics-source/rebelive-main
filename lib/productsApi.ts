@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { Product, ALL_PRODUCTS, PRODUCTS, VARIETY_BUNDLE } from '@/data/products';
+import { Product } from '@/data/products';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -17,18 +17,18 @@ export function clearProductsCache() {
 }
 
 /**
- * Fetch all products from backend MongoDB API
- * Automatically falls back to ALL_PRODUCTS if backend is offline or during SSR
+ * Fetch all products from backend MongoDB API.
+ * Does NOT fall back to dummy mock data if backend fails or returns no products.
  */
 export async function fetchProducts(forceRefresh = false): Promise<Product[]> {
-  // If memory cache exists, return it unless forceRefresh requested
+  // If memory cache exists and has items, return it unless forceRefresh requested
   if (!forceRefresh && cachedProducts && cachedProducts.length > 0) {
     return cachedProducts;
   }
 
   try {
     const res = await axios.get(`${API_BASE}/products`, {
-      timeout: 3500,
+      timeout: 4500,
     });
 
     if (res.data?.status === 'success' && Array.isArray(res.data?.data) && res.data.data.length > 0) {
@@ -44,30 +44,18 @@ export async function fetchProducts(forceRefresh = false): Promise<Product[]> {
 
       return serverProducts;
     }
+
+    throw new Error('Backend returned empty or invalid products list');
   } catch (err) {
-    console.warn('Backend /products unreachable, using local products dataset:', err);
+    console.error('Failed to retrieve products from backend:', err);
+    cachedProducts = null;
+    throw err;
   }
-
-  // Check localStorage cache before static fallback
-  if (typeof window !== 'undefined') {
-    const raw = localStorage.getItem('rebelive_products_cache');
-    if (raw) {
-      try {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed) && parsed.length > 0) {
-          cachedProducts = parsed;
-          return parsed;
-        }
-      } catch {}
-    }
-  }
-
-  cachedProducts = ALL_PRODUCTS;
-  return ALL_PRODUCTS;
 }
 
 /**
- * Fetch a single product by slug or ID from backend MongoDB API
+ * Fetch a single product by slug or ID from backend MongoDB API.
+ * Returns null if not found or if the backend request fails (never falls back to dummy data).
  */
 export async function fetchProductBySlug(slug: string, forceRefresh = false): Promise<Product | null> {
   const cleanSlug = slug.toLowerCase();
@@ -78,7 +66,7 @@ export async function fetchProductBySlug(slug: string, forceRefresh = false): Pr
 
   try {
     const res = await axios.get(`${API_BASE}/products/${cleanSlug}`, {
-      timeout: 3500,
+      timeout: 4500,
     });
 
     if (res.data?.status === 'success' && res.data?.data) {
@@ -86,65 +74,56 @@ export async function fetchProductBySlug(slug: string, forceRefresh = false): Pr
       productCacheBySlug[cleanSlug] = formatted;
       return formatted;
     }
+
+    return null;
   } catch (err) {
-    console.warn(`Backend /products/${cleanSlug} unreachable, using local fallback:`, err);
+    console.error(`Backend /products/${cleanSlug} unreachable or returned error:`, err);
+    return null;
   }
-
-  // Fallback to static product dataset
-  const fallback = ALL_PRODUCTS.find(
-    (p) => p.id.toLowerCase() === cleanSlug || p.name.toLowerCase() === cleanSlug
-  );
-  if (fallback) {
-    productCacheBySlug[cleanSlug] = fallback;
-    return fallback;
-  }
-
-  return null;
 }
 
 /**
- * Normalizes backend Prisma product to the frontend Product contract
+ * Normalizes backend Prisma/MongoDB product to the frontend Product interface
+ * without relying on any static dummy products.
  */
 function formatServerProduct(raw: any): Product {
-  const fallback = ALL_PRODUCTS.find(
-    (p) => p.id.toLowerCase() === (raw.slug || raw.id || '').toLowerCase()
-  ) || ALL_PRODUCTS[0];
+  const defaultSlug = raw.slug || raw.id || 'product';
+  const defaultTitle = raw.displayTitle || raw.name || 'Functional Formula';
 
   return {
-    id: raw.slug || raw.id || fallback.id,
-    name: raw.name || fallback.name,
-    displayTitle: raw.displayTitle || raw.name || fallback.displayTitle,
-    flavor: raw.flavor || fallback.flavor,
-    tagline: raw.tagline || fallback.tagline,
-    description: raw.description || fallback.description,
-    story: raw.story || fallback.story,
-    volume: raw.volume || fallback.volume,
-    sugar: raw.sugar || fallback.sugar,
-    caffeine: raw.caffeine || fallback.caffeine,
-    calories: raw.calories || fallback.calories,
-    notes: Array.isArray(raw.notes) && raw.notes.length > 0 ? raw.notes : fallback.notes,
-    tastingNotesDetailed:
-      Array.isArray(raw.tastingNotesDetailed) && raw.tastingNotesDetailed.length > 0
-        ? raw.tastingNotesDetailed
-        : fallback.tastingNotesDetailed,
-    model: raw.model || fallback.model,
-    canImage: raw.canImage || fallback.canImage,
-    image: raw.image || fallback.image,
-    renderImage: raw.renderImage || raw.image || fallback.renderImage,
-    brandLogo: raw.brandLogo || fallback.brandLogo,
-    bgImage: raw.bgImage || fallback.bgImage,
-    bgGradient: raw.bgGradient || fallback.bgGradient,
-    primaryTone: raw.primaryTone || fallback.primaryTone,
-    accentHex: raw.accentHex || fallback.accentHex,
-    rating: raw.rating || fallback.rating,
-    benefits: Array.isArray(raw.benefits) && raw.benefits.length > 0 ? raw.benefits : fallback.benefits,
-    nutrition: Array.isArray(raw.nutrition) && raw.nutrition.length > 0 ? raw.nutrition : fallback.nutrition,
-    gallery: Array.isArray(raw.gallery) && raw.gallery.length > 0 ? raw.gallery : fallback.gallery,
-    specs: raw.specs || fallback.specs,
-    netQuantity: raw.netQuantity || fallback.netQuantity || '250 ml',
-    isVegetarian: raw.isVegetarian !== undefined ? raw.isVegetarian : (fallback.isVegetarian ?? true),
-    ingredients: raw.ingredients || fallback.ingredients,
-    nutritionInfo: raw.nutritionInfo || fallback.nutritionInfo,
-    additionalInfo: raw.additionalInfo || fallback.additionalInfo,
+    id: defaultSlug,
+    name: raw.name || defaultTitle,
+    displayTitle: defaultTitle,
+    flavor: raw.flavor || '',
+    tagline: raw.tagline || '',
+    description: raw.description || '',
+    story: raw.story || '',
+    volume: raw.volume || '250 ml',
+    sugar: raw.sugar || '0g',
+    caffeine: raw.caffeine || '160mg',
+    calories: raw.calories || '5 kcal',
+    notes: Array.isArray(raw.notes) ? raw.notes : [],
+    tastingNotesDetailed: Array.isArray(raw.tastingNotesDetailed) ? raw.tastingNotesDetailed : [],
+    model: raw.model || '/models/soda-can1.glb',
+    canImage: raw.canImage || raw.image || '',
+    image: raw.image || raw.canImage || '',
+    renderImage: raw.renderImage || raw.image || raw.canImage || '',
+    brandLogo: raw.brandLogo || '',
+    bgImage: raw.bgImage || '',
+    bgGradient:
+      raw.bgGradient ||
+      'radial-gradient(ellipse at 50% 45%, rgba(75,75,75,0.55) 0%, rgba(22,22,22,0.9) 65%, #080808 100%)',
+    primaryTone: raw.primaryTone || '#FFFFFF',
+    accentHex: raw.accentHex || '#FFFFFF',
+    rating: raw.rating || { score: 5.0, count: 0 },
+    benefits: Array.isArray(raw.benefits) ? raw.benefits : [],
+    nutrition: Array.isArray(raw.nutrition) ? raw.nutrition : [],
+    gallery: Array.isArray(raw.gallery) ? raw.gallery : [],
+    specs: raw.specs || {},
+    netQuantity: raw.netQuantity || '250 ml',
+    isVegetarian: raw.isVegetarian !== undefined ? raw.isVegetarian : true,
+    ingredients: raw.ingredients || '',
+    nutritionInfo: raw.nutritionInfo || null,
+    additionalInfo: raw.additionalInfo || null,
   };
 }
