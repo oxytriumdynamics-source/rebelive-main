@@ -17,6 +17,7 @@ import {
   Search,
   Bell,
   User as UserIcon,
+  Quote,
 } from 'lucide-react';
 import {
   getStoredAdminToken,
@@ -30,9 +31,9 @@ const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 interface AdminLayoutShellProps {
-  activeTab?: 'overview' | 'orders' | 'products' | 'users' | 'shiprocket';
+  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket';
   children: React.ReactNode;
-  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'users' | 'shiprocket') => void;
+  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket') => void;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
@@ -95,11 +96,12 @@ export function AdminLayoutShell({
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
     { id: 'orders', label: 'My Tasks / Orders', icon: Package, href: '/root' },
     { id: 'products', label: 'Products / Catalog', icon: Boxes, href: '/root' },
+    { id: 'testimonials', label: 'Testimonials / Voices', icon: Quote, href: '/root?tab=testimonials' },
     { id: 'users', label: 'Messages / Users', icon: Users, href: '/root' },
     { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck, href: '/root' },
   ] as const;
 
-  const handleTabClick = (tabId: 'overview' | 'orders' | 'products' | 'users' | 'shiprocket') => {
+  const handleTabClick = (tabId: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket') => {
     setMobileMenuOpen(false);
     if (onTabChange) {
       onTabChange(tabId);

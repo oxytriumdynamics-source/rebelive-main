@@ -33,7 +33,9 @@ export function AppShell({ children }: AppShellProps) {
     pathname?.startsWith('/root/') ||
     pathname?.startsWith('/root');
 
-  if (isAuthPage || isRootAdmin) {
+  const is404Page = pathname === '/404';
+
+  if (isAuthPage || isRootAdmin || is404Page) {
     return (
       <main className="min-h-screen w-full relative z-10 bg-black text-white">
         {children}

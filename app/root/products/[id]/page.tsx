@@ -21,6 +21,7 @@ import {
   Zap,
   Info,
   Sparkles,
+  Check,
 } from 'lucide-react';
 import { AdminLayoutShell } from '@/components/root/AdminLayoutShell';
 import {
@@ -30,6 +31,7 @@ import {
   uploadProductImage,
   AdminProduct,
 } from '@/lib/adminApi';
+import { compressImage, formatFileSize } from '@/lib/imageCompression';
 
 interface PackVariant {
   id?: string;
@@ -114,6 +116,12 @@ export default function ProductEditPage() {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<'canImage' | 'image'>('canImage');
+  const [compressionStats, setCompressionStats] = useState<{
+    originalSize: string;
+    compressedSize: string;
+    savedPercent: number;
+  } | null>(null);
 
   // ─── 6. Pack Configurations (Variants) ───
   const [packs, setPacks] = useState<PackVariant[]>([
@@ -266,17 +274,47 @@ export default function ProductEditPage() {
     setPacks(packs.filter((_, i) => i !== index));
   };
 
-  // Image Upload Handlers
-  const handleImageUpload = async (file: File) => {
+  // Image Upload Handlers with Automatic Compression
+  const handleImageUpload = async (file: File, target: 'canImage' | 'image' = uploadTarget) => {
     setIsUploading(true);
     setFeedback(null);
+    setCompressionStats(null);
     try {
-      const res = await uploadProductImage(file, 'rebelive/products');
+      // 1. Client-side canvas compression & downscaling to WebP (max 1600x1600, quality 0.85)
+      const compressed = await compressImage(file, {
+        maxWidth: 1600,
+        maxHeight: 1600,
+        quality: 0.85,
+        format: 'image/webp',
+      });
+
+      if (compressed.savedPercent > 0) {
+        setCompressionStats({
+          originalSize: formatFileSize(compressed.originalSize),
+          compressedSize: formatFileSize(compressed.compressedSize),
+          savedPercent: compressed.savedPercent,
+        });
+      }
+
+      // 2. Upload compressed asset to Cloudinary CDN
+      const res = await uploadProductImage(compressed.file, 'rebelive/products');
       const secureUrl = res.secure_url || res.url;
-      setCanImage(secureUrl);
-      if (!image) setImage(secureUrl);
-      setFeedback({ type: 'success', message: 'Image successfully uploaded to Cloudinary CDN!' });
-      setTimeout(() => setFeedback(null), 3000);
+
+      if (target === 'canImage') {
+        setCanImage(secureUrl);
+        if (!image) setImage(secureUrl);
+      } else {
+        setImage(secureUrl);
+      }
+
+      const sizeMsg = compressed.savedPercent > 0
+        ? ` (${formatFileSize(compressed.originalSize)} → ${formatFileSize(compressed.compressedSize)}, saved ${compressed.savedPercent}%)`
+        : '';
+      setFeedback({
+        type: 'success',
+        message: `Product image compressed & uploaded to Cloudinary CDN successfully!${sizeMsg}`,
+      });
+      setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Image upload failed' });
     } finally {
@@ -955,9 +993,42 @@ export default function ProductEditPage() {
 
             {/* ─── Section 7: Visual Assets, Media & CDN Upload ─── */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                6. Product Imagery, CDN & Visual Tokens
-              </h3>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                <div>
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                    6. Product Imagery & Cloudinary CDN Upload
+                  </h3>
+                  <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                    Images are automatically downscaled & compressed to WebP before CDN distribution
+                  </p>
+                </div>
+
+                {/* Target Slot Selector */}
+                <div className="flex items-center gap-1.5 bg-black/60 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+                  <button
+                    type="button"
+                    onClick={() => setUploadTarget('canImage')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase transition-colors cursor-pointer ${
+                      uploadTarget === 'canImage'
+                        ? 'bg-white text-black font-bold'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    Can Hero
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setUploadTarget('image')}
+                    className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase transition-colors cursor-pointer ${
+                      uploadTarget === 'image'
+                        ? 'bg-white text-black font-bold'
+                        : 'text-white/50 hover:text-white'
+                    }`}
+                  >
+                    Secondary
+                  </button>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start text-xs font-mono">
                 {/* Cloudinary Drag & Drop Uploader */}
@@ -972,7 +1043,7 @@ export default function ProductEditPage() {
                       e.preventDefault();
                       setIsDragging(false);
                       const file = e.dataTransfer.files?.[0];
-                      if (file) handleImageUpload(file);
+                      if (file) handleImageUpload(file, uploadTarget);
                     }}
                     onClick={() => fileInputRef.current?.click()}
                     className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer min-h-[160px] ${
@@ -990,7 +1061,7 @@ export default function ProductEditPage() {
                       className="hidden"
                       onChange={(e) => {
                         const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file);
+                        if (file) handleImageUpload(file, uploadTarget);
                         e.target.value = '';
                       }}
                     />
@@ -998,8 +1069,8 @@ export default function ProductEditPage() {
                     {isUploading ? (
                       <div className="space-y-2 flex flex-col items-center">
                         <Loader2 className="w-6 h-6 animate-spin text-white" />
-                        <span className="text-xs font-bold text-white">Uploading to Cloudinary CDN...</span>
-                        <span className="text-[10px] text-white/40">Auto-optimizing webp delivery</span>
+                        <span className="text-xs font-bold text-white">Compressing & Uploading to Cloudinary CDN...</span>
+                        <span className="text-[10px] text-white/40">Auto-optimizing WebP delivery</span>
                       </div>
                     ) : (
                       <div className="space-y-2 flex flex-col items-center">
@@ -1008,20 +1079,36 @@ export default function ProductEditPage() {
                         </div>
                         <div>
                           <p className="font-bold text-white">
-                            Drag & drop can render, or <span className="underline">browse</span>
+                            Upload for <span className="text-emerald-400 underline">{uploadTarget === 'canImage' ? 'Can Hero Image' : 'Secondary Image'}</span>
                           </p>
                           <p className="text-[10px] text-white/40 mt-0.5">
-                            PNG, JPG, WEBP, SVG · Up to 10MB
+                            PNG, JPG, WEBP · Auto-compressed before Cloudinary CDN storage
                           </p>
                         </div>
                       </div>
                     )}
                   </div>
 
+                  {/* Compression Stats Badge */}
+                  {compressionStats && (
+                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Check className="w-3.5 h-3.5" />
+                        Compressed: {compressionStats.originalSize} → {compressionStats.compressedSize}
+                      </span>
+                      <span className="font-bold">Saved {compressionStats.savedPercent}%</span>
+                    </div>
+                  )}
+
                   {/* Manual URL Inputs */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
                     <div className="space-y-1">
-                      <label className="text-[10px] text-white/50 uppercase">Can Hero Image URL</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] text-white/50 uppercase">Can Hero Image URL</label>
+                        {canImage.includes('cloudinary.com') && (
+                          <span className="text-[9px] text-cyan-400">CDN</span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         value={canImage}
@@ -1032,7 +1119,12 @@ export default function ProductEditPage() {
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[10px] text-white/50 uppercase">Secondary Image URL</label>
+                      <div className="flex items-center justify-between">
+                        <label className="text-[10px] text-white/50 uppercase">Secondary Image URL</label>
+                        {image.includes('cloudinary.com') && (
+                          <span className="text-[9px] text-cyan-400">CDN</span>
+                        )}
+                      </div>
                       <input
                         type="text"
                         value={image}

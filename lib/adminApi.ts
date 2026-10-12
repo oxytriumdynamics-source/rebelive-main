@@ -646,3 +646,195 @@ export async function updateAdminUser(userId: string, data: Partial<AdminUser>):
   const res = await adminClient.patch(`/users/${userId}`, data);
   return res.data?.data;
 }
+
+// ─── TESTIMONIALS MANAGEMENT ───────────────────────────
+
+export interface AdminTestimonial {
+  id: string;
+  name: string;
+  role?: string | null;
+  quote: string;
+  rating: number;
+  image: string;
+  imagePosition?: string | null;
+  isFeatured: boolean;
+  sortOrder: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+export const INITIAL_TESTIMONIALS: AdminTestimonial[] = [
+  {
+    id: 'nishant',
+    name: 'NISHANT MISHRA',
+    role: 'Software Architect & Biohacker',
+    quote: 'Clean sustained mental clarity through long coding sessions without any crash or anxiety. Rebelive is literally in a class of its own.',
+    rating: 5,
+    image: '/testimonials/rebel-nishant.webp',
+    imagePosition: 'center 15%',
+    isFeatured: true,
+    sortOrder: 1,
+  },
+  {
+    id: 'ashray',
+    name: 'ASHRAY VASU',
+    role: 'Product Designer',
+    quote: 'The calm focus and zero-sugar formulation completely upgraded my workday routine. No jitters, pure natural flow state.',
+    rating: 5,
+    image: '/testimonials/rebel-ashray.webp',
+    imagePosition: 'center 15%',
+    isFeatured: true,
+    sortOrder: 2,
+  },
+  {
+    id: 'vaibhav',
+    name: 'VAIBHAV MITTAL',
+    role: 'Founder & Endurance Athlete',
+    quote: 'Unmatched sustained energy that keeps me dialed in and sharp throughout the day. Zero sugar crash, just pure cognitive momentum.',
+    rating: 5,
+    image: '/testimonials/rebel-vaibhav.webp',
+    imagePosition: 'center 18%',
+    isFeatured: true,
+    sortOrder: 3,
+  },
+  {
+    id: 'dhirendra',
+    name: 'DHIRENDRA SINGH KAUSHIK',
+    role: 'Creative Director',
+    quote: 'Game-changing endurance and crisp mental sharpness. Zero jitters, no crash, just pure sustained high performance all day long.',
+    rating: 5,
+    image: '/testimonials/rebel-dhirendra.webp',
+    imagePosition: 'center 20%',
+    isFeatured: true,
+    sortOrder: 4,
+  },
+];
+
+const TESTIMONIALS_CACHE_KEY = 'rebelive_testimonials_cache';
+
+function getLocalTestimonials(): AdminTestimonial[] {
+  if (typeof window === 'undefined') return INITIAL_TESTIMONIALS;
+  try {
+    const raw = localStorage.getItem(TESTIMONIALS_CACHE_KEY);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch {}
+  return INITIAL_TESTIMONIALS;
+}
+
+function saveLocalTestimonials(list: AdminTestimonial[]) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(TESTIMONIALS_CACHE_KEY, JSON.stringify(list));
+  } catch {}
+}
+
+export async function fetchAdminTestimonials(): Promise<AdminTestimonial[]> {
+  try {
+    const res = await adminClient.get('/testimonials');
+    if (res.data?.status === 'success' && Array.isArray(res.data?.data) && res.data.data.length > 0) {
+      saveLocalTestimonials(res.data.data);
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn('Backend /admin/testimonials unreachable, falling back to local cache:', err);
+  }
+  return getLocalTestimonials();
+}
+
+export async function fetchAdminTestimonial(id: string): Promise<AdminTestimonial> {
+  try {
+    const res = await adminClient.get(`/testimonials/${id}`);
+    if (res.data?.status === 'success' && res.data?.data) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn(`Backend /admin/testimonials/${id} unreachable:`, err);
+  }
+
+  const list = getLocalTestimonials();
+  const found = list.find((t) => t.id === id);
+  if (found) return found;
+  throw new Error(`Testimonial #${id} not found.`);
+}
+
+export async function createAdminTestimonial(data: Partial<AdminTestimonial>): Promise<AdminTestimonial> {
+  try {
+    const res = await adminClient.post('/testimonials', data);
+    if (res.data?.status === 'success' && res.data?.data) {
+      const current = getLocalTestimonials();
+      saveLocalTestimonials([...current, res.data.data]);
+      return res.data.data;
+    }
+  } catch (err: any) {
+    console.warn('Backend failed to create testimonial, saving locally:', err);
+  }
+
+  const localItem: AdminTestimonial = {
+    id: `local-${Date.now()}`,
+    name: data.name || 'New Rebel',
+    role: data.role || null,
+    quote: data.quote || '',
+    rating: data.rating || 5,
+    image: data.image || '/testimonials/rebel-nishant.webp',
+    imagePosition: data.imagePosition || 'center 15%',
+    isFeatured: data.isFeatured !== undefined ? data.isFeatured : true,
+    sortOrder: data.sortOrder || 0,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+
+  const current = getLocalTestimonials();
+  saveLocalTestimonials([...current, localItem]);
+  return localItem;
+}
+
+export async function updateAdminTestimonial(id: string, data: Partial<AdminTestimonial>): Promise<AdminTestimonial> {
+  try {
+    const res = await adminClient.patch(`/testimonials/${id}`, data);
+    if (res.data?.status === 'success' && res.data?.data) {
+      const current = getLocalTestimonials();
+      const updatedList = current.map((t) => (t.id === id ? { ...t, ...res.data.data } : t));
+      saveLocalTestimonials(updatedList);
+      return res.data.data;
+    }
+  } catch (err: any) {
+    console.warn(`Backend failed to update testimonial ${id}, updating locally:`, err);
+  }
+
+  const current = getLocalTestimonials();
+  let updatedItem: AdminTestimonial | null = null;
+  const updatedList = current.map((t) => {
+    if (t.id === id) {
+      updatedItem = { ...t, ...data, updatedAt: new Date().toISOString() };
+      return updatedItem;
+    }
+    return t;
+  });
+
+  saveLocalTestimonials(updatedList);
+  if (updatedItem) return updatedItem;
+  throw new Error(`Testimonial #${id} not found.`);
+}
+
+export async function deleteAdminTestimonial(id: string): Promise<void> {
+  try {
+    await adminClient.delete(`/testimonials/${id}`);
+  } catch (err: any) {
+    console.warn(`Backend failed to delete testimonial ${id}, removing locally:`, err);
+  }
+
+  const current = getLocalTestimonials();
+  saveLocalTestimonials(current.filter((t) => t.id !== id));
+}
+
+/**
+ * Uploads a testimonial avatar image to Cloudinary in the 'rebelive/testimonials' folder.
+ */
+export async function uploadTestimonialImage(
+  fileOrData: File | Blob | string
+): Promise<CloudinaryUploadResponse> {
+  return uploadProductImage(fileOrData, 'rebelive/testimonials');
+}

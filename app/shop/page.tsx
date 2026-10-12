@@ -128,6 +128,7 @@ export default function ShopPage() {
           actionHref="/"
           actionLabel="Return Home"
           showHomeButton={false}
+          isEmbedded={true}
         />
       </main>
     );

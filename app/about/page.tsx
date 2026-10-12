@@ -65,6 +65,16 @@ const scaleInItem = {
 
 export default function AboutPage() {
   const [activeSection, setActiveSection] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile, { passive: true });
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Transition locking & inertial cooldown refs
   const isAnimatingRef = useRef(false);
@@ -72,8 +82,19 @@ export default function AboutPage() {
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
 
-  // Strict discrete section jump
+  // Discrete section jump (desktop) or smooth document scroll (mobile)
   const goToSection = useCallback((targetIdx: number) => {
+    if (isMobile) {
+      const targetSec = ABOUT_SECTIONS[targetIdx];
+      if (targetSec) {
+        const el = document.getElementById(targetSec.id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      return;
+    }
+
     if (isAnimatingRef.current) return;
     const clamped = Math.max(0, Math.min(targetIdx, ABOUT_SECTIONS.length - 1));
     if (clamped === activeSection) return;
@@ -86,7 +107,7 @@ export default function AboutPage() {
     setTimeout(() => {
       isAnimatingRef.current = false;
     }, 1150);
-  }, [activeSection]);
+  }, [activeSection, isMobile]);
 
   const goToNext = useCallback(() => {
     if (activeSection < ABOUT_SECTIONS.length - 1) {
@@ -100,8 +121,10 @@ export default function AboutPage() {
     }
   }, [activeSection, goToSection]);
 
-  // ── Wheel Event Listener (Strict Section Snapping + Footer Hand-off) ──
+  // ── Wheel Event Listener (Desktop Only) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleWheel = (e: WheelEvent) => {
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
 
@@ -148,10 +171,12 @@ export default function AboutPage() {
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
     };
-  }, [activeSection, goToNext, goToPrev]);
+  }, [isMobile, activeSection, goToNext, goToPrev]);
 
-  // ── Touch Swipe Gestures (Mobile Devices) ──
+  // ── Touch Swipe Gestures (Desktop/Tablet Touch Only - Mobile uses natural scroll) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       touchStartYRef.current = e.touches[0].clientY;
@@ -197,10 +222,12 @@ export default function AboutPage() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [activeSection, goToNext, goToPrev]);
+  }, [isMobile, activeSection, goToNext, goToPrev]);
 
   // ── Keyboard Navigation (Arrow Keys / Page Keys / Space) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (['input', 'textarea', 'select'].includes((e.target as HTMLElement)?.tagName?.toLowerCase() || '')) return;
 
@@ -230,13 +257,13 @@ export default function AboutPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [activeSection, goToNext, goToPrev, goToSection]);
+  }, [isMobile, activeSection, goToNext, goToPrev, goToSection]);
 
   return (
     <div
       id="about-deck"
       style={{ fontFamily: SANS }}
-      className="relative w-screen h-screen overflow-hidden text-white bg-black select-none"
+      className="relative w-full min-h-screen text-white bg-black select-none md:w-screen md:h-screen md:overflow-hidden"
     >
       {/* Ambient background glow aura */}
       <div
@@ -251,24 +278,24 @@ export default function AboutPage() {
         REBELIVE
       </div>
 
-      {/* ── Discrete Slides Track with 60fps GPU Hardware Translate ── */}
+      {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
       <div
-        className="w-full h-full transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-        style={{
-          transform: `translate3d(0, -${activeSection * 100}%, 0)`,
-        }}
+        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[1100ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] md:will-change-transform"
+        style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
         {/* ══════════════════════════════════════════════════════════════
             SLIDE 0: FOUNDERS SECTION
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="founders"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-12 px-4 sm:px-8 lg:px-16"
+          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 0 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 0 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
           >
             {/* Left Content */}
@@ -314,11 +341,11 @@ export default function AboutPage() {
             >
               <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
                 <Image
-                  src="/brand/founder_portrait.webp"
+                  src="/brand/founders-8137.webp"
                   alt="Krishna and Sai Vaishno - Co-Founders"
                   fill
                   sizes="(max-width: 768px) 100vw, 420px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out grayscale contrast-110"
+                  className="object-cover object-[center_20%] group-hover:scale-105 transition-transform duration-700 ease-out"
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
@@ -333,7 +360,7 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="rebelive"
-          className="w-full h-screen flex-shrink-0 flex flex-col justify-center relative overflow-hidden pt-16 sm:pt-20 pb-8"
+          className="w-full min-h-screen py-16 sm:py-20 flex flex-col justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden"
         >
           {/* Full-bleed edge-to-edge Marquee Bar across entire screen width */}
           <div className="w-full border-y border-white/15 bg-white/[0.02] py-3 sm:py-4.5 overflow-hidden select-none mb-6 sm:mb-10">
@@ -357,7 +384,9 @@ export default function AboutPage() {
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 1 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 1 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-16"
           >
             {/* Split Content: Narrative Left, Panther Emblem Right */}
@@ -418,12 +447,14 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="oxytrium"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-12 px-4 sm:px-8 lg:px-16"
+          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 2 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
           >
             {/* Left: Oxytrium Dynamics Official Logo Emblem */}
@@ -487,12 +518,14 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="pathways"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-12 px-4 sm:px-8 lg:px-16"
+          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 3 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-7xl mx-auto space-y-6 sm:space-y-8"
           >
             <div className="text-center max-w-3xl mx-auto space-y-3">

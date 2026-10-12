@@ -215,6 +215,16 @@ const SECTION_5_PARAGRAPHS = [
 export default function StoryPage() {
   const [activeSection, setActiveSection] = useState(0);
   const [shopOpen, setShopOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile, { passive: true });
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   // Transition locking refs
   const isAnimatingRef = useRef(false);
@@ -223,6 +233,17 @@ export default function StoryPage() {
   const touchStartXRef = useRef(0);
 
   const goToSection = useCallback((targetIdx: number) => {
+    if (isMobile) {
+      const targetSec = SECTIONS[targetIdx];
+      if (targetSec) {
+        const el = document.getElementById(targetSec.id);
+        if (el) {
+          el.scrollIntoView({ behavior: 'smooth' });
+        }
+      }
+      return;
+    }
+
     if (isAnimatingRef.current) return;
     const clamped = Math.max(0, Math.min(targetIdx, SECTIONS.length - 1));
     if (clamped === activeSection) return;
@@ -235,7 +256,7 @@ export default function StoryPage() {
     setTimeout(() => {
       isAnimatingRef.current = false;
     }, 1200);
-  }, [activeSection]);
+  }, [activeSection, isMobile]);
 
   const goToNext = useCallback(() => {
     if (activeSection < SECTIONS.length - 1) {
@@ -249,8 +270,10 @@ export default function StoryPage() {
     }
   }, [activeSection, goToSection]);
 
-  // ── Wheel Event Listener (Strict Section Snapping + Seamless Footer Return) ──
+  // ── Wheel Event Listener (Desktop Only) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleWheel = (e: WheelEvent) => {
       if (shopOpen) return;
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
@@ -300,10 +323,12 @@ export default function StoryPage() {
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
     };
-  }, [shopOpen, activeSection, goToNext, goToPrev]);
+  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev]);
 
-  // ── Touch Swipe Gestures (Mobile) ──
+  // ── Touch Swipe Gestures (Desktop/Tablet Touch Only - Mobile uses natural scroll) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       touchStartYRef.current = e.touches[0].clientY;
@@ -357,10 +382,12 @@ export default function StoryPage() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [shopOpen, activeSection, goToNext, goToPrev]);
+  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev]);
 
   // ── Keyboard Navigation (Arrow Keys / Page Keys / Space) ──
   useEffect(() => {
+    if (isMobile) return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (shopOpen) return;
       if (['input', 'textarea', 'select'].includes((e.target as HTMLElement)?.tagName?.toLowerCase() || '')) return;
@@ -393,73 +420,103 @@ export default function StoryPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [shopOpen, activeSection, goToNext, goToPrev, goToSection]);
+  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev, goToSection]);
 
   return (
     <div
       id="story-deck"
       style={{ fontFamily: SANS }}
-      className="relative w-screen h-screen overflow-hidden text-white bg-black select-none"
+      className="relative w-full min-h-screen text-white bg-black select-none md:w-screen md:h-screen md:overflow-hidden"
     >
       {/* Large Ghost Background Watermark */}
       <div className="fixed top-28 left-1/2 -translate-x-1/2 select-none pointer-events-none text-[16vw] font-black uppercase text-white/[0.015] whitespace-nowrap tracking-tighter -z-10 leading-none">
         REBELIVE
       </div>
 
-      {/* ── Discrete Slides Track with 60fps GPU Translate ── */}
+      {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
       <div
-        className="w-full h-full transition-transform duration-[1100ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform"
-        style={{
-          transform: `translate3d(0, -${activeSection * 100}%, 0)`,
-        }}
+        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[1100ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] md:will-change-transform"
+        style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
-        {/* ══════════════════════════════════════════════════════════════
-            SLIDE 0: HERO ("THE STORY OF REBELIVE.")
-           ══════════════════════════════════════════════════════════════ */}
+     
         <section
           id="hero"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 lg:px-16"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 0 ? 'visible' : 'hidden'}
-            className="w-full max-w-7xl mx-auto flex flex-col justify-center items-start text-left"
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 0 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
+            className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center justify-between"
           >
-            <motion.h1
-              variants={fadeUpSlow}
-              className="text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.5rem] font-black tracking-tight uppercase text-white leading-[0.92] text-left"
-            >
-              THE STORY OF <br />
-              <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400 drop-shadow-[0_15px_30px_rgba(255,255,255,0.2)]">
-                REBELIVE.
-              </span>
-            </motion.h1>
+            {/* Left Column: Heading and Narrative */}
+            <div className="lg:col-span-7 flex flex-col justify-center items-start text-left order-2 lg:order-1">
+           
 
-            <motion.p
-              variants={fadeUpItem}
-              className="mt-6 sm:mt-8 text-base sm:text-xl md:text-2xl text-white/70 font-light max-w-2xl leading-relaxed text-left"
-            >
-              Born from two people who couldn’t keep their own life balanced. Built for everyone
-              else who lives in the real world.
-            </motion.p>
+              <motion.h1
+                variants={fadeUpSlow}
+                className="text-4xl sm:text-6xl md:text-7xl lg:text-[5rem] xl:text-[5.8rem] font-black tracking-tight uppercase text-white leading-[0.92] text-left"
+              >
+                THE STORY OF <br />
+                <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400 drop-shadow-[0_15px_30px_rgba(255,255,255,0.2)]">
+                  REBELIVE.
+                </span>
+              </motion.h1>
 
-            {/* Scroll Trigger CTA */}
-          
+              <motion.p
+                variants={fadeUpItem}
+                className="mt-5 sm:mt-7 text-base sm:text-lg md:text-xl text-white/70 font-light max-w-xl leading-relaxed text-left"
+              >
+                Born from two people who couldn’t keep their own life balanced. Built for everyone
+                else who lives in the real world.
+              </motion.p>
+
+              {/* Scroll Trigger CTA */}
+              <motion.button
+                variants={fadeUpItem}
+                onClick={() => goToSection(1)}
+                className="mt-6 sm:mt-8 px-6 py-3 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-white/40 text-white font-mono text-xs uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer flex items-center gap-2 shadow-sm"
+              >
+                <span>BEGIN THE CHRONICLE</span>
+                <ChevronDown className="w-3.5 h-3.5" />
+              </motion.button>
+            </div>
+
+            {/* Right Column: 8137 Founders Image at Top */}
+            <motion.div
+              variants={visualReveal}
+              className="lg:col-span-5 flex items-center justify-center order-1 lg:order-2"
+            >
+              <div className="relative w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[390px] aspect-[2/3] max-h-[48vh] sm:max-h-[55vh] lg:max-h-[64vh] rounded-3xl overflow-hidden border border-white/15 bg-neutral-950/80 shadow-[0_30px_70px_rgba(0,0,0,0.9)] group">
+                <div className="absolute -inset-1 rounded-3xl bg-white/[0.05] blur-2xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 pointer-events-none" />
+                <Image
+                  src="/brand/founders-8137.webp"
+                  alt="Rebelive Founders (8137)"
+                  fill
+                  sizes="(max-width: 768px) 340px, (max-width: 1200px) 400px, 440px"
+                  className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                  priority
+                />
+              
+              </div>
+            </motion.div>
           </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════
-            SLIDE 1: APPLE MOMENT ("IT ALL STARTED WITH AN APPLE.")
-           ══════════════════════════════════════════════════════════════ */}
+
         <section
           id="apple-moment"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 text-center"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden text-center"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 1 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 1 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-[96vw] 2xl:max-w-7xl mx-auto flex flex-col items-center justify-center space-y-6 sm:space-y-8 relative z-10"
           >
             <motion.h2
@@ -493,18 +550,17 @@ export default function StoryPage() {
           </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════
-            SLIDE 2: OUR APPLE MOMENT ("WHY DID IT FALL?")
-           ══════════════════════════════════════════════════════════════ */}
         <section
           id="why-it-fell"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 lg:px-14 xl:px-18"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 2 ? 'visible' : 'hidden'}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center h-full"
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
               {/* Left: Panther */}
@@ -562,18 +618,17 @@ export default function StoryPage() {
           </motion.div>
         </section>
 
-        {/* ══════════════════════════════════════════════════════════════
-            SLIDE 3: THE HARD REALIZATION ("WHY THE HELL IS TAKING CARE...")
-           ══════════════════════════════════════════════════════════════ */}
         <section
           id="realization"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 lg:px-14 xl:px-18"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 3 ? 'visible' : 'hidden'}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center h-full"
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
               {/* Left: Panther */}
@@ -652,20 +707,33 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="identity"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-16 sm:pt-20 pb-10 sm:pb-12 px-4 sm:px-6 md:px-8 lg:px-12"
+          className="w-full min-h-screen py-20 px-4 sm:px-6 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:px-8 lg:px-12 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 4 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 4 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
           >
-            <div className="w-full rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] max-h-[86vh] overflow-y-auto no-scrollbar">
+            <div className="w-full rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] md:max-h-[86vh] md:overflow-y-auto no-scrollbar">
+              {/* RED: Replace REBELIVE. text with Rebelive Logo */}
               <motion.h2
                 variants={fadeUpSlow}
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5"
+                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-wrap items-center gap-2.5 sm:gap-4"
               >
-                HI. I’M REBELIVE.
+                <span>HI. I’M</span>
+                <span className="relative inline-block w-40 sm:w-56 md:w-64 lg:w-72 h-8 sm:h-11 md:h-13 lg:h-15 align-middle">
+                  <Image
+                    src="/brand/rebelive-white.webp"
+                    alt="REBELIVE"
+                    fill
+                    sizes="(max-width: 768px) 240px, 320px"
+                    className="object-contain object-left drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
+                    priority
+                  />
+                </span>
               </motion.h2>
 
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
@@ -682,6 +750,7 @@ export default function StoryPage() {
                       para.includes("That’s where I come in.");
 
                     const isPunchy = para === "They weren’t. So they built me.";
+                    const hasTwoIdiots = para.includes("two absolute idiots");
 
                     return (
                       <div
@@ -701,41 +770,41 @@ export default function StoryPage() {
                               : ''
                           }
                         >
-                          {para}
+                          {/* ORANGE: Informal highlighted styling for 'two absolute idiots' */}
+                          {hasTwoIdiots ? (
+                            <>
+                              Yep. That’s me. I exist because my founders were{' '}
+                              <span className="font-['Permanent_Marker'] font-normal text-amber-300 text-sm sm:text-base md:text-lg tracking-wider px-2 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/35 inline-block rotate-[-2deg] mx-1 shadow-[0_0_20px_rgba(251,191,36,0.2)] select-none">
+                                two absolute idiots
+                              </span>{' '}
+                              who couldn’t keep their own shit together.
+                            </>
+                          ) : (
+                            para
+                          )}
                         </p>
                       </div>
                     );
                   })}
                 </motion.div>
 
-                {/* Right: Rebelive Brand Logo on the right side */}
+                {/* GREEN: Founders 8117 Portrait Photo replacing previous panther logo */}
                 <motion.div
                   variants={visualReveal}
                   className="lg:col-span-5 flex flex-col items-center justify-center py-4 lg:py-0"
                 >
-                  <div className="relative w-full max-w-[340px] flex flex-col items-center justify-center select-none group">
-                    <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none group-hover:bg-white/[0.08] transition-colors" />
-
-                    <div className="relative w-40 h-40 sm:w-52 sm:h-52 md:w-60 md:h-60 flex items-center justify-center">
-                      <Image
-                        src="/brand/panther_white_icon-transparent.webp"
-                        alt="Rebelive Brand Panther"
-                        fill
-                        sizes="(max-width: 768px) 220px, 300px"
-                        className="object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.12)] group-hover:scale-105 transition-transform duration-500"
-                        priority
-                      />
-                    </div>
-
-                    <div className="relative w-40 sm:w-52 h-10 mt-4 opacity-90 group-hover:opacity-100 transition-opacity">
-                      <Image
-                        src="/brand/rebelive-white.webp"
-                        alt="REBELIVE Brand Logo"
-                        fill
-                        sizes="240px"
-                        className="object-contain drop-shadow-[0_2px_14px_rgba(255,255,255,0.25)]"
-                      />
-                    </div>
+                  <div className="relative w-full max-w-[320px] sm:max-w-[360px] md:max-w-[380px] lg:max-w-[420px] aspect-[2/3] max-h-[50vh] sm:max-h-[58vh] lg:max-h-[66vh] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 bg-neutral-950/80 shadow-[0_25px_60px_rgba(0,0,0,0.9)] group">
+                    <div className="absolute -inset-1 rounded-3xl bg-white/[0.06] blur-2xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 pointer-events-none" />
+                    <Image
+                      src="/brand/founders-8117.webp"
+                      alt="Rebelive Founders (8117)"
+                      fill
+                      sizes="(max-width: 768px) 340px, (max-width: 1200px) 400px, 460px"
+                      className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                      priority
+                    />
+               
                   </div>
                 </motion.div>
               </div>
@@ -748,12 +817,14 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="why-i-exist"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 lg:px-14 xl:px-18"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 5 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 5 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 xl:gap-20 items-center w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
           >
             {/* Left: Content */}
@@ -830,12 +901,14 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="manifesto"
-          className="w-full h-screen flex-shrink-0 flex items-center justify-center relative overflow-hidden pt-20 sm:pt-24 pb-14 px-4 sm:px-8 lg:px-14"
+          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            animate={activeSection === 6 ? 'visible' : 'hidden'}
+            whileInView={isMobile ? 'visible' : undefined}
+            animate={isMobile ? undefined : (activeSection === 6 ? 'visible' : 'hidden')}
+            viewport={{ once: true, amount: 0.15 }}
             className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-4 sm:space-y-6 relative z-10"
           >
             <motion.h2

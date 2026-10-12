@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
 
@@ -97,9 +97,28 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
   subtitle = 'Tested and Tasted our pilot batch. Loved it from the first sip.',
 }) => {
   const [isPaused, setIsPaused] = useState(false);
+  const [items, setItems] = useState<Testimonial[]>(TESTIMONIALS);
+
+  // Sync with live database or admin cache if updated
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = localStorage.getItem('rebelive_testimonials_cache');
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            const featured = parsed.filter((t: any) => t.isFeatured !== false);
+            if (featured.length > 0) {
+              setItems(featured);
+            }
+          }
+        }
+      } catch {}
+    }
+  }, []);
 
   // Double items per track so every track is expansive and seamless
-  const trackItems = [...TESTIMONIALS, ...TESTIMONIALS];
+  const trackItems = [...items, ...items];
 
   return (
     <section

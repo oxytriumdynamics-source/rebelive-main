@@ -576,6 +576,7 @@ export default function ProductDetailPage() {
           actionHref="/shop"
           actionLabel="Explore Shop"
           showHomeButton={true}
+          isEmbedded={true}
         />
       </main>
     );
