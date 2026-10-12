@@ -138,6 +138,11 @@ export default function ProductEditPage() {
   ]);
 
   // Load existing product if editing
+  const isTrioProduct =
+    slug.trim().toLowerCase() === 'variety' ||
+    productId.toLowerCase() === 'variety' ||
+    name.toLowerCase().includes('trio');
+
   useEffect(() => {
     if (!isNew && productId) {
       loadProduct();
@@ -394,20 +399,29 @@ export default function ProductEditPage() {
     setIsSaving(true);
     setFeedback(null);
 
-    const nutritionPayload = {
-      productName: name.trim().toUpperCase(),
-      servingSize,
-      servingsPerContainer: `1 serving per container (${servingSize})`,
-      items: nutritionItems,
-      nutrients: nutritionItems.map((it) => ({
-        nutrient: it.key,
-        per100ml: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
-        perServe: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
-        rda: it.dv || '-',
-      })),
-      ...(existingTrioNutrients ? { trioNutrients: existingTrioNutrients } : {}),
-      notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
-    };
+    const nutritionPayload = isTrioProduct
+      ? (existingTrioNutrients
+          ? {
+              productName: 'THE REBEL TRIO',
+              servingSize: '250 ml (Each Can)',
+              servingsPerContainer: '3 unique signature flavours per crate (Apex, Aviva, Capella)',
+              trioNutrients: existingTrioNutrients,
+              notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
+            }
+          : undefined)
+      : {
+          productName: name.trim().toUpperCase(),
+          servingSize,
+          servingsPerContainer: `1 serving per container (${servingSize})`,
+          items: nutritionItems,
+          nutrients: nutritionItems.map((it) => ({
+            nutrient: it.key,
+            per100ml: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+            perServe: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+            rda: it.dv || '-',
+          })),
+          notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
+        };
 
     const payload: any = {
       name: name.trim(),
@@ -829,105 +843,123 @@ export default function ProductEditPage() {
               </div>
             </div>
 
-            {/* ─── Section 5: Nutrition Facts & Nutrition Info (User Requested) ─── */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                    4. Nutritional Parameters & Facts Table
+            {/* ─── Section 5: Nutrition Facts & Nutrition Info ─── */}
+            {isTrioProduct ? (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.5)]" />
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white font-mono">
+                    4. Nutritional Parameters · Automated Trio Multi-Formula
                   </h3>
-                  <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                    Standardized nutrient metrics rendered on public product pages and specifications modal
-                  </p>
                 </div>
-
-                <div className="flex items-center gap-2">
-                  <div className="flex items-center gap-2 text-xs font-mono">
-                    <span className="text-white/40 text-[10px]">Serving Size:</span>
-                    <input
-                      type="text"
-                      value={servingSize}
-                      onChange={(e) => setServingSize(e.target.value)}
-                      className="bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white text-xs w-36 font-mono"
-                    />
+                <p className="text-xs text-white/70 font-mono leading-relaxed">
+                  Nutritional parameters for <span className="text-white font-semibold">The Rebel Trio</span> are not configured here because this product bundles the 3 distinct formulas. Nutrients are automatically loaded and synchronized from each individual product: <span className="text-white font-semibold">APEX</span>, <span className="text-white font-semibold">AVIVA</span>, and <span className="text-white font-semibold">CAPELLA</span>.
+                </p>
+                <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 text-[11px] text-white/50 font-mono flex items-center justify-between flex-wrap gap-2">
+                  <span>To modify nutrient values, edit them in the respective individual product tabs.</span>
+                  <span className="text-emerald-400 font-bold uppercase text-[10px] tracking-wider">✓ Auto-Synced in Database</span>
+                </div>
+              </div>
+            ) : (
+              <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-xs font-bold uppercase tracking-wider text-white">
+                      4. Nutritional Parameters & Facts Table
+                    </h3>
+                    <p className="text-[10px] text-white/40 font-mono mt-0.5">
+                      Standardized nutrient metrics rendered on public product pages and specifications modal
+                    </p>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleAddNutritionRow}
-                    className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs flex items-center gap-1 cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Add Nutrient</span>
-                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-xs font-mono">
+                      <span className="text-white/40 text-[10px]">Serving Size:</span>
+                      <input
+                        type="text"
+                        value={servingSize}
+                        onChange={(e) => setServingSize(e.target.value)}
+                        className="bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white text-xs w-36 font-mono"
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleAddNutritionRow}
+                      className="px-3 py-1 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs flex items-center gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Add Nutrient</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Nutrition Table Editor */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs font-mono">
+                    <thead>
+                      <tr className="border-b border-white/10 text-white/40 text-[10px] uppercase">
+                        <th className="pb-2.5">Nutritional Element</th>
+                        <th className="pb-2.5 w-32">Amount</th>
+                        <th className="pb-2.5 w-24">Unit</th>
+                        <th className="pb-2.5 w-24">% Daily Value</th>
+                        <th className="pb-2.5 text-right w-16">Action</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5">
+                      {nutritionItems.map((item, idx) => (
+                        <tr key={idx} className="hover:bg-white/[0.02]">
+                          <td className="py-2 pr-3">
+                            <input
+                              type="text"
+                              value={item.key}
+                              onChange={(e) => handleUpdateNutritionRow(idx, 'key', e.target.value)}
+                              placeholder="Nutrient Name"
+                              className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
+                            />
+                          </td>
+                          <td className="py-2 pr-3">
+                            <input
+                              type="text"
+                              value={item.amount}
+                              onChange={(e) => handleUpdateNutritionRow(idx, 'amount', e.target.value)}
+                              placeholder="Amount"
+                              className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
+                            />
+                          </td>
+                          <td className="py-2 pr-3">
+                            <input
+                              type="text"
+                              value={item.unit}
+                              onChange={(e) => handleUpdateNutritionRow(idx, 'unit', e.target.value)}
+                              placeholder="Unit (g, mg, kcal)"
+                              className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
+                            />
+                          </td>
+                          <td className="py-2 pr-3">
+                            <input
+                              type="text"
+                              value={item.dv || ''}
+                              onChange={(e) => handleUpdateNutritionRow(idx, 'dv', e.target.value)}
+                              placeholder="% DV"
+                              className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white/70"
+                            />
+                          </td>
+                          <td className="py-2 text-right">
+                            <button
+                              type="button"
+                              onClick={() => handleRemoveNutritionRow(idx)}
+                              className="p-1 rounded text-white/40 hover:text-white hover:bg-white/10 cursor-pointer"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
-
-              {/* Nutrition Table Editor */}
-              <div className="overflow-x-auto">
-                <table className="w-full text-left text-xs font-mono">
-                  <thead>
-                    <tr className="border-b border-white/10 text-white/40 text-[10px] uppercase">
-                      <th className="pb-2.5">Nutritional Element</th>
-                      <th className="pb-2.5 w-32">Amount</th>
-                      <th className="pb-2.5 w-24">Unit</th>
-                      <th className="pb-2.5 w-24">% Daily Value</th>
-                      <th className="pb-2.5 text-right w-16">Action</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-white/5">
-                    {nutritionItems.map((item, idx) => (
-                      <tr key={idx} className="hover:bg-white/[0.02]">
-                        <td className="py-2 pr-3">
-                          <input
-                            type="text"
-                            value={item.key}
-                            onChange={(e) => handleUpdateNutritionRow(idx, 'key', e.target.value)}
-                            placeholder="Nutrient Name"
-                            className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
-                          />
-                        </td>
-                        <td className="py-2 pr-3">
-                          <input
-                            type="text"
-                            value={item.amount}
-                            onChange={(e) => handleUpdateNutritionRow(idx, 'amount', e.target.value)}
-                            placeholder="Amount"
-                            className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
-                          />
-                        </td>
-                        <td className="py-2 pr-3">
-                          <input
-                            type="text"
-                            value={item.unit}
-                            onChange={(e) => handleUpdateNutritionRow(idx, 'unit', e.target.value)}
-                            placeholder="Unit (g, mg, kcal)"
-                            className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white"
-                          />
-                        </td>
-                        <td className="py-2 pr-3">
-                          <input
-                            type="text"
-                            value={item.dv || ''}
-                            onChange={(e) => handleUpdateNutritionRow(idx, 'dv', e.target.value)}
-                            placeholder="% DV"
-                            className="w-full bg-[#141414] border border-white/10 rounded-lg px-2.5 py-1 text-white/70"
-                          />
-                        </td>
-                        <td className="py-2 text-right">
-                          <button
-                            type="button"
-                            onClick={() => handleRemoveNutritionRow(idx)}
-                            className="p-1 rounded text-white/40 hover:text-white hover:bg-white/10 cursor-pointer"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            </div>
+            )}
 
             {/* ─── Section 6: Pack Configurations & Variants (User Requested: "create new pack") ─── */}
             <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">

@@ -97,14 +97,23 @@ export function getCanTexture(product: Product): THREE.Texture {
   textureCache[cacheKey] = texture;
 
   // 2. Load the authentic 360 flat can wrap image and draw cleanly onto the canvas
-  if (product.canImage) {
+  const CAN_WRAP_DEFAULTS: Record<string, string> = {
+    apex: '/brand/apex-can.webp',
+    aviva: '/brand/aviva-can.webp',
+    capella: '/brand/capella-can.webp',
+  };
+
+  const wrapSrc =
+    product.canImage || CAN_WRAP_DEFAULTS[(product.id || '').toLowerCase()] || '/brand/apex-can.webp';
+
+  if (wrapSrc) {
     const img = new Image();
     img.crossOrigin = 'anonymous';
     img.onload = () => {
       ctx.drawImage(img, 0, 0, width, height);
       texture.needsUpdate = true;
     };
-    img.src = product.canImage;
+    img.src = wrapSrc;
   }
 
   return texture;
