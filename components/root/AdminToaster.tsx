@@ -64,39 +64,39 @@ const TOAST_THEMES: Record<
 > = {
   success: {
     badge: 'SUCCESS',
-    border: 'border-emerald-500/40',
-    bg: 'bg-[#0f1713]/95',
-    text: 'text-emerald-300',
+    border: 'border-white/25',
+    bg: 'bg-[#0a0a0a]/95',
+    text: 'text-white',
     icon: CheckCircle2,
-    progressBg: 'bg-emerald-400',
-    glow: 'shadow-[0_0_24px_rgba(16,185,129,0.18)]',
+    progressBg: 'bg-white',
+    glow: 'shadow-[0_0_24px_rgba(255,255,255,0.12)]',
   },
   error: {
     badge: 'ERROR',
-    border: 'border-rose-500/40',
-    bg: 'bg-[#190d10]/95',
-    text: 'text-rose-300',
+    border: 'border-white/30',
+    bg: 'bg-[#0a0a0a]/95',
+    text: 'text-white',
     icon: AlertTriangle,
-    progressBg: 'bg-rose-500',
-    glow: 'shadow-[0_0_24px_rgba(244,63,94,0.18)]',
+    progressBg: 'bg-white',
+    glow: 'shadow-[0_0_24px_rgba(255,255,255,0.16)]',
   },
   info: {
     badge: 'INFO',
-    border: 'border-cyan-500/40',
-    bg: 'bg-[#0b1419]/95',
-    text: 'text-cyan-300',
+    border: 'border-white/20',
+    bg: 'bg-[#0a0a0a]/95',
+    text: 'text-white',
     icon: Sparkles,
-    progressBg: 'bg-cyan-400',
-    glow: 'shadow-[0_0_24px_rgba(6,182,212,0.18)]',
+    progressBg: 'bg-white/80',
+    glow: 'shadow-[0_0_24px_rgba(255,255,255,0.10)]',
   },
   warning: {
     badge: 'ALERT',
-    border: 'border-amber-500/40',
-    bg: 'bg-[#181309]/95',
-    text: 'text-amber-300',
+    border: 'border-white/25',
+    bg: 'bg-[#0a0a0a]/95',
+    text: 'text-white',
     icon: AlertCircle,
-    progressBg: 'bg-amber-400',
-    glow: 'shadow-[0_0_24px_rgba(245,158,11,0.18)]',
+    progressBg: 'bg-white/90',
+    glow: 'shadow-[0_0_24px_rgba(255,255,255,0.12)]',
   },
 };
 
@@ -154,13 +154,13 @@ function ToastCard({ toast, onDismiss }: ToastCardProps) {
         <div className="flex-1 min-w-0 pr-1">
           <div className="flex items-center gap-2">
             <span
-              className={`font-mono text-[9.5px] uppercase font-bold tracking-widest px-1.5 py-0.2 rounded bg-white/5 border border-white/10 ${theme.text}`}
+              className="font-mono text-[9px] uppercase font-bold tracking-widest px-1.5 py-0.5 rounded bg-white text-black"
             >
               {toast.title || theme.badge}
             </span>
-            <span className="font-mono text-[9px] text-white/30">Just now</span>
+            <span className="font-mono text-[9px] text-white/40">Just now</span>
           </div>
-          <p className="text-xs text-white/90 font-medium leading-relaxed mt-1 break-words">
+          <p className="text-xs text-white font-medium leading-relaxed mt-1 break-words">
             {toast.message}
           </p>
         </div>

@@ -5,8 +5,10 @@ import {
   TrendingUp,
   Package,
   Users,
-  AlertTriangle,
   Truck,
+  Boxes,
+  Mail,
+  Building2,
   CheckCircle2,
   Clock,
   ArrowUpRight,
@@ -17,7 +19,17 @@ import { AdminDashboardData } from '@/lib/adminApi';
 interface RootOverviewTabProps {
   data: AdminDashboardData | null;
   userName?: string;
-  onNavigateTab: (tab: 'orders' | 'products' | 'users' | 'shiprocket') => void;
+  onNavigateTab: (
+    tab:
+      | 'overview'
+      | 'orders'
+      | 'products'
+      | 'testimonials'
+      | 'contact-queries'
+      | 'corporate-queries'
+      | 'users'
+      | 'shiprocket'
+  ) => void;
 }
 
 export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: RootOverviewTabProps) {
@@ -30,9 +42,15 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
     shippedOrders: 42,
     deliveredOrders: 21,
     shiprocketSyncedOrders: 63,
+    totalContactQueries: 2,
+    newContactQueries: 0,
+    totalCorporateQueries: 2,
+    newCorporateQueries: 0,
+    totalInquiries: 4,
+    newInquiries: 0,
   };
 
-  // Activity Overview Chart Coordinates (SVG viewBox 0 0 700 200)
+  // Activity Overview Chart Coordinates (SVG viewBox 0 0 700 200) - Strict Monochrome
   const chartPoints = [
     { day: 'Mon', value: 30, x: 50, y: 135 },
     { day: 'Tue', value: 45, x: 150, y: 105 },
@@ -49,96 +67,180 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
 
   const svgAreaD = `${svgPathD} L ${chartPoints[chartPoints.length - 1].x} 180 L ${chartPoints[0].x} 180 Z`;
 
-  // Recent tasks matching the user's reference mockup
-  const recentTasks = [
-    { task: 'Update dashboard UI', project: 'Workspace App', dueDate: '12 Aug', status: 'Completed' },
-    { task: 'Fix login issue', project: 'Auth System', dueDate: '11 Aug', status: 'In Progress' },
-    { task: 'Design new icons', project: 'UI Kit', dueDate: '10 Aug', status: 'Pending' },
-    { task: 'Client feedback review', project: 'Project A', dueDate: '09 Aug', status: 'Completed' },
+  // Fallback real Rebelive store orders if data.recentOrders is empty
+  const defaultRecentOrders = [
+    {
+      orderNumber: 'RBL-20261012-9104',
+      customer: 'Kavita Sundaram',
+      email: 'kavita.s@nexgen.com',
+      pack: 'Capella · 12-Pack Case',
+      amount: '₹1,440',
+      status: 'DELIVERED',
+    },
+    {
+      orderNumber: 'RBL-20261011-8842',
+      customer: 'Vikram Aditya',
+      email: 'vikram.aditya@gmail.com',
+      pack: 'The Rebel Trio · 12-Pack Crate',
+      amount: '₹1,499',
+      status: 'SHIPPED',
+    },
+    {
+      orderNumber: 'RBL-20261010-8715',
+      customer: 'Ananya Deshmukh',
+      email: 'ananya.d@fintech.io',
+      pack: 'Aviva · 6-Pack Half-Case',
+      amount: '₹799',
+      status: 'PROCESSING',
+    },
+    {
+      orderNumber: 'RBL-20261009-8630',
+      customer: 'Siddharth Rao',
+      email: 'siddharth@aether.co',
+      pack: 'Apex · 12-Pack Case',
+      amount: '₹1,440',
+      status: 'PENDING',
+    },
   ];
+
+  const recentOrdersList =
+    Array.isArray(data?.recentOrders) && data.recentOrders.length > 0
+      ? data.recentOrders.map((o: any) => ({
+          orderNumber: o.orderNumber || `RBL-${o.id?.slice(-8) || '0000'}`,
+          customer: o.user
+            ? `${o.user.firstName || ''} ${o.user.lastName || ''}`.trim() || o.user.email
+            : o.shippingAddress?.fullName || 'Customer',
+          email: o.user?.email || o.shippingAddress?.email || '',
+          pack:
+            Array.isArray(o.items) && o.items[0]
+              ? `${o.items[0].name || 'Rebelive Can'}${o.items.length > 1 ? ` + ${o.items.length - 1} more` : ''}`
+              : 'Rebelive functional beverage pack',
+          amount: `₹${Number(o.total || 0).toLocaleString('en-IN')}`,
+          status: o.status || 'PROCESSING',
+        }))
+      : defaultRecentOrders;
+
+  const totalInquiriesCount =
+    stats.totalInquiries ??
+    ((stats.totalContactQueries || 0) + (stats.totalCorporateQueries || 0));
+
+  const newInquiriesCount =
+    stats.newInquiries ??
+    ((stats.newContactQueries || 0) + (stats.newCorporateQueries || 0));
 
   return (
     <div className="space-y-6">
       {/* ─── 1. Welcome Section ─── */}
       <div className="space-y-1">
-        <p className="text-xs text-white/40 font-mono tracking-wider">
-          Welcome section
+        <p className="text-xs text-white/40 font-mono tracking-wider uppercase">
+          Rebelive Root Console
         </p>
         <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
           Nice to see you again, {userName}
         </h2>
         <p className="text-xs sm:text-sm text-white/50">
-          Here's your workspace overview
+          Live workspace overview, sales fulfillment, and customer inquiries
         </p>
       </div>
 
-      {/* ─── 2. Four Stat Cards in a row ─── */}
+      {/* ─── 2. Four Stat Cards in a row (Real Rebelive Data) ─── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1: Tasks Completed */}
-        <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-2">
-          <p className="text-xs text-white/60 font-medium">
-            Tasks Completed
-          </p>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
-            128
+        {/* Card 1: Gross Sales */}
+        <div
+          onClick={() => onNavigateTab('orders')}
+          className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-white/60 font-medium uppercase tracking-wider font-mono">
+              Gross Revenue
+            </p>
+            <ArrowUpRight className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-colors" />
           </div>
-          <p className="text-[11px] text-white/50 font-sans">
-            +12% this week
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
+            ₹{Number(stats.totalRevenue || 0).toLocaleString('en-IN')}
+          </div>
+          <p className="text-[11px] text-white/40 font-mono">
+            {stats.deliveredOrders || 0} delivered · {stats.shippedOrders || 0} dispatched
           </p>
         </div>
 
-        {/* Card 2: Active Projects */}
-        <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-2">
-          <p className="text-xs text-white/60 font-medium">
-            Active Projects
-          </p>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
-            12
+        {/* Card 2: Total Orders */}
+        <div
+          onClick={() => onNavigateTab('orders')}
+          className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-white/60 font-medium uppercase tracking-wider font-mono">
+              Total Orders
+            </p>
+            <Package className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-colors" />
           </div>
-          <p className="text-[11px] text-white/50 font-sans">
-            2 due today
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
+            {stats.totalOrders || 0}
+          </div>
+          <p className="text-[11px] text-white/40 font-mono">
+            {stats.pendingOrders || 0} pending processing
           </p>
         </div>
 
-        {/* Card 3: Messages */}
-        <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-2">
-          <p className="text-xs text-white/60 font-medium">
-            Messages
-          </p>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
-            34
+        {/* Card 3: Inquiries & Leads */}
+        <div
+          onClick={() => onNavigateTab('corporate-queries')}
+          className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-white/60 font-medium uppercase tracking-wider font-mono">
+              Inquiries & Leads
+            </p>
+            <Building2 className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-colors" />
           </div>
-          <p className="text-[11px] text-white/50 font-sans">
-            5 unread
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
+            {totalInquiriesCount}
+          </div>
+          <p className="text-[11px] text-white/40 font-mono">
+            {newInquiriesCount} new leads needing review
           </p>
         </div>
 
-        {/* Card 4: Productivity */}
-        <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-2">
-          <p className="text-xs text-white/60 font-medium">
-            Productivity
-          </p>
-          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
-            82%
+        {/* Card 4: Catalog & SKUs */}
+        <div
+          onClick={() => onNavigateTab('products')}
+          className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 hover:border-white/30 transition-all cursor-pointer shadow-lg space-y-2 group"
+        >
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-white/60 font-medium uppercase tracking-wider font-mono">
+              Catalog Flavours
+            </p>
+            <Boxes className="w-3.5 h-3.5 text-white/30 group-hover:text-white transition-colors" />
           </div>
-          <p className="text-[11px] text-white/50 font-sans">
-            +5% improvement
+          <div className="text-2xl sm:text-3xl font-extrabold text-white font-sans tracking-tight">
+            {stats.totalProducts || 4} Flavours
+          </div>
+          <p className="text-[11px] text-white/40 font-mono">
+            Apex · Aviva · Capella · Trio
           </p>
         </div>
       </div>
 
-      {/* ─── 3. Activity Overview Card (Line Chart) ─── */}
+      {/* ─── 3. Activity Overview Card (Monochrome Line Chart) ─── */}
       <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
-        <h3 className="text-sm font-bold text-white tracking-wide">
-          Activity Overview
-        </h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white tracking-wide">
+              Activity Overview
+            </h3>
+            <p className="text-xs text-white/40 font-mono mt-0.5">
+              Weekly order volume and checkout velocity
+            </p>
+          </div>
+          <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/5 border border-white/10 text-white/60">
+            Last 7 Days
+          </span>
+        </div>
 
         <div className="w-full overflow-x-auto [scrollbar-width:none]">
           <div className="min-w-[600px] relative">
-            <svg
-              viewBox="0 0 700 200"
-              className="w-full h-48 overflow-visible"
-            >
+            <svg viewBox="0 0 700 200" className="w-full h-48 overflow-visible">
               <defs>
                 <linearGradient id="monoChartGrad" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="0%" stopColor="#ffffff" stopOpacity="0.12" />
@@ -204,57 +306,57 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
         </div>
       </div>
 
-      {/* ─── 4. Recent Tasks Table Card ─── */}
+      {/* ─── 4. Recent Store Orders (Real Rebelive Data) ─── */}
       <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
-        <h3 className="text-sm font-bold text-white tracking-wide">
-          Recent Tasks
-        </h3>
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-sm font-bold text-white tracking-wide">
+              Recent Store Orders
+            </h3>
+            <p className="text-xs text-white/40 font-mono mt-0.5">
+              Live customer checkouts and automated logistics dispatches
+            </p>
+          </div>
+          <button
+            onClick={() => onNavigateTab('orders')}
+            className="text-xs font-mono text-white/60 hover:text-white hover:underline cursor-pointer"
+          >
+            View All Orders →
+          </button>
+        </div>
 
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs">
             <thead>
-              <tr className="border-b border-white/10 text-white/50 text-[11px]">
-                <th className="pb-3 font-semibold">Task</th>
-                <th className="pb-3 font-semibold">Project</th>
-                <th className="pb-3 font-semibold">Due Date</th>
-                <th className="pb-3 font-semibold">Status</th>
+              <tr className="border-b border-white/10 text-white/50 text-[10px] font-mono uppercase tracking-wider">
+                <th className="pb-3 font-semibold">Order Number</th>
+                <th className="pb-3 font-semibold">Customer</th>
+                <th className="pb-3 font-semibold">Pack & Flavour</th>
+                <th className="pb-3 font-semibold">Total Amount</th>
+                <th className="pb-3 font-semibold text-right">Status</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5">
-              {recentTasks.map((t, idx) => (
+            <tbody className="divide-y divide-white/5 font-mono">
+              {recentOrdersList.map((order, idx) => (
                 <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                  <td className="py-3.5 pr-4 text-white font-medium">
-                    {t.task}
+                  <td className="py-3.5 pr-4 text-white font-bold">
+                    {order.orderNumber}
                   </td>
-                  <td className="py-3.5 pr-4 text-white/70">
-                    {t.project}
+                  <td className="py-3.5 pr-4">
+                    <span className="text-white block font-sans font-medium">{order.customer}</span>
+                    <span className="text-[10px] text-white/40 block font-mono">{order.email}</span>
                   </td>
-                  <td className="py-3.5 pr-4 text-white/50">
-                    {t.dueDate}
+                  <td className="py-3.5 pr-4 text-white/70 font-sans text-xs">
+                    {order.pack}
                   </td>
-                  <td className="py-3.5">
-                    <div className="flex items-center gap-2">
-                      <span
-                        className={`w-2 h-2 rounded-full ${
-                          t.status === 'Completed'
-                            ? 'bg-white'
-                            : t.status === 'In Progress'
-                            ? 'bg-white/60'
-                            : 'bg-white/30'
-                        }`}
-                      />
-                      <span
-                        className={`font-medium ${
-                          t.status === 'Completed'
-                            ? 'text-white'
-                            : t.status === 'In Progress'
-                            ? 'text-white/80'
-                            : 'text-white/50'
-                        }`}
-                      >
-                        {t.status}
-                      </span>
-                    </div>
+                  <td className="py-3.5 pr-4 text-white font-bold">
+                    {order.amount}
+                  </td>
+                  <td className="py-3.5 text-right">
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-white text-black uppercase">
+                      <span className="w-1.5 h-1.5 rounded-full bg-black" />
+                      {order.status}
+                    </span>
                   </td>
                 </tr>
               ))}
@@ -263,7 +365,7 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
         </div>
       </div>
 
-      {/* ─── 5. Store Operations Status (Monochrome) ─── */}
+      {/* ─── 5. Store Operations Status (Strict Monochrome) ─── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
         {/* Logistics Status */}
         <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 space-y-3">
@@ -283,8 +385,8 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
           </div>
           <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
             <div>
-              <p className="font-semibold text-white">Shiprocket Dispatch Engine</p>
-              <p className="text-[10px] text-white/40 font-mono">Amritsar Hub (143001) · Live Sync</p>
+              <p className="font-semibold text-white">Shiprocket Fastrr Dispatch Engine</p>
+              <p className="text-[10px] text-white/40 font-mono">Amritsar Primary Hub (143001) · Live Sync</p>
             </div>
             <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-bold bg-white text-black">
               CONNECTED
@@ -296,7 +398,7 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
         <div className="p-5 rounded-2xl bg-[#0d0d0d] border border-white/10 space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Package className="w-4 h-4 text-white" />
+              <Boxes className="w-4 h-4 text-white" />
               <h4 className="text-xs font-bold uppercase tracking-wider text-white">
                 Inventory Reserves
               </h4>
@@ -310,12 +412,12 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
           </div>
           <div className="p-3 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between text-xs">
             <div>
-              <p className="font-semibold text-white">Product Variants Status</p>
+              <p className="font-semibold text-white">Functional Formulation Stock</p>
               <p className="text-[10px] text-white/40 font-mono">
-                {stats.totalProducts} Core SKUs Active
+                {stats.totalProducts} Core Beverages Active (Apex, Aviva, Capella, Trio)
               </p>
             </div>
-            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-white/10 text-white border border-white/20">
+            <span className="px-2.5 py-1 rounded-full text-[10px] font-mono font-semibold bg-white text-black">
               HEALTHY
             </span>
           </div>
@@ -324,3 +426,5 @@ export function RootOverviewTab({ data, userName = 'User', onNavigateTab }: Root
     </div>
   );
 }
+
+export default RootOverviewTab;

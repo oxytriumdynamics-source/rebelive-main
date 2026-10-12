@@ -24,27 +24,10 @@ adminClient.interceptors.request.use((config) => {
 adminClient.interceptors.response.use(
   (res) => res,
   async (error) => {
-    const originalRequest = error.config;
-    if (
-      error.response?.status === 401 &&
-      originalRequest &&
-      !originalRequest._retry &&
-      !originalRequest.url?.includes('/login')
-    ) {
-      originalRequest._retry = true;
-      try {
-        const loginRes = await axios.post(`${API_BASE}/admin/test-login`, {
-          email: 'testadmin@rebelive.com',
-        });
-        if (loginRes.data?.data?.accessToken) {
-          const newToken = loginRes.data.data.accessToken;
-          const newUser = loginRes.data.data.user;
-          setAdminSession(newToken, newUser);
-          originalRequest.headers.Authorization = `Bearer ${newToken}`;
-          return adminClient(originalRequest);
-        }
-      } catch {
-        // Fallback
+    // If 401 Unauthorized occurs on protected routes, reject cleanly
+    if (error.response?.status === 401 && typeof window !== 'undefined') {
+      if (!error.config?.url?.includes('/login')) {
+        clearAdminSession();
       }
     }
     return Promise.reject(error);
@@ -77,6 +60,12 @@ export interface AdminDashboardData {
     deliveredOrders: number;
     shiprocketSyncedOrders: number;
     totalRevenue: number;
+    totalContactQueries?: number;
+    newContactQueries?: number;
+    totalCorporateQueries?: number;
+    newCorporateQueries?: number;
+    totalInquiries?: number;
+    newInquiries?: number;
   };
   recentOrders: any[];
   lowStockVariants: any[];
@@ -221,26 +210,21 @@ export function clearAdminSession(): void {
 export async function adminLoginRequest(
   email: string,
   password: string
-): Promise<{ status: string; message: string; email: string; demoOtp?: string }> {
+): Promise<{ status: string; message: string; email: string }> {
   try {
     const res = await adminClient.post('/login-request', { email, password });
     if (res.data?.status === 'success') {
-      return res.data.data ? { ...res.data.data, message: res.data.message } : res.data;
+      return {
+        status: 'success',
+        message: res.data.message || `2FA verification code dispatched to ${email}`,
+        email,
+      };
     }
+    throw new Error(res.data?.message || 'Login request failed');
   } catch (err: any) {
-    if (err.response?.data?.message) {
-      throw new Error(err.response.data.message);
-    }
-    console.warn('Backend /admin/login-request unreachable, using simulated admin OTP:', err);
+    const msg = err.response?.data?.message || err.message || 'Authentication failed. Please verify credentials.';
+    throw new Error(msg);
   }
-
-  // Graceful fallback simulation
-  return {
-    status: 'success',
-    message: `Security 2FA code dispatched to ${email}`,
-    email,
-    demoOtp: '892147',
-  };
 }
 
 /**
@@ -257,61 +241,34 @@ export async function adminVerifyOtp(
       setAdminSession(accessToken, user);
       return { user, accessToken };
     }
+    throw new Error(res.data?.message || 'Verification failed');
   } catch (err: any) {
-    if (err.response?.data?.message) {
-      throw new Error(err.response.data.message);
-    }
-    console.warn('Backend /admin/login-verify-otp unreachable, activating local admin session:', err);
+    const msg = err.response?.data?.message || err.message || 'OTP verification failed. Invalid or expired code.';
+    throw new Error(msg);
   }
-
-  // Graceful fallback session
-  const fallbackUser: AdminUser = {
-    id: 'root-superadmin-01',
-    email,
-    firstName: 'Root',
-    lastName: 'Operator',
-    role: 'SUPERADMIN',
-    emailVerified: true,
-    createdAt: new Date().toISOString(),
-  };
-  const fallbackToken = `rebelive_root_token_${Date.now()}`;
-  setAdminSession(fallbackToken, fallbackUser);
-  return { user: fallbackUser, accessToken: fallbackToken };
 }
 
 /**
- * ⚡ 1-Click Test Admin Login: Bypasses OTP verification for rapid local & test inspection
+ * Admin Self-Service Password Management
+ * Allows authenticated admin/superadmin to change their password
  */
-export async function loginTestAdmin(
-  email: string = 'testadmin@rebelive.com'
-): Promise<{ user: AdminUser; accessToken: string }> {
+export async function changeAdminPassword(
+  currentPassword: string,
+  newPassword: string
+): Promise<{ status: string; message: string }> {
   try {
-    const res = await adminClient.post('/test-login', { email });
-    if (res.data?.status === 'success' && res.data?.data) {
-      const { user, accessToken } = res.data.data;
-      setAdminSession(accessToken, user);
-      return { user, accessToken };
-    }
+    const res = await adminClient.patch('/change-password', {
+      currentPassword,
+      newPassword,
+    });
+    return {
+      status: 'success',
+      message: res.data?.message || 'Password updated successfully.',
+    };
   } catch (err: any) {
-    if (err.response?.data?.message) {
-      console.warn('Backend /admin/test-login notice:', err.response.data.message);
-    }
-    console.warn('Backend unreachable or fallback triggered, using local admin session:', err);
+    const msg = err.response?.data?.message || err.message || 'Failed to update password.';
+    throw new Error(msg);
   }
-
-  // Fallback test admin session if network is offline
-  const fallbackUser: AdminUser = {
-    id: 'testadmin-superadmin-01',
-    email,
-    firstName: 'Test',
-    lastName: 'Admin',
-    role: 'SUPERADMIN',
-    emailVerified: true,
-    createdAt: new Date().toISOString(),
-  };
-  const fallbackToken = `rebelive_test_admin_token_${Date.now()}`;
-  setAdminSession(fallbackToken, fallbackUser);
-  return { user: fallbackUser, accessToken: fallbackToken };
 }
 
 // ─── DASHBOARD & METRICS ───────────────────────────────

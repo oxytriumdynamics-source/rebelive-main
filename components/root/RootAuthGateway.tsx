@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Lock, Mail, ArrowRight, KeyRound, AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Zap, ShieldCheck } from 'lucide-react';
-import { adminLoginRequest, adminVerifyOtp, loginTestAdmin, AdminUser } from '@/lib/adminApi';
+import { Lock, Mail, ArrowRight, KeyRound, AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, ShieldCheck } from 'lucide-react';
+import { adminLoginRequest, adminVerifyOtp, AdminUser } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
 interface RootAuthGatewayProps {
@@ -14,69 +14,42 @@ const SANS = "'Poppins', sans-serif";
 
 export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
   const [step, setStep] = useState<'credentials' | 'otp'>('credentials');
-  const [email, setEmail] = useState('testadmin@rebelive.com');
-  const [password, setPassword] = useState('AdminPassword123!');
+  const [email, setEmail] = useState('oxytriumdynamics@gmail.com');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [otp, setOtp] = useState('');
-  const [demoOtpCode, setDemoOtpCode] = useState<string | null>('892147');
-  const [skipOtpTest, setSkipOtpTest] = useState(true);
 
   const [isLoading, setIsLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const [infoMsg, setInfoMsg] = useState('');
 
-  // Direct Test Admin Login
-  const handleTestAdminLogin = async (targetEmail = 'testadmin@rebelive.com') => {
-    setIsLoading(true);
-    setErrorMsg('');
-    setInfoMsg('');
-    try {
-      const { user, accessToken } = await loginTestAdmin(targetEmail);
-      setInfoMsg('Test Admin authorization granted. Launching terminal...');
-      showAdminToast(`Authorized as ${user.email}`, 'success', 'Access Granted');
-      setTimeout(() => {
-        onAuthenticated(user, accessToken);
-      }, 400);
-    } catch (err: any) {
-      const msg = err.message || 'Failed to authenticate test admin.';
-      setErrorMsg(msg);
-      showAdminToast(msg, 'error', 'Auth Failed');
-      setIsLoading(false);
-    }
-  };
-
-  // Handle Step 1: Submit Credentials
+  // Handle Step 1: Submit Email and Password
   const handleCredentialsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setInfoMsg('');
 
     if (!email.trim() || !password) {
-      setErrorMsg('Please enter both admin email and password.');
-      return;
-    }
-
-    if (skipOtpTest) {
-      await handleTestAdminLogin(email.trim());
+      setErrorMsg('Please enter both administrator email and password.');
       return;
     }
 
     setIsLoading(true);
     try {
       const res = await adminLoginRequest(email.trim(), password);
-      if (res.demoOtp) {
-        setDemoOtpCode(res.demoOtp);
-      }
-      setInfoMsg(res.message || 'Security code generated and dispatched.');
+      setInfoMsg(res.message || 'Security verification code dispatched to your email.');
       setStep('otp');
+      showAdminToast('2FA verification code sent to your email.', 'info', 'OTP Dispatched');
     } catch (err: any) {
-      setErrorMsg(err.message || 'Authentication rejected. Verify email and master password.');
+      const msg = err.message || 'Authentication failed. Please verify credentials.';
+      setErrorMsg(msg);
+      showAdminToast(msg, 'error', 'Login Failed');
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Handle Step 2: Submit OTP
+  // Handle Step 2: Submit 6-digit OTP
   const handleOtpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
@@ -89,24 +62,30 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
     setIsLoading(true);
     try {
       const { user, accessToken } = await adminVerifyOtp(email.trim(), otp.trim());
-      showAdminToast(`Verification successful for ${user.email}`, 'success', 'Access Granted');
+      showAdminToast(`Authenticated successfully as ${user.email}`, 'success', 'Access Granted');
       onAuthenticated(user, accessToken);
     } catch (err: any) {
       const msg = err.message || 'Verification failed. Invalid or expired OTP.';
       setErrorMsg(msg);
-      showAdminToast(msg, 'error', 'OTP Verification Failed');
+      showAdminToast(msg, 'error', 'Verification Failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleResendOtp = async () => {
+    if (!password) {
+      setErrorMsg('Session expired. Please re-enter your password.');
+      setStep('credentials');
+      return;
+    }
+
     setIsLoading(true);
     setErrorMsg('');
     try {
-      const res = await adminLoginRequest(email.trim(), password || 'rebelive_root_2026');
-      if (res.demoOtp) setDemoOtpCode(res.demoOtp);
-      setInfoMsg('A new 6-digit verification code has been dispatched.');
+      const res = await adminLoginRequest(email.trim(), password);
+      setInfoMsg(res.message || 'A new 6-digit verification code has been dispatched.');
+      showAdminToast('A new 6-digit code has been sent to your email.', 'info', 'OTP Resent');
     } catch (err: any) {
       setErrorMsg(err.message || 'Failed to resend code.');
     } finally {
@@ -119,6 +98,9 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
       style={{ fontFamily: SANS }}
       className="min-h-screen bg-black text-white flex flex-col justify-center items-center p-4 relative overflow-hidden"
     >
+      {/* Background Ambience */}
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,255,255,0.03)_0%,transparent_70%)] pointer-events-none" />
+
       {/* Security Gateway Card */}
       <div className="w-full max-w-md bg-[#0e0e0e] border border-white/10 rounded-3xl p-6 sm:p-9 shadow-2xl relative z-10">
         {/* Terminal Header */}
@@ -131,61 +113,27 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-black uppercase tracking-tight text-white">
-            {step === 'credentials' ? 'ADMIN LOGIN' : 'VERIFY PASSCODE'}
+            {step === 'credentials' ? 'ADMIN LOGIN' : 'ENTER 2FA CODE'}
           </h1>
           <p className="text-xs text-white/50 tracking-wider">
             {step === 'credentials'
-              ? 'Enter root operator credentials to initiate secure session.'
-              : `A 6-digit authorization code was dispatched to ${email}.`}
+              ? 'Enter administrator credentials to initiate 2-factor authentication.'
+              : `Enter the 6-digit verification code sent to ${email}.`}
           </p>
-        </div>
-
-        {/* Quick Test Admin 1-Click Banner */}
-        <div className="mb-6 p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex flex-col gap-2.5">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Zap className="w-4 h-4 text-white" />
-              <span className="text-xs font-mono font-bold text-white">TEST ADMIN SHORTCUT</span>
-            </div>
-            <span className="text-[9px] font-mono text-white/80 bg-white/10 px-2 py-0.5 rounded-full border border-white/20 font-semibold">
-              NO OTP NEEDED
-            </span>
-          </div>
-          <p className="text-[11px] text-white/60 leading-relaxed font-sans">
-            Instantly unlock root terminal as <span className="text-white font-mono font-bold">testadmin@rebelive.com</span> (SUPERADMIN).
-          </p>
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => handleTestAdminLogin('testadmin@rebelive.com')}
-            className="w-full py-2.5 rounded-xl bg-white hover:bg-neutral-200 text-black font-mono font-extrabold text-xs uppercase tracking-wider transition-all flex items-center justify-center gap-2 cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.98] disabled:opacity-50"
-          >
-            {isLoading ? (
-              <>
-                <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                <span>Authorizing Test Admin...</span>
-              </>
-            ) : (
-              <>
-                <Zap className="w-3.5 h-3.5 fill-black" />
-                <span>1-Click Test Admin Login</span>
-              </>
-            )}
-          </button>
         </div>
 
         {/* Feedback Messages */}
         {errorMsg && (
-          <div className="mb-5 p-3 rounded-xl bg-white/10 border border-white/20 text-white text-xs flex items-center gap-2 animate-in fade-in">
-            <AlertCircle className="w-4 h-4 shrink-0 text-white/70" />
-            <span>{errorMsg}</span>
+          <div className="mb-5 p-3.5 rounded-xl bg-white/10 border border-white/20 text-white text-xs flex items-center gap-2.5 animate-in fade-in">
+            <AlertCircle className="w-4 h-4 shrink-0 text-white" />
+            <span className="font-mono">{errorMsg}</span>
           </div>
         )}
 
         {infoMsg && !errorMsg && (
-          <div className="mb-5 p-3 rounded-xl bg-white/10 border border-white/20 text-white text-xs flex items-center gap-2 animate-in fade-in">
+          <div className="mb-5 p-3.5 rounded-xl bg-white/5 border border-white/15 text-white text-xs flex items-center gap-2.5 animate-in fade-in">
             <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
-            <span>{infoMsg}</span>
+            <span className="font-mono">{infoMsg}</span>
           </div>
         )}
 
@@ -201,10 +149,10 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
                 <input
                   type="email"
                   required
-                  placeholder="root@rebelive.co"
+                  placeholder="admin@domain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/15 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40 transition-colors"
+                  className="w-full bg-white/[0.04] border border-white/15 rounded-xl py-3 pl-10 pr-4 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors font-mono"
                 />
               </div>
             </div>
@@ -214,17 +162,17 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
                 <label className="text-[10px] font-mono text-white/60 uppercase tracking-widest block">
                   SECURITY PASSWORD
                 </label>
-                <span className="text-[9px] font-mono text-white/40">MASTER ACCESS</span>
+                <span className="text-[9px] font-mono text-white/40">SUPERADMIN / ADMIN</span>
               </div>
               <div className="relative">
                 <KeyRound className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
-                  placeholder="••••••••••••"
+                  placeholder="Enter administrator password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full bg-white/[0.04] border border-white/15 rounded-xl py-3 pl-10 pr-10 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40 transition-colors font-mono"
+                  className="w-full bg-white/[0.04] border border-white/15 rounded-xl py-3 pl-10 pr-10 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white transition-colors font-mono"
                 />
                 <button
                   type="button"
@@ -236,24 +184,6 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
               </div>
             </div>
 
-            {/* Skip OTP test toggle */}
-            <div className="flex items-center justify-between py-1 px-1">
-              <label className="flex items-center gap-2 cursor-pointer text-xs text-white/70 select-none">
-                <input
-                  type="checkbox"
-                  checked={skipOtpTest}
-                  onChange={(e) => setSkipOtpTest(e.target.checked)}
-                  className="rounded border-white/20 bg-white/5 text-white focus:ring-0 cursor-pointer"
-                />
-                <span>Skip 2FA OTP verification (Test Mode)</span>
-              </label>
-              {skipOtpTest && (
-                <span className="text-[10px] font-mono text-white font-bold bg-white/10 px-2 py-0.5 rounded border border-white/20">
-                  BYPASS ACTIVE
-                </span>
-              )}
-            </div>
-
             <button
               type="submit"
               disabled={isLoading}
@@ -262,12 +192,7 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>{skipOtpTest ? 'Authorizing Admin...' : 'Verifying Credentials...'}</span>
-                </>
-              ) : skipOtpTest ? (
-                <>
-                  <Zap className="w-4 h-4 fill-black" />
-                  <span>Login Directly (No OTP)</span>
+                  <span>Verifying Credentials...</span>
                 </>
               ) : (
                 <>
@@ -283,24 +208,16 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
             <div className="space-y-2">
               <div className="flex items-center justify-between">
                 <label className="text-[10px] font-mono text-white/60 uppercase tracking-widest block">
-                  6-DIGIT PASSCODE
+                  6-DIGIT EMAIL CODE
                 </label>
-                {demoOtpCode && (
-                  <button
-                    type="button"
-                    onClick={() => setOtp(demoOtpCode)}
-                    className="text-[10px] font-mono text-white/70 hover:underline cursor-pointer"
-                  >
-                    Quick-Fill: {demoOtpCode}
-                  </button>
-                )}
+                <span className="text-[9px] font-mono text-white/40">EXP: 10 MIN</span>
               </div>
 
               <input
                 type="text"
                 required
                 maxLength={6}
-                placeholder="000000"
+                placeholder="••••••"
                 value={otp}
                 onChange={(e) => setOtp(e.target.value.replace(/\D/g, ''))}
                 autoFocus
@@ -316,25 +233,14 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
               {isLoading ? (
                 <>
                   <RefreshCw className="w-4 h-4 animate-spin" />
-                  <span>Validating Security Token...</span>
+                  <span>Validating OTP Code...</span>
                 </>
               ) : (
                 <>
                   <ShieldCheck className="w-4 h-4" />
-                  <span>Unlock Root Dashboard</span>
+                  <span>Verify & Unlock Dashboard</span>
                 </>
               )}
-            </button>
-
-            {/* Test Mode Bypass on Step 2 */}
-            <button
-              type="button"
-              onClick={() => handleTestAdminLogin(email)}
-              disabled={isLoading}
-              className="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/20 text-white font-mono text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-            >
-              <Zap className="w-3.5 h-3.5 fill-white" />
-              <span>Bypass OTP & Unlock (Test Mode)</span>
             </button>
 
             <div className="flex items-center justify-between pt-2 text-xs">
@@ -343,17 +249,18 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
                 onClick={() => {
                   setStep('credentials');
                   setErrorMsg('');
+                  setOtp('');
                 }}
                 className="text-white/50 hover:text-white transition-colors cursor-pointer text-[11px]"
               >
-                ← Back to Password
+                ← Back to Login
               </button>
 
               <button
                 type="button"
                 onClick={handleResendOtp}
                 disabled={isLoading}
-                className="text-white/70 hover:text-white transition-colors cursor-pointer text-[11px] font-mono"
+                className="text-white/70 hover:text-white transition-colors cursor-pointer text-[11px] font-mono underline"
               >
                 Resend Code
               </button>

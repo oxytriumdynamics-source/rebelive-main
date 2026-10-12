@@ -15,7 +15,7 @@ import {
   CreditCard,
   ShoppingBag,
 } from 'lucide-react';
-import { fetchAdminUsers, updateAdminUser, AdminUser } from '@/lib/adminApi';
+import { fetchAdminUsers, updateAdminUser, getStoredAdminUser, AdminUser } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -27,6 +27,7 @@ export function RootUsersTab() {
   const [search, setSearch] = useState('');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [feedback, setFeedback] = useState('');
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
 
   const loadUsers = async () => {
     setIsLoading(true);
@@ -42,6 +43,7 @@ export function RootUsersTab() {
   };
 
   useEffect(() => {
+    setCurrentAdmin(getStoredAdminUser());
     loadUsers();
   }, []);
 
@@ -51,6 +53,16 @@ export function RootUsersTab() {
   };
 
   const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN') => {
+    if (currentAdmin?.role !== 'SUPERADMIN') {
+      showAdminToast('Only Super Admin has authority to assign or change user roles.', 'error', 'Permission Denied');
+      return;
+    }
+
+    if (selectedUser?.email === 'oxytriumdynamics@gmail.com') {
+      showAdminToast('The master Super Admin account cannot be modified.', 'error', 'Protected Account');
+      return;
+    }
+
     try {
       const updated = await updateAdminUser(userId, { role: newRole });
       setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
@@ -219,24 +231,61 @@ export function RootUsersTab() {
                 </p>
               </div>
 
-              {/* Role Toggle */}
+              {/* Role & Privilege Management */}
               <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
-                <span className="text-[10px] font-mono text-white/40 uppercase block">Privilege Elevation</span>
-                <div className="flex gap-2">
-                  {(['CUSTOMER', 'ADMIN', 'SUPERADMIN'] as const).map((r) => (
-                    <button
-                      key={r}
-                      onClick={() => handleRoleChange(selectedUser.id, r)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
-                        selectedUser.role === r
-                          ? 'bg-white text-black font-extrabold shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                          : 'bg-white/5 text-white/60 hover:bg-white/10'
-                      }`}
-                    >
-                      {r}
-                    </button>
-                  ))}
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-white/40 uppercase block">
+                    Role & Privilege Management
+                  </span>
+                  {currentAdmin?.role === 'SUPERADMIN' ? (
+                    <span className="text-[9px] font-mono text-white bg-white/10 px-2 py-0.5 rounded border border-white/20">
+                      SUPER ADMIN CONTROLS
+                    </span>
+                  ) : (
+                    <span className="text-[9px] font-mono text-white/40">
+                      READ ONLY
+                    </span>
+                  )}
                 </div>
+
+                {selectedUser.email === 'oxytriumdynamics@gmail.com' ? (
+                  <div className="p-2.5 rounded-lg bg-white/10 border border-white/20 flex items-center gap-2">
+                    <ShieldCheck className="w-4 h-4 text-white shrink-0" />
+                    <span className="text-xs font-mono font-bold text-white">
+                      MASTER SUPER ADMIN (Protected & Immutable)
+                    </span>
+                  </div>
+                ) : currentAdmin?.role === 'SUPERADMIN' ? (
+                  <div className="space-y-2">
+                    <div className="flex gap-2">
+                      {(['CUSTOMER', 'ADMIN'] as const).map((r) => (
+                        <button
+                          key={r}
+                          onClick={() => handleRoleChange(selectedUser.id, r)}
+                          className={`flex-1 px-3 py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                            selectedUser.role === r
+                              ? 'bg-white text-black font-extrabold shadow-sm'
+                              : 'bg-white/5 text-white/60 hover:bg-white/10'
+                          }`}
+                        >
+                          {r === 'ADMIN' ? 'Make Admin' : 'Customer'}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="text-[10px] font-mono text-white/40 leading-relaxed">
+                      Admins have operational access to products, orders, queries, and inventory, but cannot assign roles or change other admin passwords.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-between p-2.5 rounded-lg bg-white/5 border border-white/10">
+                    <span className="font-mono text-xs font-bold text-white uppercase">
+                      {selectedUser.role}
+                    </span>
+                    <span className="text-[10px] font-mono text-white/40">
+                      Only Super Admin can assign or change roles
+                    </span>
+                  </div>
+                )}
               </div>
 
               {/* Saved Addresses */}

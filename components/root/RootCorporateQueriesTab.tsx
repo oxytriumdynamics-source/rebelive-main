@@ -43,37 +43,37 @@ const STATUS_CONFIG: Record<
 > = {
   NEW: {
     label: 'New',
-    bg: 'bg-emerald-500/10',
-    text: 'text-emerald-300',
-    border: 'border-emerald-500/30',
+    bg: 'bg-white',
+    text: 'text-black font-bold',
+    border: 'border-white',
     icon: Clock,
   },
   VIEWED: {
     label: 'Viewed',
-    bg: 'bg-amber-500/10',
-    text: 'text-amber-300',
-    border: 'border-amber-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
     icon: Eye,
   },
   IN_PROCESS: {
     label: 'In Process',
-    bg: 'bg-indigo-500/10',
-    text: 'text-indigo-300',
-    border: 'border-indigo-500/30',
+    bg: 'bg-white/20',
+    text: 'text-white',
+    border: 'border-white/30',
     icon: Zap,
   },
   RESOLVED: {
     label: 'Resolved',
-    bg: 'bg-teal-500/10',
-    text: 'text-teal-300',
-    border: 'border-teal-500/30',
+    bg: 'bg-white/10',
+    text: 'text-white',
+    border: 'border-white/20',
     icon: CheckCircle2,
   },
   IGNORED: {
     label: 'Ignored',
-    bg: 'bg-neutral-800',
-    text: 'text-neutral-400',
-    border: 'border-neutral-700',
+    bg: 'bg-white/5',
+    text: 'text-white/40',
+    border: 'border-white/10',
     icon: Slash,
   },
 };
@@ -175,12 +175,12 @@ export function RootCorporateQueriesTab() {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
         <div>
           <div className="flex items-center gap-2">
-            <span className="font-mono text-[10px] tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+            <span className="font-mono text-[10px] tracking-widest text-white/70 uppercase bg-white/5 px-2 py-0.5 rounded border border-white/10">
               B2B & INSTITUTIONAL LEADS
             </span>
           </div>
           <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight mt-1 flex items-center gap-2.5">
-            <Building2 className="w-5 h-5 text-emerald-400" />
+            <Building2 className="w-5 h-5 text-white" />
             Corporate Inquiries
           </h2>
           <p className="text-xs text-white/50 font-mono mt-0.5">
@@ -203,12 +203,12 @@ export function RootCorporateQueriesTab() {
       {/* ─── KPI Stats Row ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {[
-          { label: 'Total Leads', count: counts.total, filter: 'ALL', color: 'border-white/10 text-white' },
-          { label: 'New Leads', count: counts.new, filter: 'NEW', color: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' },
-          { label: 'Viewed', count: counts.viewed, filter: 'VIEWED', color: 'border-amber-500/30 text-amber-400 bg-amber-500/5' },
-          { label: 'In Process', count: counts.in_process, filter: 'IN_PROCESS', color: 'border-indigo-500/30 text-indigo-400 bg-indigo-500/5' },
-          { label: 'Resolved', count: counts.resolved, filter: 'RESOLVED', color: 'border-teal-500/30 text-teal-400 bg-teal-500/5' },
-          { label: 'Ignored', count: counts.ignored, filter: 'IGNORED', color: 'border-neutral-700 text-neutral-400 bg-neutral-900' },
+          { label: 'Total Leads', count: counts.total, filter: 'ALL', color: 'border-white/10 text-white bg-white/[0.02]' },
+          { label: 'New Leads', count: counts.new, filter: 'NEW', color: 'border-white/20 text-white bg-white/5' },
+          { label: 'Viewed', count: counts.viewed, filter: 'VIEWED', color: 'border-white/15 text-white/90 bg-white/[0.03]' },
+          { label: 'In Process', count: counts.in_process, filter: 'IN_PROCESS', color: 'border-white/20 text-white bg-white/5' },
+          { label: 'Resolved', count: counts.resolved, filter: 'RESOLVED', color: 'border-white/25 text-white bg-white/[0.04]' },
+          { label: 'Ignored', count: counts.ignored, filter: 'IGNORED', color: 'border-white/10 text-white/50 bg-black' },
         ].map((item) => (
           <button
             key={item.label}
@@ -260,7 +260,7 @@ export function RootCorporateQueriesTab() {
       {/* ─── Queries List / Table ─── */}
       {isLoading ? (
         <div className="p-12 rounded-2xl bg-[#0b0b0b] border border-white/10 text-center font-mono text-xs text-white/40">
-          <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-400" />
+          <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-white" />
           Loading corporate inquiries...
         </div>
       ) : queries.length === 0 ? (
@@ -296,7 +296,7 @@ export function RootCorporateQueriesTab() {
                 {/* Header Row: Company name, Ref ID, Contact & Status */}
                 <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
                   <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center font-black text-emerald-400 font-mono shrink-0">
+                    <div className="w-11 h-11 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center font-black text-white font-mono shrink-0">
                       <Building2 className="w-5 h-5" />
                     </div>
 
@@ -306,7 +306,7 @@ export function RootCorporateQueriesTab() {
                           {q.companyName}
                         </h4>
                         {q.refId && (
-                          <span className="font-mono text-[10px] text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                          <span className="font-mono text-[10px] text-white/60 bg-white/5 border border-white/10 px-2 py-0.5 rounded">
                             {q.refId}
                           </span>
                         )}
@@ -381,7 +381,7 @@ export function RootCorporateQueriesTab() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs font-mono">
                   <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
                     <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
-                      <Boxes className="w-3 h-3 text-emerald-400" />
+                      <Boxes className="w-3 h-3 text-white/60" />
                       Approx Quantity:
                     </span>
                     <span className="font-bold text-white text-[11px]">
@@ -391,7 +391,7 @@ export function RootCorporateQueriesTab() {
 
                   <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
                     <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
-                      <Briefcase className="w-3 h-3 text-emerald-400" />
+                      <Briefcase className="w-3 h-3 text-white/60" />
                       Requirement:
                     </span>
                     <span className="font-bold text-white text-[11px] truncate ml-2">
@@ -401,15 +401,15 @@ export function RootCorporateQueriesTab() {
 
                   <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
                     <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
-                      <Mail className="w-3 h-3 text-emerald-400" />
+                      <Mail className="w-3 h-3 text-white/60" />
                       Direct Contact:
                     </span>
                     <div className="flex items-center gap-2">
-                      <a href={`mailto:${q.email}`} className="text-emerald-400 hover:underline text-[11px]">
+                      <a href={`mailto:${q.email}`} className="text-white hover:underline text-[11px]">
                         Email
                       </a>
                       {q.phone && (
-                        <a href={`tel:${q.phone}`} className="text-emerald-400 hover:underline text-[11px]">
+                        <a href={`tel:${q.phone}`} className="text-white hover:underline text-[11px]">
                           Call
                         </a>
                       )}
@@ -426,10 +426,10 @@ export function RootCorporateQueriesTab() {
 
                 {/* Admin Note if present */}
                 {q.adminNote && (
-                  <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-200/90 font-mono flex items-start gap-2">
-                    <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                  <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-[11px] text-white/80 font-mono flex items-start gap-2">
+                    <FileText className="w-3.5 h-3.5 text-white/60 shrink-0 mt-0.5" />
                     <div>
-                      <span className="font-bold text-amber-300">Internal Admin Note: </span>
+                      <span className="font-bold text-white">Internal Admin Note: </span>
                       {q.adminNote}
                     </div>
                   </div>
@@ -447,7 +447,7 @@ export function RootCorporateQueriesTab() {
             {/* Modal Header */}
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div>
-                <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-400">
+                <span className="font-mono text-[9px] uppercase tracking-widest text-white/60">
                   CORPORATE ALLOCATION DOSSIER
                 </span>
                 <h3 className="text-lg font-bold text-white uppercase flex items-center gap-2">
@@ -487,7 +487,7 @@ export function RootCorporateQueriesTab() {
                 <p className="text-[10px] text-white/40 uppercase">Email Address</p>
                 <a
                   href={`mailto:${selectedQuery.email}`}
-                  className="font-semibold text-emerald-400 hover:underline block truncate mt-0.5"
+                  className="font-semibold text-white hover:underline block truncate mt-0.5"
                 >
                   {selectedQuery.email}
                 </a>
@@ -497,7 +497,7 @@ export function RootCorporateQueriesTab() {
                 <p className="text-[10px] text-white/40 uppercase">Phone / Mobile</p>
                 <a
                   href={`tel:${selectedQuery.phone}`}
-                  className="font-semibold text-emerald-400 hover:underline block truncate mt-0.5"
+                  className="font-semibold text-white hover:underline block truncate mt-0.5"
                 >
                   {selectedQuery.phone ? `+91 ${selectedQuery.phone}` : 'Not provided'}
                 </a>
