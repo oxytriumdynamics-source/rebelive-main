@@ -30,6 +30,7 @@ import {
   trackOrderShiprocket,
   AdminOrder,
 } from '@/lib/adminApi';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -89,9 +90,10 @@ export default function OrderDetailsPage() {
       const updated = await updateOrderStatus(order.id, newStatus);
       setOrder((prev) => (prev ? { ...prev, status: updated.status } : updated));
       setActionSuccessMsg(`Order status updated to ${newStatus}`);
+      showAdminToast(`Order status updated to ${newStatus}`, 'success', 'Order Updated');
       setTimeout(() => setActionSuccessMsg(''), 3000);
     } catch (err: any) {
-      alert(err.message || 'Failed to update order status');
+      showAdminToast(err.message || 'Failed to update order status', 'error', 'Update Failed');
     }
   };
 
@@ -110,10 +112,11 @@ export default function OrderDetailsPage() {
           : prev
       );
       setActionSuccessMsg('Consignment successfully dispatched to Shiprocket!');
-      setTimeout(() => setActionSuccessMsg(''), 4000);
+      showAdminToast(`Dispatched to Shiprocket! AWB: ${res.awbCode}`, 'success', 'Order Dispatched');
+      setTimeout(() => setActionSuccessMsg(''), 3000);
       loadTracking(order.id);
     } catch (err: any) {
-      alert(err.message || 'Failed to dispatch to Shiprocket');
+      showAdminToast(err.message || 'Failed to dispatch to Shiprocket', 'error', 'Dispatch Error');
     } finally {
       setIsDispatching(false);
     }
@@ -122,6 +125,7 @@ export default function OrderDetailsPage() {
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
     setCopiedAwb(true);
+    showAdminToast(`AWB ${text} copied to clipboard`, 'info', 'Copied');
     setTimeout(() => setCopiedAwb(false), 2000);
   };
 

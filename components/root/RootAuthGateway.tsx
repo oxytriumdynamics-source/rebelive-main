@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import { Lock, Mail, ArrowRight, KeyRound, AlertCircle, RefreshCw, Eye, EyeOff, CheckCircle2, Zap, ShieldCheck } from 'lucide-react';
 import { adminLoginRequest, adminVerifyOtp, loginTestAdmin, AdminUser } from '@/lib/adminApi';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 interface RootAuthGatewayProps {
   onAuthenticated: (user: AdminUser, token: string) => void;
@@ -32,11 +33,14 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
     try {
       const { user, accessToken } = await loginTestAdmin(targetEmail);
       setInfoMsg('Test Admin authorization granted. Launching terminal...');
+      showAdminToast(`Authorized as ${user.email}`, 'success', 'Access Granted');
       setTimeout(() => {
         onAuthenticated(user, accessToken);
       }, 400);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Failed to authenticate test admin.');
+      const msg = err.message || 'Failed to authenticate test admin.';
+      setErrorMsg(msg);
+      showAdminToast(msg, 'error', 'Auth Failed');
       setIsLoading(false);
     }
   };
@@ -85,9 +89,12 @@ export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {
     setIsLoading(true);
     try {
       const { user, accessToken } = await adminVerifyOtp(email.trim(), otp.trim());
+      showAdminToast(`Verification successful for ${user.email}`, 'success', 'Access Granted');
       onAuthenticated(user, accessToken);
     } catch (err: any) {
-      setErrorMsg(err.message || 'Verification failed. Invalid or expired OTP.');
+      const msg = err.message || 'Verification failed. Invalid or expired OTP.';
+      setErrorMsg(msg);
+      showAdminToast(msg, 'error', 'OTP Verification Failed');
     } finally {
       setIsLoading(false);
     }

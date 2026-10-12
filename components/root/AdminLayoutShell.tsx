@@ -18,6 +18,8 @@ import {
   Bell,
   User as UserIcon,
   Quote,
+  Building2,
+  Mail,
 } from 'lucide-react';
 import {
   getStoredAdminToken,
@@ -26,14 +28,15 @@ import {
   AdminUser,
 } from '@/lib/adminApi';
 import { RootAuthGateway } from '@/components/root/RootAuthGateway';
+import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 interface AdminLayoutShellProps {
-  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket';
+  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket';
   children: React.ReactNode;
-  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket') => void;
+  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket') => void;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
@@ -72,6 +75,7 @@ export function AdminLayoutShell({
   const handleLogout = () => {
     clearAdminSession();
     setAdminUser(null);
+    showAdminToast('Signed out of Admin console.', 'info', 'Session Ended');
     router.push('/root');
   };
 
@@ -94,14 +98,16 @@ export function AdminLayoutShell({
 
   const NAV_TABS = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
-    { id: 'orders', label: 'My Tasks / Orders', icon: Package, href: '/root' },
-    { id: 'products', label: 'Products / Catalog', icon: Boxes, href: '/root' },
+    { id: 'orders', label: 'My Tasks / Orders', icon: Package, href: '/root?tab=orders' },
+    { id: 'products', label: 'Products / Catalog', icon: Boxes, href: '/root?tab=products' },
     { id: 'testimonials', label: 'Testimonials / Voices', icon: Quote, href: '/root?tab=testimonials' },
-    { id: 'users', label: 'Messages / Users', icon: Users, href: '/root' },
-    { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck, href: '/root' },
+    { id: 'contact-queries', label: 'Contact Queries', icon: Mail, href: '/root?tab=contact-queries' },
+    { id: 'corporate-queries', label: 'Corporate & Bulk', icon: Building2, href: '/root?tab=corporate-queries' },
+    { id: 'users', label: 'Messages / Users', icon: Users, href: '/root?tab=users' },
+    { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck, href: '/root?tab=shiprocket' },
   ] as const;
 
-  const handleTabClick = (tabId: 'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket') => {
+  const handleTabClick = (tabId: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket') => {
     setMobileMenuOpen(false);
     if (onTabChange) {
       onTabChange(tabId);
@@ -120,7 +126,8 @@ export function AdminLayoutShell({
   };
 
   return (
-    <div style={{ fontFamily: SANS }} className="min-h-screen bg-black text-white flex">
+    <AdminToastProvider>
+      <div style={{ fontFamily: SANS }} className="min-h-screen bg-black text-white flex">
       {/* ─── Mobile Sidebar Overlay Backdrop ─── */}
       {mobileMenuOpen && (
         <div
@@ -291,5 +298,6 @@ export function AdminLayoutShell({
         </main>
       </div>
     </div>
+    </AdminToastProvider>
   );
 }

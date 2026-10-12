@@ -3,5 +3,5 @@
 import ProductEditPage from '../[id]/page';
 
 export default function NewProductPage() {
-  return <ProductEditPage />;
+  return <ProductEditPage initialId="new" />;
 }

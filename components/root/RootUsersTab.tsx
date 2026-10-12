@@ -16,6 +16,7 @@ import {
   ShoppingBag,
 } from 'lucide-react';
 import { fetchAdminUsers, updateAdminUser, AdminUser } from '@/lib/adminApi';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -57,9 +58,10 @@ export function RootUsersTab() {
         setSelectedUser((prev) => (prev ? { ...prev, role: updated.role } : null));
       }
       setFeedback(`User role updated to ${newRole}`);
+      showAdminToast(`User role updated to ${newRole}`, 'success', 'Role Updated');
       setTimeout(() => setFeedback(''), 3000);
     } catch (err: any) {
-      alert(err.message || 'Error updating user role');
+      showAdminToast(err.message || 'Error updating user role', 'error', 'Update Failed');
     }
   };
 

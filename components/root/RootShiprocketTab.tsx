@@ -17,6 +17,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { trackShipment, TrackingResult } from '@/lib/shiprocketApi';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -35,8 +36,10 @@ export function RootShiprocketTab() {
     try {
       const res = await trackShipment(searchAwb.trim());
       setTrackingResult(res);
+      showAdminToast(`Tracking located for ${res.orderNumber} (${res.currentStatus})`, 'success', 'Shipment Found');
     } catch (err: any) {
       setSearchError(err.message || 'Tracking identifier not located.');
+      showAdminToast(err.message || 'Tracking identifier not located.', 'error', 'Lookup Failed');
     } finally {
       setIsSearching(false);
     }

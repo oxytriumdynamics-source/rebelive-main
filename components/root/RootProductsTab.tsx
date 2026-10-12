@@ -33,6 +33,7 @@ import {
   uploadProductImage,
   AdminProduct,
 } from '@/lib/adminApi';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -117,13 +118,16 @@ export function RootProductsTab() {
         const finalUrl = res.secure_url || res.url;
         setCanImage(finalUrl);
         setUploadSuccessMessage('Uploaded to Cloudinary CDN successfully!');
-        setTimeout(() => setUploadSuccessMessage(null), 4000);
+        showAdminToast('Product image uploaded to Cloudinary CDN', 'success', 'Media Uploaded');
+        setTimeout(() => setUploadSuccessMessage(null), 3000);
       } else {
         throw new Error('Upload returned empty image URL');
       }
     } catch (err: any) {
       console.error('Image upload failed:', err);
-      setUploadError(err.response?.data?.message || err.message || 'Failed to upload to Cloudinary');
+      const errMsg = err.response?.data?.message || err.message || 'Failed to upload to Cloudinary';
+      setUploadError(errMsg);
+      showAdminToast(errMsg, 'error', 'Upload Failed');
     } finally {
       setIsUploadingImage(false);
     }
@@ -327,16 +331,18 @@ export function RootProductsTab() {
       if (editingProduct) {
         await updateAdminProduct(editingProduct.id, payload);
         setFeedbackMsg(`Product "${name}" updated successfully`);
+        showAdminToast(`Product "${name}" updated successfully`, 'success', 'Product Updated');
       } else {
         await createAdminProduct(payload);
         setFeedbackMsg(`New product "${name}" created with 4 pack variants`);
+        showAdminToast(`New product "${name}" created with 4 pack variants`, 'success', 'Product Created');
       }
 
       setIsModalOpen(false);
       loadProducts();
-      setTimeout(() => setFeedbackMsg(''), 4000);
+      setTimeout(() => setFeedbackMsg(''), 3000);
     } catch (err: any) {
-      alert(err.message || 'Error saving product');
+      showAdminToast(err.message || 'Error saving product', 'error', 'Save Failed');
     } finally {
       setIsSubmitting(false);
     }
@@ -347,10 +353,11 @@ export function RootProductsTab() {
     try {
       await deleteAdminProduct(prodId);
       setFeedbackMsg(`Product "${prodName}" deactivated`);
+      showAdminToast(`Product "${prodName}" deactivated`, 'success', 'Product Deactivated');
       loadProducts();
-      setTimeout(() => setFeedbackMsg(''), 4000);
+      setTimeout(() => setFeedbackMsg(''), 3000);
     } catch (err: any) {
-      alert(err.message || 'Error deleting product');
+      showAdminToast(err.message || 'Error deleting product', 'error', 'Delete Failed');
     }
   };
 

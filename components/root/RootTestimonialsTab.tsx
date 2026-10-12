@@ -30,6 +30,7 @@ import {
   AdminTestimonial,
 } from '@/lib/adminApi';
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
+import { showAdminToast } from './AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
@@ -153,16 +154,13 @@ export function RootTestimonialsTab() {
       const secureUrl = res.secure_url || res.url;
       setImage(secureUrl);
 
-      setFeedback({
-        type: 'success',
-        message: `Image compressed & uploaded to Cloudinary CDN! (${formatFileSize(
-          compressed.compressedSize
-        )})`,
-      });
-      setTimeout(() => setFeedback(null), 3500);
+      showAdminToast(
+        `Image compressed & uploaded to Cloudinary CDN! (${formatFileSize(compressed.compressedSize)})`,
+        'success'
+      );
     } catch (err: any) {
       console.error('Image upload failed:', err);
-      setFeedback({ type: 'error', message: err.message || 'Image upload failed' });
+      showAdminToast(err.message || 'Image upload failed', 'error');
     } finally {
       setIsUploading(false);
     }
@@ -172,11 +170,11 @@ export function RootTestimonialsTab() {
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!name.trim()) {
-      alert('Rebel name is required');
+      showAdminToast('Rebel name is required', 'warning');
       return;
     }
     if (!quote.trim()) {
-      alert('Testimonial quote is required');
+      showAdminToast('Testimonial quote is required', 'warning');
       return;
     }
 
@@ -195,18 +193,17 @@ export function RootTestimonialsTab() {
 
       if (editingItem) {
         await updateAdminTestimonial(editingItem.id, payload);
-        setFeedback({ type: 'success', message: `Testimonial for ${name} updated successfully!` });
+        showAdminToast(`Testimonial for ${name} updated successfully!`, 'success');
       } else {
         await createAdminTestimonial(payload);
-        setFeedback({ type: 'success', message: `New testimonial for ${name} created!` });
+        showAdminToast(`New testimonial for ${name} created!`, 'success');
       }
 
       handleCloseModal();
       await loadTestimonials();
-      setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
       console.error('Save failed:', err);
-      setFeedback({ type: 'error', message: err.message || 'Failed to save testimonial' });
+      showAdminToast(err.message || 'Failed to save testimonial', 'error');
     } finally {
       setIsSaving(false);
     }
@@ -220,11 +217,10 @@ export function RootTestimonialsTab() {
 
     try {
       await deleteAdminTestimonial(id);
-      setFeedback({ type: 'success', message: `Testimonial by ${rebelName} removed.` });
+      showAdminToast(`Testimonial by ${rebelName} removed.`, 'info');
       await loadTestimonials();
-      setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
-      setFeedback({ type: 'error', message: err.message || 'Failed to delete' });
+      showAdminToast(err.message || 'Failed to delete', 'error');
     }
   };
 

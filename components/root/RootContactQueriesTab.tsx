@@ -29,6 +29,7 @@ import {
   QueryStatus,
   QueryCounts,
 } from '@/lib/adminApi';
+import { showAdminToast } from './AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
@@ -122,13 +123,15 @@ export function RootContactQueriesTab() {
       if (selectedQuery?.id === queryId) {
         setSelectedQuery(updated);
       }
-      setFeedback(`Query marked as ${STATUS_CONFIG[newStatus].label}`);
-      setTimeout(() => setFeedback(null), 3000);
+      showAdminToast(
+        `Inquiry marked as ${STATUS_CONFIG[newStatus].label}`,
+        newStatus === 'RESOLVED' ? 'success' : newStatus === 'IGNORED' ? 'warning' : 'info'
+      );
       // Reload stats
       const refreshed = await fetchContactQueries(statusFilter === 'ALL' ? undefined : statusFilter, search);
       setCounts(refreshed.counts);
     } catch (err: any) {
-      alert(`Failed to update status: ${err?.message || 'Server error'}`);
+      showAdminToast(err?.message || 'Failed to update status', 'error');
     } finally {
       setIsUpdatingStatus(null);
     }
@@ -142,12 +145,11 @@ export function RootContactQueriesTab() {
       await deleteContactQuery(queryId);
       setQueries((prev) => prev.filter((q) => q.id !== queryId));
       if (selectedQuery?.id === queryId) setSelectedQuery(null);
-      setFeedback('Query deleted successfully.');
-      setTimeout(() => setFeedback(null), 3000);
+      showAdminToast('Contact inquiry deleted successfully.', 'info');
       const refreshed = await fetchContactQueries(statusFilter === 'ALL' ? undefined : statusFilter, search);
       setCounts(refreshed.counts);
     } catch (err: any) {
-      alert(`Failed to delete query: ${err?.message || 'Server error'}`);
+      showAdminToast(err?.message || 'Failed to delete query', 'error');
     }
   };
 
@@ -195,14 +197,6 @@ export function RootContactQueriesTab() {
           </button>
         </div>
       </div>
-
-      {/* ─── Feedback Toast ─── */}
-      {feedback && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
-          <CheckCircle2 className="w-4 h-4 shrink-0" />
-          <span>{feedback}</span>
-        </div>
-      )}
 
       {/* ─── KPI Stats Row ─── */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

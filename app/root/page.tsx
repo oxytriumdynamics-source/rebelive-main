@@ -36,6 +36,7 @@ import { RootContactQueriesTab } from '@/components/root/RootContactQueriesTab';
 import { RootCorporateQueriesTab } from '@/components/root/RootCorporateQueriesTab';
 import { RootUsersTab } from '@/components/root/RootUsersTab';
 import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
+import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
 import { Building2, Mail } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -97,12 +98,14 @@ export default function AdminRootPage() {
   const handleAuthenticated = (user: AdminUser, token: string) => {
     setAdminUser(user);
     loadDashboardData();
+    showAdminToast(`Welcome, ${user.firstName || 'Administrator'}! Session active.`, 'success', 'Session Authenticated');
   };
 
   const handleLogout = () => {
     clearAdminSession();
     setAdminUser(null);
     setDashboardData(null);
+    showAdminToast('Signed out of Admin console.', 'info', 'Session Ended');
   };
 
   // If initial load checking
@@ -134,9 +137,10 @@ export default function AdminRootPage() {
   ] as const;
 
   return (
-    <div style={{ fontFamily: SANS }} className="min-h-screen bg-black text-white flex">
-      {/* ─── Mobile Sidebar Overlay Backdrop ─── */}
-      {mobileMenuOpen && (
+    <AdminToastProvider>
+      <div style={{ fontFamily: SANS }} className="min-h-screen bg-black text-white flex">
+        {/* ─── Mobile Sidebar Overlay Backdrop ─── */}
+        {mobileMenuOpen && (
         <div
           onClick={() => setMobileMenuOpen(false)}
           className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden"
@@ -321,5 +325,6 @@ export default function AdminRootPage() {
         </main>
       </div>
     </div>
+    </AdminToastProvider>
   );
 }

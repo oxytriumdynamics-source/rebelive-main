@@ -32,6 +32,7 @@ import {
   AdminProduct,
 } from '@/lib/adminApi';
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
+import { showAdminToast } from '@/components/root/AdminToaster';
 
 interface PackVariant {
   id?: string;
@@ -52,11 +53,11 @@ interface NutritionItem {
   dv?: string;
 }
 
-export default function ProductEditPage() {
+export default function ProductEditPage({ initialId }: { initialId?: string } = {}) {
   const params = useParams();
   const router = useRouter();
-  const productId = params?.id as string;
-  const isNew = productId === 'new';
+  const productId = initialId || (params?.id as string) || 'new';
+  const isNew = !productId || productId === 'new';
 
   const [isLoading, setIsLoading] = useState(!isNew);
   const [isSaving, setIsSaving] = useState(false);
@@ -139,9 +140,9 @@ export default function ProductEditPage() {
 
   // Load existing product if editing
   const isTrioProduct =
-    slug.trim().toLowerCase() === 'variety' ||
-    productId.toLowerCase() === 'variety' ||
-    name.toLowerCase().includes('trio');
+    Boolean(slug && slug.trim().toLowerCase() === 'variety') ||
+    Boolean(productId && productId.toLowerCase() === 'variety') ||
+    Boolean(name && name.toLowerCase().includes('trio'));
 
   useEffect(() => {
     if (!isNew && productId) {
@@ -351,9 +352,11 @@ export default function ProductEditPage() {
         type: 'success',
         message: `Image compressed & uploaded to Cloudinary CDN successfully!${sizeMsg}`,
       });
-      setTimeout(() => setFeedback(null), 4000);
+      showAdminToast(`Image uploaded to Cloudinary CDN!${sizeMsg}`, 'success', 'Media Uploaded');
+      setTimeout(() => setFeedback(null), 3000);
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Image upload failed' });
+      showAdminToast(err.message || 'Image upload failed', 'error', 'Upload Error');
     } finally {
       setIsUploading(false);
       setIsGalleryUploading(false);
@@ -366,11 +369,13 @@ export default function ProductEditPage() {
     } else {
       setImage('');
     }
+    const label = target === 'canImage' ? 'Can Hero' : 'Secondary';
     setFeedback({
       type: 'success',
-      message: `${target === 'canImage' ? 'Can Hero' : 'Secondary'} image deleted. Click "Save Changes" to commit.`,
+      message: `${label} image deleted. Click "Save Changes" to commit.`,
     });
-    setTimeout(() => setFeedback(null), 3500);
+    showAdminToast(`${label} image removed from draft`, 'info', 'Image Removed');
+    setTimeout(() => setFeedback(null), 3000);
   };
 
   const handleDeleteGalleryImage = (index: number) => {
@@ -379,7 +384,8 @@ export default function ProductEditPage() {
       type: 'success',
       message: 'Gallery image removed. Click "Save Changes" to commit.',
     });
-    setTimeout(() => setFeedback(null), 3500);
+    showAdminToast('Gallery image removed from draft', 'info', 'Image Removed');
+    setTimeout(() => setFeedback(null), 3000);
   };
 
   const handleAddGalleryUrl = () => {
@@ -469,17 +475,20 @@ export default function ProductEditPage() {
       if (isNew) {
         const created = await createAdminProduct(payload);
         setFeedback({ type: 'success', message: `Product "${created.name}" created successfully!` });
+        showAdminToast(`Product "${created.name}" created successfully!`, 'success', 'Product Created');
         setTimeout(() => {
           router.push(`/root/products/${created.id}`);
         }, 1200);
       } else {
         const updated = await updateAdminProduct(productId, payload);
         setFeedback({ type: 'success', message: `Product "${updated.name}" updated in database!` });
-        setTimeout(() => setFeedback(null), 4000);
+        showAdminToast(`Product "${updated.name}" updated in database!`, 'success', 'Product Saved');
+        setTimeout(() => setFeedback(null), 3000);
       }
     } catch (err: any) {
       console.error('Failed to save product:', err);
       setFeedback({ type: 'error', message: err.message || 'Failed to save product' });
+      showAdminToast(err.message || 'Failed to save product', 'error', 'Save Failed');
     } finally {
       setIsSaving(false);
     }
