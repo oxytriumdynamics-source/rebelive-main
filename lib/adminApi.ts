@@ -840,3 +840,148 @@ export async function uploadTestimonialImage(
 ): Promise<CloudinaryUploadResponse> {
   return uploadProductImage(fileOrData, 'rebelive/testimonials');
 }
+
+// ─── CONTACT & CORPORATE QUERIES ─────────────────────────
+
+export type QueryStatus = 'NEW' | 'VIEWED' | 'IN_PROCESS' | 'RESOLVED' | 'IGNORED';
+
+export interface QueryCounts {
+  total: number;
+  new: number;
+  viewed: number;
+  in_process: number;
+  resolved: number;
+  ignored: number;
+}
+
+export interface AdminContactQuery {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  services: string[];
+  message: string;
+  status: QueryStatus;
+  adminNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AdminCorporateQuery {
+  id: string;
+  refId?: string | null;
+  fullName: string;
+  companyName: string;
+  designation?: string | null;
+  email: string;
+  phone: string;
+  city?: string | null;
+  approxQuantity?: string | null;
+  natureOfRequirement?: string | null;
+  message?: string | null;
+  status: QueryStatus;
+  adminNote?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// Public Submission Helpers
+export async function submitContactQuery(payload: {
+  firstName: string;
+  lastName?: string;
+  email: string;
+  phone?: string;
+  services?: string[];
+  message: string;
+}): Promise<AdminContactQuery> {
+  const res = await axios.post(`${API_BASE}/support/contact-query`, payload);
+  return res.data.data;
+}
+
+export async function submitCorporateQuery(payload: {
+  refId?: string;
+  fullName: string;
+  companyName: string;
+  designation?: string;
+  email: string;
+  phone?: string;
+  city?: string;
+  approxQuantity?: string;
+  natureOfRequirement?: string;
+  message?: string;
+}): Promise<AdminCorporateQuery> {
+  const res = await axios.post(`${API_BASE}/support/corporate-query`, payload);
+  return res.data.data;
+}
+
+// Admin Contact Query Management
+export async function fetchContactQueries(
+  status?: string,
+  search?: string
+): Promise<{ data: AdminContactQuery[]; counts: QueryCounts }> {
+  try {
+    const res = await adminClient.get('/contact-queries', {
+      params: { status: status || 'ALL', search: search || undefined },
+    });
+    return {
+      data: res.data.data || [],
+      counts: res.data.counts || { total: 0, new: 0, viewed: 0, in_process: 0, resolved: 0, ignored: 0 },
+    };
+  } catch (err) {
+    console.warn('Failed to fetch contact queries from backend:', err);
+    return {
+      data: [],
+      counts: { total: 0, new: 0, viewed: 0, in_process: 0, resolved: 0, ignored: 0 },
+    };
+  }
+}
+
+export async function updateContactQueryStatus(
+  id: string,
+  status: QueryStatus,
+  adminNote?: string
+): Promise<AdminContactQuery> {
+  const res = await adminClient.patch(`/contact-queries/${id}/status`, { status, adminNote });
+  return res.data.data;
+}
+
+export async function deleteContactQuery(id: string): Promise<void> {
+  await adminClient.delete(`/contact-queries/${id}`);
+}
+
+// Admin Corporate Query Management
+export async function fetchCorporateQueries(
+  status?: string,
+  search?: string
+): Promise<{ data: AdminCorporateQuery[]; counts: QueryCounts }> {
+  try {
+    const res = await adminClient.get('/corporate-queries', {
+      params: { status: status || 'ALL', search: search || undefined },
+    });
+    return {
+      data: res.data.data || [],
+      counts: res.data.counts || { total: 0, new: 0, viewed: 0, in_process: 0, resolved: 0, ignored: 0 },
+    };
+  } catch (err) {
+    console.warn('Failed to fetch corporate queries from backend:', err);
+    return {
+      data: [],
+      counts: { total: 0, new: 0, viewed: 0, in_process: 0, resolved: 0, ignored: 0 },
+    };
+  }
+}
+
+export async function updateCorporateQueryStatus(
+  id: string,
+  status: QueryStatus,
+  adminNote?: string
+): Promise<AdminCorporateQuery> {
+  const res = await adminClient.patch(`/corporate-queries/${id}/status`, { status, adminNote });
+  return res.data.data;
+}
+
+export async function deleteCorporateQuery(id: string): Promise<void> {
+  await adminClient.delete(`/corporate-queries/${id}`);
+}
+

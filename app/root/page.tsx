@@ -32,15 +32,20 @@ import { RootOverviewTab } from '@/components/root/RootOverviewTab';
 import { RootOrdersTab } from '@/components/root/RootOrdersTab';
 import { RootProductsTab } from '@/components/root/RootProductsTab';
 import { RootTestimonialsTab } from '@/components/root/RootTestimonialsTab';
+import { RootContactQueriesTab } from '@/components/root/RootContactQueriesTab';
+import { RootCorporateQueriesTab } from '@/components/root/RootCorporateQueriesTab';
 import { RootUsersTab } from '@/components/root/RootUsersTab';
 import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
+import { Building2, Mail } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 export default function AdminRootPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [activeTab, setActiveTab] = useState<'overview' | 'orders' | 'products' | 'testimonials' | 'users' | 'shiprocket'>('overview');
+  const [activeTab, setActiveTab] = useState<
+    'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket'
+  >('overview');
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -60,7 +65,19 @@ export default function AdminRootPage() {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const tab = params.get('tab') as any;
-      if (tab && ['overview', 'orders', 'products', 'testimonials', 'users', 'shiprocket'].includes(tab)) {
+      if (
+        tab &&
+        [
+          'overview',
+          'orders',
+          'products',
+          'testimonials',
+          'contact-queries',
+          'corporate-queries',
+          'users',
+          'shiprocket',
+        ].includes(tab)
+      ) {
         setActiveTab(tab);
       }
     }
@@ -110,6 +127,8 @@ export default function AdminRootPage() {
     { id: 'orders', label: 'My Tasks / Orders', icon: Package },
     { id: 'products', label: 'Projects / Catalog', icon: Boxes },
     { id: 'testimonials', label: 'Testimonials / Voices', icon: Quote },
+    { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail },
+    { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2 },
     { id: 'users', label: 'Messages / Users', icon: Users },
     { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck },
   ] as const;
@@ -295,6 +314,8 @@ export default function AdminRootPage() {
           {activeTab === 'orders' && <RootOrdersTab />}
           {activeTab === 'products' && <RootProductsTab />}
           {activeTab === 'testimonials' && <RootTestimonialsTab />}
+          {activeTab === 'contact-queries' && <RootContactQueriesTab />}
+          {activeTab === 'corporate-queries' && <RootCorporateQueriesTab />}
           {activeTab === 'users' && <RootUsersTab />}
           {activeTab === 'shiprocket' && <RootShiprocketTab />}
         </main>

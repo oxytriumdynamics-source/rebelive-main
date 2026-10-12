@@ -16,6 +16,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import SubpageShell from '@/components/layout/SubpageShell';
+import { submitCorporateQuery } from '@/lib/adminApi';
 
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
@@ -60,7 +61,7 @@ export default function CorporatePage() {
     if (errorMessage) setErrorMessage(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
 
@@ -97,11 +98,26 @@ export default function CorporatePage() {
       // Safe fallback
     }
 
-    setTimeout(() => {
+    try {
+      await submitCorporateQuery({
+        refId: ref,
+        fullName: formData.fullName.trim(),
+        companyName: formData.companyName.trim(),
+        designation: formData.designation?.trim(),
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        city: formData.city?.trim(),
+        approxQuantity: formData.quantity?.trim(),
+        natureOfRequirement: formData.enquiryType?.trim(),
+        message: formData.message?.trim(),
+      });
+    } catch (err) {
+      console.warn('Backend corporate submission failed, falling back to local:', err);
+    } finally {
       setIsSubmitting(false);
       setReferenceId(ref);
       setSubmitted(true);
-    }, 700);
+    }
   };
 
   return (

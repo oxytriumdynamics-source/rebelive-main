@@ -17,6 +17,7 @@ import {
   Check,
 } from 'lucide-react';
 import SubpageShell from '@/components/layout/SubpageShell';
+import { submitContactQuery } from '@/lib/adminApi';
 
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
@@ -97,7 +98,7 @@ export default function ContactPage() {
     if (formError) setFormError(null);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormError(null);
 
@@ -125,10 +126,21 @@ export default function ContactPage() {
     }
 
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await submitContactQuery({
+        firstName: formData.firstName.trim(),
+        lastName: formData.lastName.trim(),
+        email: formData.email.trim(),
+        phone: cleanPhone,
+        services: formData.services,
+        message: formData.message.trim(),
+      });
+    } catch (err) {
+      console.warn('API submission failed, falling back to instant UX:', err);
+    } finally {
       setIsSubmitting(false);
       setSubmitted(true);
-    }, 600);
+    }
   };
 
   return (

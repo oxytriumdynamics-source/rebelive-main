@@ -1,0 +1,588 @@
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import {
+  Building2,
+  Search,
+  RefreshCw,
+  Clock,
+  Phone,
+  User,
+  CheckCircle2,
+  Eye,
+  Zap,
+  Slash,
+  Trash2,
+  X,
+  FileText,
+  Boxes,
+  MapPin,
+  Briefcase,
+  Layers,
+  ArrowRight,
+  Send,
+  Building,
+  Mail,
+} from 'lucide-react';
+import {
+  fetchCorporateQueries,
+  updateCorporateQueryStatus,
+  deleteCorporateQuery,
+  AdminCorporateQuery,
+  QueryStatus,
+  QueryCounts,
+} from '@/lib/adminApi';
+
+const MONO = "'JetBrains Mono', monospace";
+const SANS = "'Poppins', sans-serif";
+
+const STATUS_CONFIG: Record<
+  QueryStatus,
+  { label: string; bg: string; text: string; border: string; icon: React.ComponentType<{ className?: string }> }
+> = {
+  NEW: {
+    label: 'New',
+    bg: 'bg-emerald-500/10',
+    text: 'text-emerald-300',
+    border: 'border-emerald-500/30',
+    icon: Clock,
+  },
+  VIEWED: {
+    label: 'Viewed',
+    bg: 'bg-amber-500/10',
+    text: 'text-amber-300',
+    border: 'border-amber-500/30',
+    icon: Eye,
+  },
+  IN_PROCESS: {
+    label: 'In Process',
+    bg: 'bg-indigo-500/10',
+    text: 'text-indigo-300',
+    border: 'border-indigo-500/30',
+    icon: Zap,
+  },
+  RESOLVED: {
+    label: 'Resolved',
+    bg: 'bg-teal-500/10',
+    text: 'text-teal-300',
+    border: 'border-teal-500/30',
+    icon: CheckCircle2,
+  },
+  IGNORED: {
+    label: 'Ignored',
+    bg: 'bg-neutral-800',
+    text: 'text-neutral-400',
+    border: 'border-neutral-700',
+    icon: Slash,
+  },
+};
+
+export function RootCorporateQueriesTab() {
+  const [queries, setQueries] = useState<AdminCorporateQuery[]>([]);
+  const [counts, setCounts] = useState<QueryCounts>({
+    total: 0,
+    new: 0,
+    viewed: 0,
+    in_process: 0,
+    resolved: 0,
+    ignored: 0,
+  });
+  const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | QueryStatus>('ALL');
+  const [selectedQuery, setSelectedQuery] = useState<AdminCorporateQuery | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
+  const [feedback, setFeedback] = useState<string | null>(null);
+
+  const loadData = async () => {
+    setIsLoading(true);
+    try {
+      const res = await fetchCorporateQueries(statusFilter === 'ALL' ? undefined : statusFilter, search);
+      setQueries(res.data);
+      setCounts(res.counts);
+    } catch (err) {
+      console.error('Error fetching corporate queries:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
+  }, [statusFilter]);
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    loadData();
+  };
+
+  const handleStatusChange = async (queryId: string, newStatus: QueryStatus, adminNote?: string) => {
+    setIsUpdatingStatus(queryId);
+    try {
+      const updated = await updateCorporateQueryStatus(queryId, newStatus, adminNote);
+      setQueries((prev) => prev.map((q) => (q.id === queryId ? updated : q)));
+      if (selectedQuery?.id === queryId) {
+        setSelectedQuery(updated);
+      }
+      setFeedback(`Corporate query marked as ${STATUS_CONFIG[newStatus].label}`);
+      setTimeout(() => setFeedback(null), 3000);
+      const refreshed = await fetchCorporateQueries(statusFilter === 'ALL' ? undefined : statusFilter, search);
+      setCounts(refreshed.counts);
+    } catch (err: any) {
+      alert(`Failed to update status: ${err?.message || 'Server error'}`);
+    } finally {
+      setIsUpdatingStatus(null);
+    }
+  };
+
+  const handleDelete = async (queryId: string, company: string) => {
+    if (!window.confirm(`Are you sure you want to delete the corporate inquiry from "${company}"?`)) {
+      return;
+    }
+    try {
+      await deleteCorporateQuery(queryId);
+      setQueries((prev) => prev.filter((q) => q.id !== queryId));
+      if (selectedQuery?.id === queryId) setSelectedQuery(null);
+      setFeedback('Corporate inquiry deleted successfully.');
+      setTimeout(() => setFeedback(null), 3000);
+      const refreshed = await fetchCorporateQueries(statusFilter === 'ALL' ? undefined : statusFilter, search);
+      setCounts(refreshed.counts);
+    } catch (err: any) {
+      alert(`Failed to delete query: ${err?.message || 'Server error'}`);
+    }
+  };
+
+  const openDetail = (query: AdminCorporateQuery) => {
+    setSelectedQuery(query);
+    setNoteDraft(query.adminNote || '');
+    if (query.status === 'NEW') {
+      handleStatusChange(query.id, 'VIEWED');
+    }
+  };
+
+  const saveAdminNote = async () => {
+    if (!selectedQuery) return;
+    await handleStatusChange(selectedQuery.id, selectedQuery.status, noteDraft);
+  };
+
+  return (
+    <div style={{ fontFamily: SANS }} className="space-y-6">
+      {/* ─── Header & Top Actions ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] tracking-widest text-emerald-400 uppercase bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/20">
+              B2B & INSTITUTIONAL LEADS
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight mt-1 flex items-center gap-2.5">
+            <Building2 className="w-5 h-5 text-emerald-400" />
+            Corporate Inquiries
+          </h2>
+          <p className="text-xs text-white/50 font-mono mt-0.5">
+            Bulk orders, workplace pantries, executive gifting, and corporate sample requests from /corporate
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <button
+            onClick={loadData}
+            disabled={isLoading}
+            className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-xs font-mono text-white transition-all cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? 'animate-spin' : ''}`} />
+            <span>Refresh</span>
+          </button>
+        </div>
+      </div>
+
+      {/* ─── Feedback Toast ─── */}
+      {feedback && (
+        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs flex items-center gap-2 animate-in fade-in">
+          <CheckCircle2 className="w-4 h-4 shrink-0" />
+          <span>{feedback}</span>
+        </div>
+      )}
+
+      {/* ─── KPI Stats Row ─── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
+        {[
+          { label: 'Total Leads', count: counts.total, filter: 'ALL', color: 'border-white/10 text-white' },
+          { label: 'New Leads', count: counts.new, filter: 'NEW', color: 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5' },
+          { label: 'Viewed', count: counts.viewed, filter: 'VIEWED', color: 'border-amber-500/30 text-amber-400 bg-amber-500/5' },
+          { label: 'In Process', count: counts.in_process, filter: 'IN_PROCESS', color: 'border-indigo-500/30 text-indigo-400 bg-indigo-500/5' },
+          { label: 'Resolved', count: counts.resolved, filter: 'RESOLVED', color: 'border-teal-500/30 text-teal-400 bg-teal-500/5' },
+          { label: 'Ignored', count: counts.ignored, filter: 'IGNORED', color: 'border-neutral-700 text-neutral-400 bg-neutral-900' },
+        ].map((item) => (
+          <button
+            key={item.label}
+            onClick={() => setStatusFilter(item.filter as any)}
+            className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+              statusFilter === item.filter
+                ? 'ring-2 ring-white/40 bg-white/10'
+                : 'hover:bg-white/5'
+            } ${item.color}`}
+          >
+            <p className="text-[10px] font-mono uppercase text-white/50">{item.label}</p>
+            <p className="text-xl font-bold font-mono mt-0.5">{item.count}</p>
+          </button>
+        ))}
+      </div>
+
+      {/* ─── Search & Filters Bar ─── */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+        {/* Status Filter Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 sm:pb-0 [scrollbar-width:none]">
+          {(['ALL', 'NEW', 'VIEWED', 'IN_PROCESS', 'RESOLVED', 'IGNORED'] as const).map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-mono font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                statusFilter === st
+                  ? 'bg-white text-black shadow'
+                  : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white'
+              }`}
+            >
+              {st === 'ALL' ? 'All Leads' : STATUS_CONFIG[st].label}
+            </button>
+          ))}
+        </div>
+
+        {/* Search Input */}
+        <form onSubmit={handleSearchSubmit} className="relative sm:w-80">
+          <Search className="w-3.5 h-3.5 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search company, person, city, ref..."
+            className="w-full bg-[#111] border border-white/10 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
+          />
+        </form>
+      </div>
+
+      {/* ─── Queries List / Table ─── */}
+      {isLoading ? (
+        <div className="p-12 rounded-2xl bg-[#0b0b0b] border border-white/10 text-center font-mono text-xs text-white/40">
+          <RefreshCw className="w-5 h-5 animate-spin mx-auto mb-2 text-emerald-400" />
+          Loading corporate inquiries...
+        </div>
+      ) : queries.length === 0 ? (
+        <div className="p-12 rounded-2xl bg-[#0b0b0b] border border-white/10 text-center font-mono text-xs text-white/40 space-y-2">
+          <Building2 className="w-8 h-8 mx-auto text-white/20 mb-2" />
+          <p className="text-white text-sm font-bold">No Corporate Inquiries Found</p>
+          <p className="text-white/40 max-w-sm mx-auto">
+            {search
+              ? 'No corporate leads matched your search query. Try clearing the search filter.'
+              : statusFilter !== 'ALL'
+              ? `No inquiries currently marked as ${STATUS_CONFIG[statusFilter].label}.`
+              : 'Corporate quotes and bulk requests submitted via /corporate will appear here.'}
+          </p>
+        </div>
+      ) : (
+        <div className="space-y-3.5">
+          {queries.map((q) => {
+            const config = STATUS_CONFIG[q.status] || STATUS_CONFIG.NEW;
+            const StatusIcon = config.icon;
+            const dateStr = new Date(q.createdAt).toLocaleString('en-IN', {
+              day: 'numeric',
+              month: 'short',
+              year: 'numeric',
+              hour: '2-digit',
+              minute: '2-digit',
+            });
+
+            return (
+              <div
+                key={q.id}
+                className="rounded-2xl bg-[#0b0b0b] border border-white/10 hover:border-white/20 p-4 sm:p-5 transition-all shadow-lg space-y-3.5 group"
+              >
+                {/* Header Row: Company name, Ref ID, Contact & Status */}
+                <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center font-black text-emerald-400 font-mono shrink-0">
+                      <Building2 className="w-5 h-5" />
+                    </div>
+
+                    <div>
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-bold text-base text-white tracking-tight">
+                          {q.companyName}
+                        </h4>
+                        {q.refId && (
+                          <span className="font-mono text-[10px] text-emerald-400/90 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                            {q.refId}
+                          </span>
+                        )}
+                        <span
+                          className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-mono border font-semibold ${config.bg} ${config.text} ${config.border}`}
+                        >
+                          <StatusIcon className="w-3 h-3" />
+                          {config.label}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2.5 text-xs text-white/60 font-mono mt-1 flex-wrap">
+                        <span className="text-white font-medium flex items-center gap-1">
+                          <User className="w-3 h-3 text-white/40" />
+                          {q.fullName} {q.designation ? `(${q.designation})` : ''}
+                        </span>
+                        {q.city && (
+                          <span className="text-white/40 flex items-center gap-1">
+                            <MapPin className="w-3 h-3" />
+                            {q.city}
+                          </span>
+                        )}
+                        <span className="text-white/30 flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          {dateStr}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Quick Action Status Markings */}
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <span className="text-[10px] text-white/40 font-mono mr-1 hidden sm:inline">Mark as:</span>
+                    {(['VIEWED', 'IN_PROCESS', 'RESOLVED', 'IGNORED'] as const).map((targetStatus) => {
+                      const isCurrent = q.status === targetStatus;
+                      const isBusy = isUpdatingStatus === q.id;
+                      return (
+                        <button
+                          key={targetStatus}
+                          onClick={() => handleStatusChange(q.id, targetStatus)}
+                          disabled={isBusy || isCurrent}
+                          className={`px-2 py-1 rounded-lg text-[10px] font-mono font-semibold transition-all cursor-pointer ${
+                            isCurrent
+                              ? 'bg-white/20 text-white cursor-default'
+                              : 'bg-white/5 hover:bg-white/10 text-white/60 hover:text-white border border-white/5'
+                          } disabled:opacity-40`}
+                          title={`Mark query as ${STATUS_CONFIG[targetStatus].label}`}
+                        >
+                          {STATUS_CONFIG[targetStatus].label}
+                        </button>
+                      );
+                    })}
+
+                    <button
+                      onClick={() => openDetail(q)}
+                      className="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[11px] font-mono font-semibold transition-colors cursor-pointer"
+                    >
+                      Full Details
+                    </button>
+
+                    <button
+                      onClick={() => handleDelete(q.id, q.companyName)}
+                      className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors cursor-pointer"
+                      title="Delete corporate inquiry"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Key Spec Badges: Volume & Requirement Nature */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 text-xs font-mono">
+                  <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                    <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
+                      <Boxes className="w-3 h-3 text-emerald-400" />
+                      Approx Quantity:
+                    </span>
+                    <span className="font-bold text-white text-[11px]">
+                      {q.approxQuantity || 'Custom / Unspecified'}
+                    </span>
+                  </div>
+
+                  <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                    <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
+                      <Briefcase className="w-3 h-3 text-emerald-400" />
+                      Requirement:
+                    </span>
+                    <span className="font-bold text-white text-[11px] truncate ml-2">
+                      {q.natureOfRequirement || 'Workforce Allocation'}
+                    </span>
+                  </div>
+
+                  <div className="px-3 py-2 rounded-xl bg-white/5 border border-white/10 flex items-center justify-between">
+                    <span className="text-white/40 text-[10px] uppercase flex items-center gap-1.5">
+                      <Mail className="w-3 h-3 text-emerald-400" />
+                      Direct Contact:
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <a href={`mailto:${q.email}`} className="text-emerald-400 hover:underline text-[11px]">
+                        Email
+                      </a>
+                      {q.phone && (
+                        <a href={`tel:${q.phone}`} className="text-emerald-400 hover:underline text-[11px]">
+                          Call
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Message Body if any */}
+                {q.message && (
+                  <div className="p-3 rounded-xl bg-black/40 border border-white/5 text-xs text-white/80 leading-relaxed font-light">
+                    <p className="whitespace-pre-line">{q.message}</p>
+                  </div>
+                )}
+
+                {/* Admin Note if present */}
+                {q.adminNote && (
+                  <div className="p-2.5 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-amber-200/90 font-mono flex items-start gap-2">
+                    <FileText className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-amber-300">Internal Admin Note: </span>
+                      {q.adminNote}
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {/* ─── Corporate Detail & Note Modal ─── */}
+      {selectedQuery && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-2xl bg-[#0e0e0e] border border-white/20 rounded-2xl p-5 sm:p-6 shadow-2xl space-y-4 max-h-[92vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-white/10">
+              <div>
+                <span className="font-mono text-[9px] uppercase tracking-widest text-emerald-400">
+                  CORPORATE ALLOCATION DOSSIER
+                </span>
+                <h3 className="text-lg font-bold text-white uppercase flex items-center gap-2">
+                  <span>{selectedQuery.companyName}</span>
+                  {selectedQuery.refId && (
+                    <span className="text-xs font-mono font-normal text-white/50">
+                      ({selectedQuery.refId})
+                    </span>
+                  )}
+                </h3>
+              </div>
+              <button
+                onClick={() => setSelectedQuery(null)}
+                className="p-1 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Corporate Specs Grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs font-mono">
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Authorized Contact</p>
+                <p className="font-bold text-white mt-0.5">
+                  {selectedQuery.fullName} {selectedQuery.designation ? `(${selectedQuery.designation})` : ''}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Delivery Location / City</p>
+                <p className="font-bold text-white mt-0.5">
+                  {selectedQuery.city || 'National / Remote Fleet'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Email Address</p>
+                <a
+                  href={`mailto:${selectedQuery.email}`}
+                  className="font-semibold text-emerald-400 hover:underline block truncate mt-0.5"
+                >
+                  {selectedQuery.email}
+                </a>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Phone / Mobile</p>
+                <a
+                  href={`tel:${selectedQuery.phone}`}
+                  className="font-semibold text-emerald-400 hover:underline block truncate mt-0.5"
+                >
+                  {selectedQuery.phone ? `+91 ${selectedQuery.phone}` : 'Not provided'}
+                </a>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Approx Can Quantity</p>
+                <p className="font-bold text-white mt-0.5">
+                  {selectedQuery.approxQuantity || 'Custom Quote Needed'}
+                </p>
+              </div>
+
+              <div className="p-3 rounded-xl bg-white/5 border border-white/10">
+                <p className="text-[10px] text-white/40 uppercase">Requirement Nature</p>
+                <p className="font-bold text-white mt-0.5">
+                  {selectedQuery.natureOfRequirement || 'General Workplace Allocation'}
+                </p>
+              </div>
+            </div>
+
+            {/* Message */}
+            {selectedQuery.message && (
+              <div className="space-y-1">
+                <p className="text-[10px] font-mono uppercase text-white/40">Additional Specifications</p>
+                <div className="p-3.5 rounded-xl bg-black/60 border border-white/10 text-xs text-white leading-relaxed whitespace-pre-line max-h-40 overflow-y-auto">
+                  {selectedQuery.message}
+                </div>
+              </div>
+            )}
+
+            {/* Status Change Buttons */}
+            <div className="space-y-1.5 pt-2 border-t border-white/10">
+              <p className="text-[10px] font-mono uppercase text-white/40">Update Status</p>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(['VIEWED', 'IN_PROCESS', 'RESOLVED', 'IGNORED'] as const).map((st) => {
+                  const isCurrent = selectedQuery.status === st;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => handleStatusChange(selectedQuery.id, st, noteDraft)}
+                      className={`p-2 rounded-xl text-xs font-mono font-bold uppercase transition-all cursor-pointer border ${
+                        isCurrent
+                          ? 'bg-white text-black border-white'
+                          : 'bg-white/5 hover:bg-white/10 text-white/70 hover:text-white border-white/10'
+                      }`}
+                    >
+                      {STATUS_CONFIG[st].label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Internal Admin Note */}
+            <div className="space-y-1.5 pt-2">
+              <label className="text-[10px] font-mono uppercase text-white/40 block">
+                Institutional Sales Notes (Private)
+              </label>
+              <textarea
+                rows={2}
+                value={noteDraft}
+                onChange={(e) => setNoteDraft(e.target.value)}
+                placeholder="Log quote pricing, sent sample kit dates, procurement manager notes..."
+                className="w-full bg-[#141414] border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono resize-none"
+              />
+              <div className="flex justify-end">
+                <button
+                  type="button"
+                  onClick={saveAdminNote}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white font-mono text-xs font-semibold cursor-pointer"
+                >
+                  Save Note
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default RootCorporateQueriesTab;
