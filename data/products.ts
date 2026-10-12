@@ -21,6 +21,40 @@ export interface GalleryItem {
   type: 'render' | 'wrap' | 'logo' | 'mood';
 }
 
+export interface NutritionFactRow {
+  nutrient: string;
+  per100ml: string;
+  perServe: string;
+  rda: string;
+}
+
+export interface ProductNutritionInfo {
+  productName?: string;
+  servingSize?: string;
+  servingsPerContainer?: string;
+  nutrients: NutritionFactRow[];
+  notes?: string[];
+}
+
+export interface ProductAdditionalInfo {
+  recommendedUsage?: string;
+  directionsForUse?: string;
+  storage?: string;
+  disclaimer?: string;
+  bestBefore?: string;
+  countryOfOrigin?: string;
+  manufacturedBy?: {
+    name: string;
+    address: string;
+    fssaiLicNo?: string;
+  };
+  marketedBy?: {
+    name: string;
+    address: string;
+    fssaiLicNo?: string;
+  };
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -63,6 +97,11 @@ export interface Product {
     batch: string;
     dimensions?: string;
   };
+  netQuantity?: string;
+  isVegetarian?: boolean;
+  ingredients?: string;
+  nutritionInfo?: ProductNutritionInfo;
+  additionalInfo?: ProductAdditionalInfo;
 }
 
 export type PackSize = 3 | 6 | 9 | 12;

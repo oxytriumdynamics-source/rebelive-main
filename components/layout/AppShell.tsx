@@ -22,13 +22,18 @@ export function AppShell({ children }: AppShellProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // Do not show header or footer on authentication pages
+  // Do not show header or footer on authentication pages or root admin console
   const isAuthPage =
     pathname === '/auth' ||
     pathname?.startsWith('/auth/') ||
     pathname === '/login';
 
-  if (isAuthPage) {
+  const isRootAdmin =
+    pathname === '/root' ||
+    pathname?.startsWith('/root/') ||
+    pathname?.startsWith('/root');
+
+  if (isAuthPage || isRootAdmin) {
     return (
       <main className="min-h-screen w-full relative z-10 bg-black text-white">
         {children}
@@ -37,7 +42,7 @@ export function AppShell({ children }: AppShellProps) {
   }
 
   // Only hide footer on authentication pages
-  const hideFooter = isAuthPage;
+  const hideFooter = isAuthPage || isRootAdmin;
 
   return (
     <div className="min-h-screen flex flex-col justify-between relative bg-black text-white select-none">

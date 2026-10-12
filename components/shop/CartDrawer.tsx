@@ -1,9 +1,9 @@
 'use client';
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { ShoppingBag, X, Plus, Minus, Check, Truck, ShieldCheck, ArrowRight } from 'lucide-react';
+import { ShoppingBag, X, Plus, Minus, Check, Truck, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import {
   closeCart,
@@ -11,10 +11,12 @@ import {
   removeFromCart,
   clearCart,
 } from '@/store/slices/cartSlice';
+import { FastrrCheckoutModal } from './FastrrCheckoutModal';
 
 export function CartDrawer() {
   const dispatch = useAppDispatch();
   const { items, isOpen } = useAppSelector((state) => state.cart);
+  const [isFastrrOpen, setIsFastrrOpen] = useState(false);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -71,15 +73,7 @@ export function CartDrawer() {
             </button>
           </div>
 
-          {/* Pan-India Express Banner */}
-          <div className="mt-3.5 px-3 py-2 rounded-xl bg-white/[0.03] border border-white/10 flex items-center justify-between text-[11px] text-white/70">
-            <span className="flex items-center gap-1.5 text-emerald-400 font-medium">
-              <Truck className="w-3.5 h-3.5" /> Free Pan-India Delivery
-            </span>
-            <span className="text-[10px] text-white/40 uppercase font-mono">
-              24-48H DISPATCH
-            </span>
-          </div>
+      
 
           {/* Items List */}
           <div className="mt-4 space-y-3 max-h-[52vh] overflow-y-auto pr-1">
@@ -236,23 +230,25 @@ export function CartDrawer() {
             </div>
 
             <button
-              onClick={() => {
-                alert(
-                  `Thank you! Your REBELIVE cold-dispatch order of ₹${subtotal.toLocaleString(
-                    'en-IN'
-                  )} has been placed. Packaging at facility.`
-                );
-                dispatch(clearCart());
-                dispatch(closeCart());
-              }}
-              className="w-full py-3.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-[0_0_25px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98]"
+              disabled
+              className="w-full py-3.5 rounded-xl bg-white/10 text-white/40 border border-white/10 text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-not-allowed select-none"
+              title="Ordering is currently disabled"
             >
-              <Check className="w-4 h-4 stroke-[3]" />
-              <span>Checkout • ₹{subtotal.toLocaleString('en-IN')}</span>
+              <Zap className="w-4 h-4 text-white/30 fill-white/30" />
+              <span>Checkout Disabled • ₹{subtotal.toLocaleString('en-IN')}</span>
             </button>
+            <p className="text-[10px] text-center text-white/40 font-mono tracking-wider">
+              ONLINE ORDERS ARE TEMPORARILY DISABLED
+            </p>
           </div>
         )}
       </div>
+
+      {/* Shiprocket Fastrr 1-Click Checkout Modal */}
+      <FastrrCheckoutModal
+        isOpen={isFastrrOpen}
+        onClose={() => setIsFastrrOpen(false)}
+      />
     </div>
   );
 }

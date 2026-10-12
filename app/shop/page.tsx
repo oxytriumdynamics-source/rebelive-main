@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ALL_PRODUCTS, PRODUCTS, PRICES, PackSize, Product } from '@/data/products';
+import { fetchProducts } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
 
@@ -33,6 +34,7 @@ export default function ShopPage() {
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'single' | 'bundle'>('all');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+  const [productsList, setProductsList] = useState<Product[]>(ALL_PRODUCTS);
 
   // Quick-Add Modal Popup State
   const [quickAddProduct, setQuickAddProduct] = useState<Product | null>(null);
@@ -44,7 +46,16 @@ export default function ShopPage() {
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.pricePerUnit * item.quantity, 0);
 
-  const filteredProducts = ALL_PRODUCTS.filter((p) => {
+  // Load products from backend database
+  React.useEffect(() => {
+    fetchProducts(true).then((data) => {
+      if (data && data.length > 0) {
+        setProductsList(data);
+      }
+    });
+  }, []);
+
+  const filteredProducts = productsList.filter((p) => {
     if (selectedCategory === 'single') return p.id !== 'variety';
     if (selectedCategory === 'bundle') return p.id === 'variety';
     return true;

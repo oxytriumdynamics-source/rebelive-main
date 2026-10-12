@@ -320,6 +320,22 @@ export const claimPersona = createAsyncThunk(
   },
 );
 
+/** Update user profile */
+export const updateProfile = createAsyncThunk(
+  'auth/updateProfile',
+  async (
+    payload: { firstName?: string; lastName?: string; phone?: string; avatarUrl?: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const { data } = await API.patch('/users/profile', payload);
+      return data.data as AuthUser;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err, 'Failed to update profile'));
+    }
+  },
+);
+
 // ─── Slice ─────────────────────────────────────────────
 
 const initialState: AuthState = {
@@ -342,6 +358,13 @@ const authSlice = createSlice({
     setAccessToken(state, action: PayloadAction<string>) {
       state.accessToken = action.payload;
       saveToken(action.payload);
+    },
+    /** Set user directly (e.g., after profile edit) */
+    setUser(state, action: PayloadAction<AuthUser>) {
+      state.user = action.payload;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('authUser', JSON.stringify(action.payload));
+      }
     },
     /** Clear all auth state (client-side logout) */
     clearAuth(state) {
@@ -503,6 +526,27 @@ const authSlice = createSlice({
         }
       });
 
+    // ── Update Profile ────────────────────────────────
+    builder
+      .addCase(updateProfile.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(updateProfile.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        state.user = {
+          ...(state.user || {}),
+          ...payload,
+        } as AuthUser;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('authUser', JSON.stringify(state.user));
+        }
+      })
+      .addCase(updateProfile.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload as string;
+      });
+
     // ── Logout ────────────────────────────────────────
     builder
       .addCase(logoutUser.fulfilled, (state) => {
@@ -520,5 +564,6 @@ const authSlice = createSlice({
   },
 });
 
-export const { setAccessToken, clearAuth, clearError } = authSlice.actions;
+export const { setAccessToken, setUser, clearAuth, clearError } = authSlice.actions;
+export { API };
 export default authSlice.reducer;

@@ -45,8 +45,10 @@ import {
   PRICES,
   PackSize,
 } from '@/data/products';
+import { fetchProducts, fetchProductBySlug } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
+import { FastrrCheckoutModal } from '@/components/shop/FastrrCheckoutModal';
 
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
@@ -222,8 +224,27 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     ),
   },
   {
+    id: 'monk-fruit',
+    icons: ['/benifits/monk-fruit-badge.png'],
+    title: (
+      <>
+        <div>
+          <span className="font-black text-white">NATURALLY</span> Sweetened
+        </div>
+        <div className="mt-0.5">
+          with <span className="font-black text-white">Monk Fruit</span>
+        </div>
+      </>
+    ),
+    desc: (
+      <>
+        Pure plant-based sweetness from antioxidant-rich monk fruit extract, giving delicious flavor with zero sugar spikes.
+      </>
+    ),
+  },
+  {
     id: 'zero-sugar',
-    icons: ['/benifits/Rebelive Corporate Pilot (2).webp'],
+    icons: ['/benifits/zero-sugar-badge.png'],
     title: (
       <>
         <div>
@@ -236,8 +257,7 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     ),
     desc: (
       <>
-        Naturally Sweetened with{' '}
-        <strong className="font-bold text-white">Monkfruit</strong>
+        Clean functional formula without added sugars or artificial dyes, crafted for sustained everyday energy and focus.
       </>
     ),
   },
@@ -380,8 +400,18 @@ export default function ProductDetailPage() {
   const router = useRouter();
   const productId = (params?.id as string) || 'apex';
 
-  const product = useMemo(() => {
+  const [product, setProduct] = useState<Product>(() => {
     return getProductById(productId) || ALL_PRODUCTS[0];
+  });
+  const [allProductsList, setAllProductsList] = useState<Product[]>(ALL_PRODUCTS);
+
+  useEffect(() => {
+    fetchProductBySlug(productId, true).then((serverProd) => {
+      if (serverProd) setProduct(serverProd);
+    });
+    fetchProducts(true).then((list) => {
+      if (list && list.length > 0) setAllProductsList(list);
+    });
   }, [productId]);
 
   const dispatch = useAppDispatch();
@@ -407,6 +437,7 @@ export default function ProductDetailPage() {
   // ── Photo Gallery State ──
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
+  const [isFastrrModalOpen, setIsFastrrModalOpen] = useState<boolean>(false);
 
   // Reset photo index when product changes
   useEffect(() => {
@@ -464,8 +495,8 @@ export default function ProductDetailPage() {
 
   // Other products for "Explore Other Flavors" section
   const otherProducts = useMemo(() => {
-    return ALL_PRODUCTS.filter((p) => p.id !== product.id);
-  }, [product.id]);
+    return allProductsList.filter((p) => p.id !== product.id);
+  }, [allProductsList, product.id]);
 
   const handleAddToCart = () => {
     setIsAddedAnimation(true);
@@ -485,18 +516,7 @@ export default function ProductDetailPage() {
   };
 
   const handleQuickBuy = () => {
-    dispatch(
-      addToCart({
-        id: product.id,
-        name: product.name,
-        flavor: product.flavor,
-        image: product.image || product.canImage,
-        packSize,
-        quantity,
-        pricePerUnit: pricing.price,
-      })
-    );
-    dispatch(openCart());
+    setIsFastrrModalOpen(true);
   };
 
   return (
@@ -834,18 +854,28 @@ export default function ProductDetailPage() {
                   {/* Express Checkout */}
                   <button
                     type="button"
-                    onClick={handleQuickBuy}
-                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/20 hover:border-white/40 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer active:scale-[0.98] flex items-center justify-center gap-2"
+                    disabled
+                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white/[0.04] text-white/40 border border-white/10 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-not-allowed flex items-center justify-center gap-2 select-none"
+                    title="Ordering is currently disabled"
                   >
+                    <Zap className="w-3.5 h-3.5 text-white/30 fill-white/30" />
                     <span>Instant Checkout</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
                   </button>
                 </div>
 
                 {/* ── Product Dropdowns: Description & Additional Information ── */}
                 {(() => {
                   const currentKey = (product?.id || productId || 'apex').toLowerCase();
-                  const currentInfo = PRODUCT_ADDITIONAL_INFO[currentKey] || PRODUCT_ADDITIONAL_INFO.apex;
+                  const isVarietyProduct = isVariety || currentKey === 'variety';
+
+                  // Dynamic Nutrition & Additional Info directly from product data
+                  const activeNutrition = product?.nutritionInfo || PRODUCT_ADDITIONAL_INFO[currentKey] || PRODUCT_ADDITIONAL_INFO.apex;
+                  const activeAdditional = product?.additionalInfo;
+
+                  // Dynamic Trio flavors nutrition lookup from allProductsList
+                  const apexNutrients = allProductsList.find((p) => p.id === 'apex')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.apex;
+                  const capellaNutrients = allProductsList.find((p) => p.id === 'capella')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.capella;
+                  const avivaNutrients = allProductsList.find((p) => p.id === 'aviva')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.aviva;
 
                   return (
                     <div className="mt-5 space-y-2.5">
@@ -862,7 +892,7 @@ export default function ProductDetailPage() {
                               DESCRIPTION
                             </span>
                             <span className="text-[10px] text-white/40 uppercase font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10">
-                              {'250 ml'}
+                              {product?.netQuantity || '250 ml'}
                             </span>
                           </div>
                           <ChevronDown
@@ -876,158 +906,97 @@ export default function ProductDetailPage() {
                             {/* Net Quantity & Vegetarian Status */}
                             <div className="flex items-center justify-between p-2.5 rounded-xl bg-white/[0.03] border border-white/10">
                               {/* Vegetarian Logo (Official Green Square & Circle) */}
-                              <div
-                                className="w-5 h-5 border-2 border-emerald-500 rounded-sm flex items-center justify-center p-0.5 bg-black/60 shadow-[0_0_12px_rgba(16,185,129,0.3)] shrink-0"
-                                title="100% Vegetarian"
-                              >
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                              </div>
+                              {product?.isVegetarian !== false && (
+                                <div
+                                  className="w-5 h-5 border-2 border-emerald-500 rounded-sm flex items-center justify-center p-0.5 bg-black/60 shadow-[0_0_12px_rgba(16,185,129,0.3)] shrink-0"
+                                  title="100% Vegetarian"
+                                >
+                                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
+                                </div>
+                              )}
 
-                              <div className="text-right">
+                              <div className="text-right ml-auto">
                                 <span className="text-[9px] sm:text-[10px] text-white/40 uppercase font-mono block">
                                   Net Quantity
                                 </span>
                                 <span className="text-xs font-bold text-white font-mono">
-                                  {'250 ml'}
+                                  {product?.netQuantity || '250 ml'}
                                 </span>
                               </div>
                             </div>
 
+                        
                             {/* Ingredients */}
                             <div className="p-2.5 sm:p-3 rounded-xl bg-white/[0.02] border border-white/5 space-y-1">
                               <span className="text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider font-mono block">
                                 INGREDIENTS:
                               </span>
                               <p className="text-[11px] sm:text-xs text-white/70 leading-relaxed font-light">
-                                Carbonated Water, Fructo-oligosaccharides (FOS), Acidity Regulator (INS 345), Acidity Regulator (INS 332(ii)), Acidity Regulator (INS 330), Nature Identical Flavouring Substances, Ashwagandha (KSM-66®), Bacillus clausii, Monk Fruit Extract, L-Theanine, Natural Caffeine Extract, Preservative (INS 211), Vitamin Premix (B6, B9, B12).
+                                {product?.ingredients ||
+                                  'Carbonated Water, Fructo-oligosaccharides (FOS), Acidity Regulator (INS 345), Acidity Regulator (INS 332(ii)), Acidity Regulator (INS 330), Nature Identical Flavouring Substances, Ashwagandha (KSM-66®), Bacillus clausii, Monk Fruit Extract, L-Theanine, Natural Caffeine Extract, Preservative (INS 211), Vitamin Premix (B6, B9, B12).'}
                               </p>
                             </div>
 
                             {/* ── NUTRITION FACTS: Compact Small Text & Reduced Space ── */}
                             {(() => {
                               // Helper: Render a single compact flavor nutrition panel
-                              const renderCompactTable = (info: AdditionalInfoData, customBadge?: string) => (
-                                <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-                                  <div className="p-2 sm:p-2.5 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
-                                    <div>
-                                      <span className="text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider font-mono block">
-                                        Nutrition Facts
-                                      </span>
-                                      <span className="text-[8.5px] sm:text-[9px] text-white/50 font-mono">
-                                        1 serving per container (250 ml)
+                              const renderCompactTable = (info: any, customBadge?: string) => {
+                                if (!info || !info.nutrients || info.nutrients.length === 0) return null;
+                                return (
+                                  <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
+                                    <div className="p-2 sm:p-2.5 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
+                                      <div>
+                                        <span className="text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider font-mono block">
+                                          Nutrition Facts
+                                        </span>
+                                        <span className="text-[8.5px] sm:text-[9px] text-white/50 font-mono">
+                                          {info.servingsPerContainer || `1 serving per container (${info.servingSize || '250 ml'})`}
+                                        </span>
+                                      </div>
+                                      <span className="text-[8.5px] sm:text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/80 font-semibold">
+                                        {customBadge || info.productName || product?.name}
                                       </span>
                                     </div>
-                                    <span className="text-[8.5px] sm:text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/80 font-semibold">
-                                      {customBadge || info.productName}
-                                    </span>
-                                  </div>
 
-                                  <div className="overflow-x-auto [scrollbar-width:thin] scrollbar-thin scrollbar-thumb-white/20">
-                                    <table className="w-full text-left text-[9px] sm:text-[9.5px] font-mono">
-                                      <thead>
-                                        <tr className="border-b border-white/10 text-[8px] sm:text-[8.5px] uppercase tracking-wider text-white/50 bg-white/[0.01]">
-                                          <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70">Nutrients</th>
-                                          <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70 text-center">Per 100 ml</th>
-                                          <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70 text-right">%RDA per serve</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-white/5">
-                                        {info.nutrients.map((item, idx) => (
-                                          <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                                            <td className="py-1 px-1.5 sm:px-2 text-white/85 font-medium">{item.nutrient}</td>
-                                            <td className="py-1 px-1.5 sm:px-2 text-white/70 text-center">{item.per100ml}</td>
-                                            <td className="py-1 px-1.5 sm:px-2 text-white/90 text-right font-semibold">
-                                              {item.rda}
-                                            </td>
+                                    <div className="overflow-x-auto [scrollbar-width:thin] scrollbar-thin scrollbar-thumb-white/20">
+                                      <table className="w-full text-left text-[9px] sm:text-[9.5px] font-mono">
+                                        <thead>
+                                          <tr className="border-b border-white/10 text-[8px] sm:text-[8.5px] uppercase tracking-wider text-white/50 bg-white/[0.01]">
+                                            <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70">Nutrients</th>
+                                            <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70 text-center">Per 100 ml</th>
+                                            <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70 text-right">%RDA per serve</th>
                                           </tr>
-                                        ))}
-                                      </tbody>
-                                    </table>
-                                  </div>
-
-                                  <div className="p-1.5 sm:p-2 border-t border-white/10 text-[8px] sm:text-[8.5px] text-white/40 font-mono space-y-0.5 bg-white/[0.01]">
-                                    {info.notes.map((note, idx) => (
-                                      <p key={idx}>{note}</p>
-                                    ))}
-                                  </div>
-                                </div>
-                              );
-
-                              // Helper: Render master 3-in-1 comparison table with all 3 flavors adjusted together
-                              const renderTrioCombined = () => (
-                                <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
-                                  <div className="p-2 sm:p-2.5 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
-                                    <div>
-                                      <span className="text-[10px] sm:text-[11px] font-bold text-white uppercase tracking-wider font-mono block">
-                                        Nutrition Facts — All 3 Flavours
-                                      </span>
-                                      <span className="text-[8.5px] sm:text-[9px] text-white/50 font-mono">
-                                        Values per 100 ml (%RDA per 250 ml serve)
-                                      </span>
-                                    </div>
-                                    <span className="text-[8.5px] sm:text-[9px] uppercase font-mono px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/80 font-semibold">
-                                      Trio Comparison
-                                    </span>
-                                  </div>
-
-                                  <div className="overflow-x-auto [scrollbar-width:thin] scrollbar-thin scrollbar-thumb-white/20">
-                                    <table className="w-full text-left text-[9px] sm:text-[9.5px] font-mono">
-                                      <thead>
-                                        <tr className="border-b border-white/10 text-[8px] sm:text-[8.5px] uppercase tracking-wider bg-white/[0.01]">
-                                          <th className="py-1 px-1.5 sm:px-2 font-semibold text-white/70">Nutrients</th>
-                                          <th className="py-1 px-1.5 sm:px-2 font-bold text-amber-300 text-center">APEX</th>
-                                          <th className="py-1 px-1.5 sm:px-2 font-bold text-cyan-300 text-center">CAPELLA</th>
-                                          <th className="py-1 px-1.5 sm:px-2 font-bold text-rose-300 text-center">AVIVA</th>
-                                        </tr>
-                                        <tr className="border-b border-white/5 text-[7.5px] sm:text-[8px] uppercase tracking-wider text-white/40 bg-white/[0.005]">
-                                          <th className="py-0.5 px-1.5 sm:px-2 text-white/40 font-normal">Per 250ml Can</th>
-                                          <th className="py-0.5 px-1.5 sm:px-2 text-center text-white/40 font-normal">100ml (%RDA)</th>
-                                          <th className="py-0.5 px-1.5 sm:px-2 text-center text-white/40 font-normal">100ml (%RDA)</th>
-                                          <th className="py-0.5 px-1.5 sm:px-2 text-center text-white/40 font-normal">100ml (%RDA)</th>
-                                        </tr>
-                                      </thead>
-                                      <tbody className="divide-y divide-white/5">
-                                        {PRODUCT_ADDITIONAL_INFO.apex.nutrients.map((apexItem, idx) => {
-                                          const capellaItem = PRODUCT_ADDITIONAL_INFO.capella.nutrients[idx];
-                                          const avivaItem = PRODUCT_ADDITIONAL_INFO.aviva.nutrients[idx];
-
-                                          return (
+                                        </thead>
+                                        <tbody className="divide-y divide-white/5">
+                                          {info.nutrients.map((item: any, idx: number) => (
                                             <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
-                                              <td className="py-1 px-1.5 sm:px-2 text-white/85 font-medium whitespace-nowrap">
-                                                {apexItem.nutrient}
-                                              </td>
-                                              <td className="py-1 px-1.5 sm:px-2 text-center whitespace-nowrap">
-                                                <span className="text-white/95">{apexItem.per100ml}</span>
-                                                <span className="text-white/40 text-[7.5px] sm:text-[8px] ml-0.5">({apexItem.rda})</span>
-                                              </td>
-                                              <td className="py-1 px-1.5 sm:px-2 text-center whitespace-nowrap">
-                                                <span className="text-white/95">{capellaItem.per100ml}</span>
-                                                <span className="text-white/40 text-[7.5px] sm:text-[8px] ml-0.5">({capellaItem.rda})</span>
-                                              </td>
-                                              <td className="py-1 px-1.5 sm:px-2 text-center whitespace-nowrap">
-                                                <span className="text-white/95">{avivaItem.per100ml}</span>
-                                                <span className="text-white/40 text-[7.5px] sm:text-[8px] ml-0.5">({avivaItem.rda})</span>
+                                              <td className="py-1 px-1.5 sm:px-2 text-white/85 font-medium">{item.nutrient}</td>
+                                              <td className="py-1 px-1.5 sm:px-2 text-white/70 text-center">{item.per100ml}</td>
+                                              <td className="py-1 px-1.5 sm:px-2 text-white/90 text-right font-semibold">
+                                                {item.rda}
                                               </td>
                                             </tr>
-                                          );
-                                        })}
-                                      </tbody>
-                                    </table>
-                                  </div>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
 
-                                  <div className="p-1.5 sm:p-2 border-t border-white/10 text-[8px] sm:text-[8.5px] text-white/40 font-mono space-y-0.5 bg-white/[0.01]">
-                                    <p>* Values formatted as: Per 100 ml (%RDA per 250 ml serve)</p>
-                                    <p>** Based on 2000 kCal Diet</p>
+                                    {info.notes && info.notes.length > 0 && (
+                                      <div className="p-1.5 sm:p-2 border-t border-white/10 text-[8px] sm:text-[8.5px] text-white/40 font-mono space-y-0.5 bg-white/[0.01]">
+                                        {info.notes.map((note: string, idx: number) => (
+                                          <p key={idx}>{note}</p>
+                                        ))}
+                                      </div>
+                                    )}
                                   </div>
-                                </div>
-                              );
+                                );
+                              };
 
-                              if (isVariety) {
+                              if (isVarietyProduct) {
                                 return (
                                   <div className="space-y-2">
                                     {/* Flavor Selector Tabs for Trio Pack */}
                                     <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/10 overflow-x-auto [scrollbar-width:none]">
-                                   
                                       <button
                                         type="button"
                                         onClick={() => setTrioNutrientTab('apex')}
@@ -1063,17 +1032,14 @@ export default function ProductDetailPage() {
                                       </button>
                                     </div>
 
-                                    {trioNutrientTab === 'apex' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.apex, 'APEX')}
-                                    {trioNutrientTab === 'capella' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.capella, 'CAPELLA')}
-                                    {trioNutrientTab === 'aviva' &&
-                                      renderCompactTable(PRODUCT_ADDITIONAL_INFO.aviva, 'AVIVA')}
+                                    {trioNutrientTab === 'apex' && renderCompactTable(apexNutrients, 'APEX')}
+                                    {trioNutrientTab === 'capella' && renderCompactTable(capellaNutrients, 'CAPELLA')}
+                                    {trioNutrientTab === 'aviva' && renderCompactTable(avivaNutrients, 'AVIVA')}
                                   </div>
                                 );
                               }
 
-                              return renderCompactTable(currentInfo);
+                              return renderCompactTable(activeNutrition);
                             })()}
                           </div>
                         )}
@@ -1110,7 +1076,7 @@ export default function ProductDetailPage() {
                                   Recommended Usage
                                 </span>
                                 <p className="text-xs text-white/90 font-medium">
-                                  Consume not more than 500 ml per day.
+                                  {activeAdditional?.recommendedUsage || 'Consume not more than 500 ml per day.'}
                                 </p>
                               </div>
 
@@ -1119,7 +1085,7 @@ export default function ProductDetailPage() {
                                   Directions for Use
                                 </span>
                                 <p className="text-xs text-white/90 font-medium">
-                                  Best served chilled.
+                                  {activeAdditional?.directionsForUse || 'Best served chilled.'}
                                 </p>
                               </div>
                             </div>
@@ -1130,7 +1096,7 @@ export default function ProductDetailPage() {
                                 Storage
                               </span>
                               <p className="text-xs text-white/80 font-normal">
-                                Store in a cool and dry place. Avoid direct sunlight.
+                                {activeAdditional?.storage || 'Store in a cool and dry place. Avoid direct sunlight.'}
                               </p>
                             </div>
 
@@ -1140,7 +1106,8 @@ export default function ProductDetailPage() {
                                 Disclaimer
                               </span>
                               <p className="text-xs text-white/75 leading-relaxed font-normal">
-                                Contains caffeine. Not recommended for children, pregnant or lactating women, or persons sensitive to caffeine. Not suitable for persons below 18 years of age. No medicinal or disease claims.
+                                {activeAdditional?.disclaimer ||
+                                  'Contains caffeine. Not recommended for children, pregnant or lactating women, or persons sensitive to caffeine. Not suitable for persons below 18 years of age. No medicinal or disease claims.'}
                               </p>
                             </div>
 
@@ -1151,7 +1118,7 @@ export default function ProductDetailPage() {
                                   Best Before
                                 </span>
                                 <p className="text-xs text-white/90 font-medium">
-                                  12 months from the date of manufacture
+                                  {activeAdditional?.bestBefore || '12 months from the date of manufacture'}
                                 </p>
                               </div>
 
@@ -1160,7 +1127,7 @@ export default function ProductDetailPage() {
                                   Country of Origin
                                 </span>
                                 <p className="text-xs text-white/90 font-medium uppercase font-mono tracking-wider">
-                                  INDIA
+                                  {activeAdditional?.countryOfOrigin || 'INDIA'}
                                 </p>
                               </div>
                             </div>
@@ -1172,14 +1139,17 @@ export default function ProductDetailPage() {
                                   Manufactured By
                                 </span>
                                 <p className="text-xs text-white/90 font-medium leading-relaxed">
-                                  Patel Beverages Pvt. Ltd.<br />
+                                  {activeAdditional?.manufacturedBy?.name || 'Patel Beverages Pvt. Ltd.'}<br />
                                   <span className="text-white/60 text-[11px] font-normal block mt-0.5">
-                                    505/2-3-4, G.I.D.C Estate, Makarpura, Vadodara, Gujarat - 3900010
+                                    {activeAdditional?.manufacturedBy?.address ||
+                                      '505/2-3-4, G.I.D.C Estate, Makarpura, Vadodara, Gujarat - 3900010'}
                                   </span>
                                 </p>
                                 <div className="pt-1.5 border-t border-white/5 flex items-center gap-1.5">
                                   <span className="text-[10px] font-mono text-white/40 uppercase">FSSAI Lic. No.</span>
-                                  <span className="text-[11px] font-mono font-bold text-white/90">10013021000941</span>
+                                  <span className="text-[11px] font-mono font-bold text-white/90">
+                                    {activeAdditional?.manufacturedBy?.fssaiLicNo || '10013021000941'}
+                                  </span>
                                 </div>
                               </div>
 
@@ -1188,14 +1158,17 @@ export default function ProductDetailPage() {
                                   Marketed By
                                 </span>
                                 <p className="text-xs text-white/90 font-medium leading-relaxed">
-                                  OXYTRIUM DYNAMICS PRIVATE LIMITED<br />
+                                  {activeAdditional?.marketedBy?.name || 'OXYTRIUM DYNAMICS PRIVATE LIMITED'}<br />
                                   <span className="text-white/60 text-[11px] font-normal block mt-0.5">
-                                    2nd Floor, House No. 81, Ward No. 12, Manikpur, Keshopur, Rajpur, Buxar, Bihar, India, 802113
+                                    {activeAdditional?.marketedBy?.address ||
+                                      '2nd Floor, House No. 81, Ward No. 12, Manikpur, Keshopur, Rajpur, Buxar, Bihar, India, 802113'}
                                   </span>
                                 </p>
                                 <div className="pt-1.5 border-t border-white/5 flex items-center gap-1.5">
                                   <span className="text-[10px] font-mono text-white/40 uppercase">FSSAI Lic. No.</span>
-                                  <span className="text-[11px] font-mono font-bold text-white/90">10013021000941</span>
+                                  <span className="text-[11px] font-mono font-bold text-white/90">
+                                    {activeAdditional?.marketedBy?.fssaiLicNo || '10013021000941'}
+                                  </span>
                                 </div>
                               </div>
                             </div>
@@ -1356,44 +1329,45 @@ export default function ProductDetailPage() {
                 </p>
               </div>
 
-              {/* Box 5 (Bottom Center: Product Can Showcase Card) */}
-              <div className="rounded-2xl sm:rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 p-4 sm:p-6 flex flex-col items-center justify-center relative overflow-hidden group shadow-[0_12px_40px_rgba(0,0,0,0.5)] transition-all duration-300 hover:-translate-y-1 min-h-[220px] sm:min-h-[240px] md:min-h-[250px]">
-                {/* Backlight Halo in Monochrome Silver */}
-                <div
-                  className="absolute inset-4 rounded-full blur-2xl opacity-20 group-hover:opacity-35 transition-opacity duration-500 pointer-events-none"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.25) 0%, transparent 70%)',
-                  }}
-                />
-                <div className="relative w-28 xs:w-32 sm:w-40 md:w-44 h-40 xs:h-44 sm:h-52 md:h-56 flex items-center justify-center transition-transform duration-500 group-hover:scale-105 z-10">
-                  <Image
-                    src={product.canImage || product.image || '/brand/apex-can.webp'}
-                    alt={`${product.name} Can`}
-                    fill
-                    sizes="(max-width: 640px) 140px, 220px"
-                    className="object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)]"
-                  />
-                </div>
-              </div>
-
-              {/* Box 6 (Bottom Right) */}
+              {/* Box 5 (Bottom Center: Naturally Sweetened with Monk Fruit) */}
               <div className="rounded-2xl sm:rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 p-5 sm:p-6 md:p-7 flex flex-col items-center justify-between text-center transition-all duration-300 group shadow-[0_12px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_45px_rgba(255,255,255,0.06)] hover:-translate-y-1 relative min-h-[220px] sm:min-h-[240px] md:min-h-[250px]">
-                <div className="flex items-center justify-center mb-4 sm:mb-5 w-full">
-                  <div className="w-11 h-11 sm:w-14 sm:h-14 relative flex items-center justify-center">
+                <div className="flex items-center justify-center mb-3 sm:mb-4 w-full">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
                     <Image
                       src={BENEFIT_BOXES[4].icons[0]}
-                      alt="ZERO added Sugar"
+                      alt="Naturally Sweetened with Monk Fruit"
                       fill
-                      sizes="60px"
-                      className="object-contain invert"
+                      sizes="80px"
+                      className="object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
                     />
                   </div>
                 </div>
                 <div className="text-sm sm:text-base md:text-[17px] font-bold text-white tracking-tight leading-snug">
                   {BENEFIT_BOXES[4].title}
                 </div>
-                <p className="text-xs sm:text-[13px] text-white/70 leading-relaxed font-light mt-3 sm:mt-4">
+                <p className="text-xs sm:text-[13px] text-white/70 leading-relaxed font-light mt-2 sm:mt-3">
                   {BENEFIT_BOXES[4].desc}
+                </p>
+              </div>
+
+              {/* Box 6 (Bottom Right: Zero Added Sugar) */}
+              <div className="rounded-2xl sm:rounded-3xl bg-white/[0.03] hover:bg-white/[0.06] border border-white/10 hover:border-white/20 p-5 sm:p-6 md:p-7 flex flex-col items-center justify-between text-center transition-all duration-300 group shadow-[0_12px_40px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_45px_rgba(255,255,255,0.06)] hover:-translate-y-1 relative min-h-[220px] sm:min-h-[240px] md:min-h-[250px]">
+                <div className="flex items-center justify-center mb-3 sm:mb-4 w-full">
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
+                    <Image
+                      src={BENEFIT_BOXES[5].icons[0]}
+                      alt="ZERO added Sugar"
+                      fill
+                      sizes="80px"
+                      className="object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
+                    />
+                  </div>
+                </div>
+                <div className="text-sm sm:text-base md:text-[17px] font-bold text-white tracking-tight leading-snug">
+                  {BENEFIT_BOXES[5].title}
+                </div>
+                <p className="text-xs sm:text-[13px] text-white/70 leading-relaxed font-light mt-2 sm:mt-3">
+                  {BENEFIT_BOXES[5].desc}
                 </p>
               </div>
             </div>
@@ -1777,6 +1751,22 @@ export default function ProductDetailPage() {
             </div>
           </div>
         )}
+
+        {/* Shiprocket Fastrr Instant Checkout Modal */}
+        <FastrrCheckoutModal
+          isOpen={isFastrrModalOpen}
+          onClose={() => setIsFastrrModalOpen(false)}
+          directItem={{
+            productId: product.id,
+            slug: product.id,
+            name: product.name,
+            flavor: product.flavor,
+            packSize,
+            quantity,
+            unitPrice: pricing.price,
+            image: product.image || product.canImage,
+          }}
+        />
       </div>
     </>
   );

@@ -111,7 +111,6 @@ function PersonaContent() {
             <ProfileStage
               key="profile"
               user={user}
-              onStartQuiz={startTest}
             />
           )}
         </AnimatePresence>

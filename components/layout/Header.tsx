@@ -3,8 +3,8 @@ import React, { useState, useRef, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { User, LogIn, LogOut, ChevronDown, ExternalLink, ShieldCheck, ShoppingBag } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { User, LogIn, LogOut, ChevronDown, ExternalLink, ShieldCheck, ShoppingBag, MapPin, Package } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { openCart } from '@/store/slices/cartSlice';
@@ -249,7 +249,21 @@ export const Header: React.FC<HeaderProps> = ({
               <HoverRollText text="SHOP" />
             </Link>
 
-
+            {isUserAuthenticated && (
+              <Link
+                href="/profile"
+                className={`group text-[11px] xl:text-xs font-tech tracking-[0.2em] uppercase transition-all cursor-pointer pb-0.5 ${isProfile
+                    ? isDark
+                      ? 'font-bold text-white border-b-2 border-white'
+                      : 'font-bold text-black border-b-2 border-black'
+                    : isDark
+                      ? 'font-medium text-white/80 hover:text-white border-b-2 border-transparent'
+                      : 'font-medium text-black/80 hover:text-black border-b-2 border-transparent'
+                  }`}
+              >
+                <HoverRollText text="PROFILE" />
+              </Link>
+            )}
           </nav>
         </div>
 
@@ -262,8 +276,8 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <div
               className={`relative transition-all duration-500 group-hover:opacity-85 ${isScrolled
-                  ? 'w-[105px] min-[360px]:w-[125px] min-[420px]:w-[150px] sm:w-[175px] md:w-[195px] lg:w-[215px] h-[20px] min-[360px]:h-[24px] min-[420px]:h-[28px] sm:h-[34px] md:h-[38px] lg:h-[42px]'
-                  : 'w-[120px] min-[360px]:w-[140px] min-[420px]:w-[170px] sm:w-[210px] md:w-[240px] lg:w-[260px] h-[24px] min-[360px]:h-[28px] min-[420px]:h-[34px] sm:h-[42px] md:h-[48px] lg:h-[52px]'
+                  ? 'w-[118px] min-[360px]:w-[140px] min-[420px]:w-[165px] sm:w-[175px] md:w-[195px] lg:w-[215px] h-[23px] min-[360px]:h-[27px] min-[420px]:h-[31px] sm:h-[34px] md:h-[38px] lg:h-[42px]'
+                  : 'w-[135px] min-[360px]:w-[160px] min-[420px]:w-[185px] sm:w-[210px] md:w-[240px] lg:w-[260px] h-[27px] min-[360px]:h-[32px] min-[420px]:h-[37px] sm:h-[42px] md:h-[48px] lg:h-[52px]'
                 }`}
             >
               <Image
@@ -271,7 +285,7 @@ export const Header: React.FC<HeaderProps> = ({
                 alt="REBELIVE"
                 fill
                 priority
-                sizes="(max-width: 640px) 160px, (max-width: 1024px) 240px, 280px"
+                sizes="(max-width: 640px) 200px, (max-width: 1024px) 240px, 280px"
                 className={`object-contain object-center transition-all duration-500 drop-shadow-[0_2px_14px_rgba(0,0,0,0.9)] ${isDark ? 'brightness-0 invert' : ''
                   }`}
               />
@@ -316,24 +330,53 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
           {isUserAuthenticated ? (
-            <div className="relative hidden sm:block" ref={dropdownRef}>
+            <div className="relative" ref={dropdownRef}>
+              {/* Mobile Profile Trigger (< sm) */}
               <button
+                type="button"
+                id="header-profile-mobile-btn"
                 onClick={() => setProfileDropdownOpen((prev) => !prev)}
-                className={`flex items-center gap-1.5 sm:gap-2.5 p-1 sm:pl-1.5 sm:pr-3 py-1 rounded-full border transition-all duration-300 cursor-pointer group shadow-sm ${isDark
+                className={`sm:hidden flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 cursor-pointer active:scale-95 ${isDark
+                    ? 'border-white/20 bg-white/[0.08] hover:bg-white/[0.16] text-white shadow-sm'
+                    : 'border-black/15 bg-white/90 hover:bg-white text-black shadow-sm'
+                  }`}
+                aria-label="Operator account menu"
+                title="Profile Menu"
+              >
+                <div className="relative w-6 h-6 rounded-full overflow-hidden bg-neutral-900 border border-white/30 p-0.5 flex items-center justify-center shrink-0">
+                  <Image
+                    src={userAvatar}
+                    alt={displayName}
+                    fill
+                    sizes="24px"
+                    unoptimized={Boolean(userAvatar?.startsWith('http'))}
+                    className="object-cover rounded-full"
+                  />
+                  <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-white ring-1 ring-black" />
+                </div>
+              </button>
+
+              {/* Desktop Profile Trigger (>= sm) */}
+              <button
+                type="button"
+                id="header-profile-desktop-btn"
+                onClick={() => setProfileDropdownOpen((prev) => !prev)}
+                className={`hidden sm:flex items-center gap-1.5 sm:gap-2.5 p-1 sm:pl-1.5 sm:pr-3 py-1 rounded-full border transition-all duration-300 cursor-pointer group shadow-sm ${isDark
                     ? 'border-white/25 bg-white/[0.08] hover:bg-white/[0.16] hover:border-white/50 text-white'
                     : 'border-black/15 bg-white/80 hover:bg-white hover:border-black/30 text-black shadow-[0_2px_10px_rgba(0,0,0,0.06)]'
                   }`}
                 aria-label="Operator account menu"
               >
-                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-neutral-900 border border-amber-400/60 p-0.5 shadow-sm flex items-center justify-center shrink-0">
+                <div className="relative w-7 h-7 rounded-full overflow-hidden bg-neutral-900 border border-white/20 p-0.5 shadow-sm flex items-center justify-center shrink-0">
                   <Image
                     src={userAvatar}
                     alt={displayName}
                     fill
                     sizes="28px"
+                    unoptimized={Boolean(userAvatar?.startsWith('http'))}
                     className="object-cover rounded-full"
                   />
-                  <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-emerald-400 ring-1 ring-black animate-pulse" />
+                  <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-white ring-1 ring-black" />
                 </div>
 
                 {/* Name & ID snippet */}
@@ -342,7 +385,7 @@ export const Header: React.FC<HeaderProps> = ({
                     {displayName}
                   </span>
                   <span
-                    className={`text-[8px] font-mono tracking-widest leading-none mt-0.5 ${isDark ? 'text-amber-400/80' : 'text-amber-600 font-semibold'
+                    className={`text-[8px] font-mono tracking-widest leading-none mt-0.5 ${isDark ? 'text-white/60' : 'text-black/60 font-semibold'
                       }`}
                   >
                     {rebelId.replace('REBEL-', '#')}
@@ -365,12 +408,13 @@ export const Header: React.FC<HeaderProps> = ({
                 >
                   {/* Dropdown Header: Avatar, Name, Email, Status */}
                   <div className="flex items-center gap-3 pb-3.5 border-b border-black/10 dark:border-white/10">
-                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black/90 border-2 border-amber-400/70 p-0.5 shrink-0">
+                    <div className="relative w-10 h-10 rounded-full overflow-hidden bg-black/90 border border-white/20 p-0.5 shrink-0">
                       <Image
                         src={userAvatar}
                         alt={displayName}
                         fill
                         sizes="40px"
+                        unoptimized={Boolean(userAvatar?.startsWith('http'))}
                         className="object-cover rounded-full"
                       />
                     </div>
@@ -381,8 +425,8 @@ export const Header: React.FC<HeaderProps> = ({
                       <span className="text-[10px] font-mono opacity-60 truncate">
                         {user.email}
                       </span>
-                      <span className="inline-flex items-center gap-1 text-[8.5px] font-tech text-amber-500 font-bold uppercase tracking-widest mt-0.5">
-                        <ShieldCheck className="w-3 h-3" />
+                      <span className="inline-flex items-center gap-1 text-[8.5px] font-tech text-white/70 font-bold uppercase tracking-widest mt-0.5">
+                        <ShieldCheck className="w-3 h-3 text-white" />
                         REBEL ID VERIFIED
                       </span>
                     </div>
@@ -399,8 +443,36 @@ export const Header: React.FC<HeaderProps> = ({
                         }`}
                     >
                       <span className="flex items-center gap-2.5">
-                        <User className="w-3.5 h-3.5 text-amber-500" />
+                        <User className="w-3.5 h-3.5 text-white/80" />
                         PROFILE
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/profile?tab=orders"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-tech font-medium tracking-wider uppercase transition-colors ${isDark
+                          ? 'hover:bg-white/10 text-white/90 hover:text-white'
+                          : 'hover:bg-black/5 text-black/80 hover:text-black'
+                        }`}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <Package className="w-3.5 h-3.5 text-white/80" />
+                        ORDERS
+                      </span>
+                    </Link>
+
+                    <Link
+                      href="/profile?tab=addresses"
+                      onClick={() => setProfileDropdownOpen(false)}
+                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-tech font-medium tracking-wider uppercase transition-colors ${isDark
+                          ? 'hover:bg-white/10 text-white/90 hover:text-white'
+                          : 'hover:bg-black/5 text-black/80 hover:text-black'
+                        }`}
+                    >
+                      <span className="flex items-center gap-2.5">
+                        <MapPin className="w-3.5 h-3.5 text-white/80" />
+                        ADDRESSES
                       </span>
                     </Link>
 
@@ -438,19 +510,35 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
           ) : (
-            <div className="hidden sm:block">
-              <Premium3DButton
+            <>
+              {/* Mobile Login Button (< sm) */}
+              <Link
                 href="/auth"
-                text="LOGIN"
-                size="sm"
-                theme={isDark ? "white" : "dark"}
-                showSparkles={false}
-                icon={<LogIn className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />}
-                isActive={pathname === '/auth'}
-                title="Sign in to your Rebelive operator account"
-                className="text-[10.5px] sm:text-xs"
-              />
-            </div>
+                className={`sm:hidden flex items-center justify-center w-8 h-8 rounded-full border transition-all duration-300 cursor-pointer active:scale-95 ${isDark
+                    ? 'border-white/20 bg-white/[0.08] hover:bg-white/[0.16] text-white'
+                    : 'border-black/15 bg-black/[0.05] hover:bg-black/10 text-black'
+                  }`}
+                aria-label="Sign in"
+                title="Sign in"
+              >
+                <LogIn className="w-3.5 h-3.5 text-amber-400" />
+              </Link>
+
+              {/* Desktop Login Button (>= sm) */}
+              <div className="hidden sm:block">
+                <Premium3DButton
+                  href="/auth"
+                  text="LOGIN"
+                  size="sm"
+                  theme={isDark ? "white" : "dark"}
+                  showSparkles={false}
+                  icon={<LogIn className="w-3.5 h-3.5 transition-transform duration-300 group-hover:scale-110" />}
+                  isActive={pathname === '/auth'}
+                  title="Sign in to your Rebelive operator account"
+                  className="text-[10.5px] sm:text-xs"
+                />
+              </div>
+            </>
           )}
 
           {/* 3D Glass Pill Contact Button - ONLY visible on desktop (lg+), hidden on mobile & tablet */}

@@ -154,6 +154,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                       alt={user.firstName || 'User'}
                       fill
                       sizes="32px"
+                      unoptimized={Boolean(user.avatarUrl?.startsWith('http'))}
                       className="object-cover"
                     />
                   </div>

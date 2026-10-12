@@ -426,31 +426,24 @@ export default function AboutPage() {
             animate={activeSection === 2 ? 'visible' : 'hidden'}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
           >
-            {/* Left: Oxytrium Dynamics Studio Visual */}
+            {/* Left: Oxytrium Dynamics Official Logo Emblem */}
             <motion.div
               variants={scaleInItem}
-              className="lg:col-span-5 order-2 lg:order-1 flex justify-center"
+              className="lg:col-span-5 order-2 lg:order-1 flex items-center justify-center"
             >
-              <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
-                <Image
-                  src="/brand/oxytrium_dynamics.webp"
-                  alt="Oxytrium Dynamics Innovation Studio"
-                  fill
-                  sizes="(max-width: 768px) 100vw, 420px"
-                  className="object-cover group-hover:scale-105 transition-transform duration-700 ease-out"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent pointer-events-none" />
+              <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 flex items-center justify-center select-none group">
+                {/* Subtle Ambient Radial Backlight */}
+                <div className="absolute inset-0 rounded-full bg-[#5195D0]/10 blur-3xl pointer-events-none group-hover:bg-[#5195D0]/20 transition-all duration-700" />
 
-                <div className="absolute bottom-3.5 left-4 right-4 p-3 rounded-2xl bg-black/60 backdrop-blur-md border border-white/10 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-mono uppercase tracking-wider text-white font-bold">
-                      OXYTRIUM DYNAMICS
-                    </p>
-                    <p className="text-[10px] font-mono text-white/50">
-                      NEXT-GEN FOOD &amp; BEVERAGE INCUBATOR
-                    </p>
-                  </div>
-                  <Compass className="w-4 h-4 text-white/60" />
+                <div className="relative w-full h-full p-2 sm:p-4 flex items-center justify-center">
+                  <Image
+                    src="/brand/oxytrium_logo_white.png"
+                    alt="Oxytrium Dynamics Official Emblem"
+                    fill
+                    sizes="(max-width: 768px) 320px, (max-width: 1024px) 384px, 420px"
+                    className="object-contain drop-shadow-[0_0_40px_rgba(81,149,208,0.25)] group-hover:scale-105 transition-transform duration-500"
+                    priority
+                  />
                 </div>
               </div>
             </motion.div>
