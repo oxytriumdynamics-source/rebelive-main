@@ -102,6 +102,7 @@ export default function ProductEditPage() {
     { key: 'Vitamin B6', amount: '2.0', unit: 'mg', dv: '100%' },
     { key: 'Vitamin B12', amount: '2.4', unit: 'mcg', dv: '100%' },
   ]);
+  const [existingTrioNutrients, setExistingTrioNutrients] = useState<any>(null);
 
   // ─── 5. Visual Media & Assets ───
   const [canImage, setCanImage] = useState('');
@@ -171,11 +172,24 @@ export default function ProductEditPage() {
       }
 
       // Nutrition info
-      if (prod.nutritionInfo?.items && Array.isArray(prod.nutritionInfo.items)) {
+      if (prod.nutritionInfo?.items && Array.isArray(prod.nutritionInfo.items) && prod.nutritionInfo.items.length > 0) {
         setNutritionItems(prod.nutritionInfo.items);
+        if (prod.nutritionInfo.servingSize) setServingSize(prod.nutritionInfo.servingSize);
+      } else if (prod.nutritionInfo?.nutrients && Array.isArray(prod.nutritionInfo.nutrients) && prod.nutritionInfo.nutrients.length > 0) {
+        setNutritionItems(
+          prod.nutritionInfo.nutrients.map((n: any) => ({
+            key: n.nutrient,
+            amount: n.per100ml,
+            unit: '',
+            dv: n.rda,
+          }))
+        );
         if (prod.nutritionInfo.servingSize) setServingSize(prod.nutritionInfo.servingSize);
       } else if (prod.nutrition?.items && Array.isArray(prod.nutrition.items)) {
         setNutritionItems(prod.nutrition.items);
+      }
+      if (prod.nutritionInfo?.trioNutrients) {
+        setExistingTrioNutrients(prod.nutritionInfo.trioNutrients);
       }
 
       setCanImage(prod.canImage || '');
@@ -381,8 +395,18 @@ export default function ProductEditPage() {
     setFeedback(null);
 
     const nutritionPayload = {
+      productName: name.trim().toUpperCase(),
       servingSize,
+      servingsPerContainer: `1 serving per container (${servingSize})`,
       items: nutritionItems,
+      nutrients: nutritionItems.map((it) => ({
+        nutrient: it.key,
+        per100ml: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+        perServe: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+        rda: it.dv || '-',
+      })),
+      ...(existingTrioNutrients ? { trioNutrients: existingTrioNutrients } : {}),
+      notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
     };
 
     const payload: any = {

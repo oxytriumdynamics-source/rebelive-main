@@ -66,80 +66,6 @@ interface AdditionalInfoData {
   notes: string[];
 }
 
-const PRODUCT_ADDITIONAL_INFO: Record<string, AdditionalInfoData> = {
-  apex: {
-    productName: 'APEX',
-    servingSize: '250 ml',
-    nutrients: [
-      { nutrient: 'Energy (kCal)', per100ml: '9.33', perServe: '23.325', rda: '1.17%' },
-      { nutrient: 'Total Fat (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Carbohydrates (g)', per100ml: '2.33', perServe: '5.825', rda: '10.79%' },
-      { nutrient: 'Total Sugars (g)', per100ml: '1.9', perServe: '4.75', rda: '0' },
-      { nutrient: 'Added Sugars (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Dietary Fiber (g)', per100ml: '1.48', perServe: '3.7', rda: '12.33%' },
-      { nutrient: 'Protein (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Sodium (mg)', per100ml: '2.97', perServe: '7.425', rda: '0.37%' },
-      { nutrient: 'Potassium (mg)', per100ml: '55.98', perServe: '139.95', rda: '4.00%' },
-      { nutrient: 'Magnesium (mg)', per100ml: '49.77', perServe: '124.425', rda: '32.32%' },
-      { nutrient: 'Caffeine (mg)', per100ml: '18', perServe: '45', rda: '15.00%' },
-      { nutrient: 'Vitamin B6 (mg)', per100ml: '0.39', perServe: '0.975', rda: '40.63%' },
-      { nutrient: 'Vitamin B9 (mcg)', per100ml: '36.39', perServe: '90.975', rda: '30.33%' },
-      { nutrient: 'Vitamin B12 (mcg)', per100ml: '0.21', perServe: '0.525', rda: '21.00%' },
-    ],
-    notes: [
-      '* Approximate Value',
-      '** Based on 2000 kCal Diet',
-    ],
-  },
-  capella: {
-    productName: 'CAPELLA',
-    servingSize: '250 ml',
-    nutrients: [
-      { nutrient: 'Energy (kCal)', per100ml: '10.78', perServe: '26.950', rda: '1.35%' },
-      { nutrient: 'Total Fat (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Carbohydrates (g)', per100ml: '2.69', perServe: '6.725', rda: '12.45%' },
-      { nutrient: 'Total Sugars (g)', per100ml: '1.8', perServe: '4.500', rda: '0' },
-      { nutrient: 'Added Sugars (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Dietary Fiber (g)', per100ml: '1.56', perServe: '3.900', rda: '13.00%' },
-      { nutrient: 'Protein (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Sodium (mg)', per100ml: '3.11', perServe: '7.775', rda: '0.39%' },
-      { nutrient: 'Potassium (mg)', per100ml: '60.86', perServe: '152.150', rda: '4.35%' },
-      { nutrient: 'Magnesium (mg)', per100ml: '53.33', perServe: '133.325', rda: '34.63%' },
-      { nutrient: 'Caffeine (mg)', per100ml: '19', perServe: '47.500', rda: '15.83%' },
-      { nutrient: 'Vitamin B6 (mg)', per100ml: '0.33', perServe: '0.825', rda: '34.38%' },
-      { nutrient: 'Vitamin B9 (mcg)', per100ml: '45.79', perServe: '114.475', rda: '38.16%' },
-      { nutrient: 'Vitamin B12 (mcg)', per100ml: '0.13', perServe: '0.325', rda: '13.00%' },
-    ],
-    notes: [
-      '* Approximate Value',
-      '** Based on 2000 kCal Diet',
-    ],
-  },
-  aviva: {
-    productName: 'AVIVA',
-    servingSize: '250 ml',
-    nutrients: [
-      { nutrient: 'Energy (kCal)', per100ml: '9.63', perServe: '24.075', rda: '1.20%' },
-      { nutrient: 'Total Fat (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Carbohydrates (g)', per100ml: '2.4', perServe: '6.000', rda: '11.10%' },
-      { nutrient: 'Total Sugars (g)', per100ml: '1.79', perServe: '4.475', rda: '0' },
-      { nutrient: 'Added Sugars (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Dietary Fiber (g)', per100ml: '1.52', perServe: '3.800', rda: '12.70%' },
-      { nutrient: 'Protein (g)', per100ml: '0', perServe: '0', rda: '0' },
-      { nutrient: 'Sodium (mg)', per100ml: '3.04', perServe: '7.600', rda: '0.40%' },
-      { nutrient: 'Potassium (mg)', per100ml: '55.1', perServe: '137.750', rda: '3.90%' },
-      { nutrient: 'Magnesium (mg)', per100ml: '48.92', perServe: '122.300', rda: '31.80%' },
-      { nutrient: 'Caffeine (mg)', per100ml: '17', perServe: '42.500', rda: '14.20%' },
-      { nutrient: 'Vitamin B6 (mg)', per100ml: '0.43', perServe: '1.075', rda: '44.80%' },
-      { nutrient: 'Vitamin B9 (mcg)', per100ml: '33.25', perServe: '83.125', rda: '27.70%' },
-      { nutrient: 'Vitamin B12 (mcg)', per100ml: '0.23', perServe: '0.575', rda: '23.00%' },
-    ],
-    notes: [
-      '* Approximate Value',
-      '** Based on 2000 kCal Diet',
-    ],
-  },
-};
 
 interface BenefitBoxItem {
   id: string;
@@ -459,7 +385,7 @@ export default function ProductDetailPage() {
   // ── Dropdown Accordions (Description & Additional Info) ──
   const [isDescOpen, setIsDescOpen] = useState<boolean>(false);
   const [isAdditionalInfoOpen, setIsAdditionalInfoOpen] = useState<boolean>(false);
-  const [trioNutrientTab, setTrioNutrientTab] = useState<'apex' | 'capella' | 'aviva'>('apex');
+  const [trioNutrientTab, setTrioNutrientTab] = useState<'apex' | 'aviva' | 'capella'>('apex');
 
   // ── Benefits Horizontal Carousel Ref ──
   const benefitsCarouselRef = useRef<HTMLDivElement>(null);
@@ -926,13 +852,21 @@ export default function ProductDetailPage() {
                   const isVarietyProduct = isVariety || currentKey === 'variety';
 
                   // Dynamic Nutrition & Additional Info directly from product data
-                  const activeNutrition = product?.nutritionInfo || PRODUCT_ADDITIONAL_INFO[currentKey] || PRODUCT_ADDITIONAL_INFO.apex;
+                  const activeNutrition = product?.nutritionInfo 
                   const activeAdditional = product?.additionalInfo;
 
-                  // Dynamic Trio flavors nutrition lookup from allProductsList
-                  const apexNutrients = allProductsList.find((p) => p.id === 'apex')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.apex;
-                  const capellaNutrients = allProductsList.find((p) => p.id === 'capella')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.capella;
-                  const avivaNutrients = allProductsList.find((p) => p.id === 'aviva')?.nutritionInfo || PRODUCT_ADDITIONAL_INFO.aviva;
+                  // Dynamic Trio flavors nutrition lookup from database (allProductsList or variety.nutritionInfo.trioNutrients)
+                  const getNutrientsForFlavor = (flavorKey: 'apex' | 'aviva' | 'capella') => {
+                    const fromList = allProductsList.find(
+                      (p) => (p.id || '').toLowerCase() === flavorKey || ((p as any).slug || '').toLowerCase() === flavorKey
+                    )?.nutritionInfo;
+                    const fromTrio = (product?.nutritionInfo as any)?.trioNutrients?.[flavorKey];
+                    return fromList || fromTrio 
+                  };
+
+                  const apexNutrients = getNutrientsForFlavor('apex');
+                  const avivaNutrients = getNutrientsForFlavor('aviva');
+                  const capellaNutrients = getNutrientsForFlavor('capella');
 
                   return (
                     <div className="mt-5 space-y-2.5">
@@ -998,7 +932,23 @@ export default function ProductDetailPage() {
                             {(() => {
                               // Helper: Render a single compact flavor nutrition panel
                               const renderCompactTable = (info: any, customBadge?: string) => {
-                                if (!info || !info.nutrients || info.nutrients.length === 0) return null;
+                                if (!info) return null;
+
+                                const rows = (Array.isArray(info.nutrients) && info.nutrients.length > 0)
+                                  ? info.nutrients
+                                  : (Array.isArray(info.items) && info.items.length > 0)
+                                    ? info.items.map((it: any) => ({
+                                        nutrient: it.nutrient || it.key || it.name || 'Nutrient',
+                                        per100ml: it.per100ml || (it.amount ? `${it.amount} ${it.unit || ''}`.trim() : '-'),
+                                        perServe: it.perServe || (it.amount ? `${it.amount} ${it.unit || ''}`.trim() : '-'),
+                                        rda: it.rda || it.dv || '-',
+                                      }))
+                                    : (Array.isArray(info) && info.length > 0)
+                                      ? info
+                                      : [];
+
+                                if (rows.length === 0) return null;
+
                                 return (
                                   <div className="rounded-xl border border-white/10 bg-white/[0.02] overflow-hidden">
                                     <div className="p-2 sm:p-2.5 bg-white/[0.03] border-b border-white/10 flex items-center justify-between">
@@ -1025,7 +975,7 @@ export default function ProductDetailPage() {
                                           </tr>
                                         </thead>
                                         <tbody className="divide-y divide-white/5">
-                                          {info.nutrients.map((item: any, idx: number) => (
+                                          {rows.map((item: any, idx: number) => (
                                             <tr key={idx} className="hover:bg-white/[0.02] transition-colors">
                                               <td className="py-1 px-1.5 sm:px-2 text-white/85 font-medium">{item.nutrient}</td>
                                               <td className="py-1 px-1.5 sm:px-2 text-white/70 text-center">{item.per100ml}</td>
@@ -1051,9 +1001,10 @@ export default function ProductDetailPage() {
 
                               if (isVarietyProduct) {
                                 return (
-                                  <div className="space-y-2">
+                                  <div className="space-y-3">
                                     {/* Flavor Selector Tabs for Trio Pack */}
                                     <div className="flex items-center gap-1 p-0.5 rounded-lg bg-white/[0.04] border border-white/10 overflow-x-auto [scrollbar-width:none]">
+                                  
                                       <button
                                         type="button"
                                         onClick={() => setTrioNutrientTab('apex')}
@@ -1067,17 +1018,6 @@ export default function ProductDetailPage() {
                                       </button>
                                       <button
                                         type="button"
-                                        onClick={() => setTrioNutrientTab('capella')}
-                                        className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
-                                          trioNutrientTab === 'capella'
-                                            ? 'bg-white text-black font-bold shadow-sm'
-                                            : 'text-white/60 hover:text-white hover:bg-white/5'
-                                        }`}
-                                      >
-                                        Capella
-                                      </button>
-                                      <button
-                                        type="button"
                                         onClick={() => setTrioNutrientTab('aviva')}
                                         className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
                                           trioNutrientTab === 'aviva'
@@ -1087,11 +1027,30 @@ export default function ProductDetailPage() {
                                       >
                                         Aviva
                                       </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => setTrioNutrientTab('capella')}
+                                        className={`px-2 py-0.5 rounded text-[8.5px] sm:text-[9.5px] font-mono uppercase tracking-wider transition-all whitespace-nowrap cursor-pointer ${
+                                          trioNutrientTab === 'capella'
+                                            ? 'bg-white text-black font-bold shadow-sm'
+                                            : 'text-white/60 hover:text-white hover:bg-white/5'
+                                        }`}
+                                      >
+                                        Capella
+                                      </button>
                                     </div>
 
+                                    {/* Render all three nutrients or single selected tab */}
+                                    {trioNutrientTab === 'all' && (
+                                      <div className="space-y-3">
+                                        {renderCompactTable(apexNutrients, 'APEX')}
+                                        {renderCompactTable(avivaNutrients, 'AVIVA')}
+                                        {renderCompactTable(capellaNutrients, 'CAPELLA')}
+                                      </div>
+                                    )}
                                     {trioNutrientTab === 'apex' && renderCompactTable(apexNutrients, 'APEX')}
-                                    {trioNutrientTab === 'capella' && renderCompactTable(capellaNutrients, 'CAPELLA')}
                                     {trioNutrientTab === 'aviva' && renderCompactTable(avivaNutrients, 'AVIVA')}
+                                    {trioNutrientTab === 'capella' && renderCompactTable(capellaNutrients, 'CAPELLA')}
                                   </div>
                                 );
                               }
