@@ -1040,14 +1040,6 @@ export default function ProductDetailPage() {
                                       </button>
                                     </div>
 
-                                    {/* Render all three nutrients or single selected tab */}
-                                    {trioNutrientTab === 'all' && (
-                                      <div className="space-y-3">
-                                        {renderCompactTable(apexNutrients, 'APEX')}
-                                        {renderCompactTable(avivaNutrients, 'AVIVA')}
-                                        {renderCompactTable(capellaNutrients, 'CAPELLA')}
-                                      </div>
-                                    )}
                                     {trioNutrientTab === 'apex' && renderCompactTable(apexNutrients, 'APEX')}
                                     {trioNutrientTab === 'aviva' && renderCompactTable(avivaNutrients, 'AVIVA')}
                                     {trioNutrientTab === 'capella' && renderCompactTable(capellaNutrients, 'CAPELLA')}
