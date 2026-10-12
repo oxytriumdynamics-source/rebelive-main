@@ -104,9 +104,10 @@ export default function ProductEditPage() {
   ]);
 
   // ─── 5. Visual Media & Assets ───
-  const [canImage, setCanImage] = useState('/products/apex.webp');
+  const [canImage, setCanImage] = useState('');
   const [image, setImage] = useState('');
   const [renderImage, setRenderImage] = useState('');
+  const [galleryImages, setGalleryImages] = useState<string[]>([]);
   const [brandLogo, setBrandLogo] = useState('');
   const [bgGradient, setBgGradient] = useState('from-neutral-900 to-black');
   const [primaryTone, setPrimaryTone] = useState('#ffffff');
@@ -114,7 +115,10 @@ export default function ProductEditPage() {
 
   // Cloudinary uploader state
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const imageFileInputRef = useRef<HTMLInputElement | null>(null);
+  const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [isGalleryUploading, setIsGalleryUploading] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<'canImage' | 'image'>('canImage');
   const [compressionStats, setCompressionStats] = useState<{
@@ -122,6 +126,7 @@ export default function ProductEditPage() {
     compressedSize: string;
     savedPercent: number;
   } | null>(null);
+  const [newGalleryUrl, setNewGalleryUrl] = useState('');
 
   // ─── 6. Pack Configurations (Variants) ───
   const [packs, setPacks] = useState<PackVariant[]>([
@@ -173,9 +178,16 @@ export default function ProductEditPage() {
         setNutritionItems(prod.nutrition.items);
       }
 
-      setCanImage(prod.canImage || prod.image || '/products/apex.webp');
+      setCanImage(prod.canImage || '');
       setImage(prod.image || '');
       setRenderImage(prod.renderImage || '');
+      if (Array.isArray(prod.gallery)) {
+        setGalleryImages(prod.gallery.map((g: any) => typeof g === 'string' ? g : (g.src || g.url || '')).filter(Boolean));
+      } else if (Array.isArray(prod.images)) {
+        setGalleryImages(prod.images.map((im: any) => im.url || '').filter(Boolean));
+      } else {
+        setGalleryImages([]);
+      }
       setBrandLogo(prod.brandLogo || '');
       setBgGradient(prod.bgGradient || 'from-neutral-900 to-black');
       setPrimaryTone(prod.primaryTone || '#ffffff');
@@ -274,9 +286,13 @@ export default function ProductEditPage() {
     setPacks(packs.filter((_, i) => i !== index));
   };
 
-  // Image Upload Handlers with Automatic Compression
-  const handleImageUpload = async (file: File, target: 'canImage' | 'image' = uploadTarget) => {
-    setIsUploading(true);
+  // Image Upload Handlers with Automatic WebP Compression
+  const handleImageUpload = async (file: File, target: 'canImage' | 'image' | 'gallery' = uploadTarget) => {
+    if (target === 'gallery') {
+      setIsGalleryUploading(true);
+    } else {
+      setIsUploading(true);
+    }
     setFeedback(null);
     setCompressionStats(null);
     try {
@@ -303,8 +319,10 @@ export default function ProductEditPage() {
       if (target === 'canImage') {
         setCanImage(secureUrl);
         if (!image) setImage(secureUrl);
-      } else {
+      } else if (target === 'image') {
         setImage(secureUrl);
+      } else if (target === 'gallery') {
+        setGalleryImages((prev) => [...prev, secureUrl]);
       }
 
       const sizeMsg = compressed.savedPercent > 0
@@ -312,14 +330,43 @@ export default function ProductEditPage() {
         : '';
       setFeedback({
         type: 'success',
-        message: `Product image compressed & uploaded to Cloudinary CDN successfully!${sizeMsg}`,
+        message: `Image compressed & uploaded to Cloudinary CDN successfully!${sizeMsg}`,
       });
       setTimeout(() => setFeedback(null), 4000);
     } catch (err: any) {
       setFeedback({ type: 'error', message: err.message || 'Image upload failed' });
     } finally {
       setIsUploading(false);
+      setIsGalleryUploading(false);
     }
+  };
+
+  const handleDeleteImage = (target: 'canImage' | 'image') => {
+    if (target === 'canImage') {
+      setCanImage('');
+    } else {
+      setImage('');
+    }
+    setFeedback({
+      type: 'success',
+      message: `${target === 'canImage' ? 'Can Hero' : 'Secondary'} image deleted. Click "Save Changes" to commit.`,
+    });
+    setTimeout(() => setFeedback(null), 3500);
+  };
+
+  const handleDeleteGalleryImage = (index: number) => {
+    setGalleryImages((prev) => prev.filter((_, i) => i !== index));
+    setFeedback({
+      type: 'success',
+      message: 'Gallery image removed. Click "Save Changes" to commit.',
+    });
+    setTimeout(() => setFeedback(null), 3500);
+  };
+
+  const handleAddGalleryUrl = () => {
+    if (!newGalleryUrl.trim()) return;
+    setGalleryImages((prev) => [...prev, newGalleryUrl.trim()]);
+    setNewGalleryUrl('');
   };
 
   // Form Submit: Save / Create Product
@@ -357,9 +404,10 @@ export default function ProductEditPage() {
       notes,
       nutritionInfo: nutritionPayload,
       nutrition: nutritionPayload,
-      canImage: canImage.trim(),
-      image: image.trim() || canImage.trim(),
-      renderImage: renderImage.trim() || canImage.trim(),
+      canImage: canImage.trim() || null,
+      image: image.trim() || null,
+      renderImage: renderImage.trim() || null,
+      gallery: galleryImages.filter(Boolean),
       brandLogo: brandLogo.trim() || null,
       bgGradient,
       primaryTone,
@@ -992,170 +1040,370 @@ export default function ProductEditPage() {
             </div>
 
             {/* ─── Section 7: Visual Assets, Media & CDN Upload ─── */}
-            <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+            <div className="p-5 sm:p-6 rounded-2xl bg-[#0d0d0d] border border-white/10 shadow-lg space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-4">
                 <div>
-                  <h3 className="text-xs font-bold uppercase tracking-wider text-white">
-                    6. Product Imagery & Cloudinary CDN Upload
+                  <h3 className="text-xs font-bold uppercase tracking-wider text-white flex items-center gap-2">
+                    <UploadCloud className="w-4 h-4 text-cyan-400" />
+                    6. Product Visual Assets (Cloudinary CDN Management)
                   </h3>
-                  <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                    Images are automatically downscaled & compressed to WebP before CDN distribution
+                  <p className="text-[10px] text-white/50 font-mono mt-1">
+                    Storefront strictly renders images from Cloudinary & DB. No local fallback images are loaded. You can upload, replace, or delete images anytime.
                   </p>
-                </div>
-
-                {/* Target Slot Selector */}
-                <div className="flex items-center gap-1.5 bg-black/60 p-1 rounded-xl border border-white/10 self-start sm:self-auto">
-                  <button
-                    type="button"
-                    onClick={() => setUploadTarget('canImage')}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase transition-colors cursor-pointer ${
-                      uploadTarget === 'canImage'
-                        ? 'bg-white text-black font-bold'
-                        : 'text-white/50 hover:text-white'
-                    }`}
-                  >
-                    Can Hero
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setUploadTarget('image')}
-                    className={`px-3 py-1 rounded-lg text-[10px] font-mono uppercase transition-colors cursor-pointer ${
-                      uploadTarget === 'image'
-                        ? 'bg-white text-black font-bold'
-                        : 'text-white/50 hover:text-white'
-                    }`}
-                  >
-                    Secondary
-                  </button>
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start text-xs font-mono">
-                {/* Cloudinary Drag & Drop Uploader */}
-                <div className="md:col-span-2 space-y-3">
-                  <div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      const file = e.dataTransfer.files?.[0];
-                      if (file) handleImageUpload(file, uploadTarget);
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`p-6 rounded-2xl border-2 border-dashed transition-all flex flex-col items-center justify-center text-center cursor-pointer min-h-[160px] ${
-                      isDragging
-                        ? 'border-white bg-white/10'
-                        : isUploading
-                        ? 'border-white/30 bg-white/[0.04]'
-                        : 'border-white/15 bg-black/40 hover:border-white/30 hover:bg-white/[0.02]'
-                    }`}
-                  >
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(file, uploadTarget);
-                        e.target.value = '';
-                      }}
-                    />
+              {/* Compression Stats Badge */}
+              {compressionStats && (
+                <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] flex items-center justify-between font-mono">
+                  <span className="flex items-center gap-1.5">
+                    <Check className="w-3.5 h-3.5" />
+                    Auto-Compressed: {compressionStats.originalSize} → {compressionStats.compressedSize}
+                  </span>
+                  <span className="font-bold">Saved {compressionStats.savedPercent}% WebP</span>
+                </div>
+              )}
 
-                    {isUploading ? (
-                      <div className="space-y-2 flex flex-col items-center">
-                        <Loader2 className="w-6 h-6 animate-spin text-white" />
-                        <span className="text-xs font-bold text-white">Compressing & Uploading to Cloudinary CDN...</span>
-                        <span className="text-[10px] text-white/40">Auto-optimizing WebP delivery</span>
-                      </div>
+              {/* Hidden File Inputs */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file, 'canImage');
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={imageFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file, 'image');
+                  e.target.value = '';
+                }}
+              />
+              <input
+                ref={galleryFileInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) handleImageUpload(file, 'gallery');
+                  e.target.value = '';
+                }}
+              />
+
+              {/* Primary Images: Hero Can & Secondary Card */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5 font-mono text-xs">
+                {/* 1. Can Hero Image */}
+                <div className="p-4 rounded-2xl bg-black/50 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-white font-bold block">Can Hero Image</span>
+                      <span className="text-[10px] text-white/40">Primary 3D / can showcase image</span>
+                    </div>
+                    {canImage ? (
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${
+                        canImage.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
+                      }`}>
+                        {canImage.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Custom URL'}
+                      </span>
                     ) : (
-                      <div className="space-y-2 flex flex-col items-center">
-                        <div className="w-10 h-10 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-white">
-                          <UploadCloud className="w-5 h-5" />
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase font-bold">
+                        Empty (No Image)
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Preview Canvas */}
+                  <div className="w-full h-44 rounded-xl bg-[#141414] border border-white/10 flex items-center justify-center relative overflow-hidden group">
+                    {canImage ? (
+                      <>
+                        <Image
+                          src={canImage}
+                          alt="Can Hero Preview"
+                          fill
+                          className="object-contain p-3"
+                          unoptimized={canImage.startsWith('http')}
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-lg bg-white text-black text-[10px] font-bold cursor-pointer hover:bg-neutral-200"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage('canImage')}
+                            className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[10px] font-bold cursor-pointer hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
                         </div>
-                        <div>
-                          <p className="font-bold text-white">
-                            Upload for <span className="text-emerald-400 underline">{uploadTarget === 'canImage' ? 'Can Hero Image' : 'Secondary Image'}</span>
-                          </p>
-                          <p className="text-[10px] text-white/40 mt-0.5">
-                            PNG, JPG, WEBP · Auto-compressed before Cloudinary CDN storage
-                          </p>
-                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-white/30 space-y-1">
+                        <UploadCloud className="w-6 h-6 text-white/20" />
+                        <span className="text-[11px]">No Can Hero Image</span>
+                        <span className="text-[9px] text-white/20">Upload to populate database</span>
                       </div>
                     )}
                   </div>
 
-                  {/* Compression Stats Badge */}
-                  {compressionStats && (
-                    <div className="p-2.5 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-[11px] flex items-center justify-between">
-                      <span className="flex items-center gap-1.5">
-                        <Check className="w-3.5 h-3.5" />
-                        Compressed: {compressionStats.originalSize} → {compressionStats.compressedSize}
-                      </span>
-                      <span className="font-bold">Saved {compressionStats.savedPercent}%</span>
-                    </div>
-                  )}
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{canImage ? 'Upload & Replace' : 'Upload to Cloudinary'}</span>
+                        </>
+                      )}
+                    </button>
 
-                  {/* Manual URL Inputs */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] text-white/50 uppercase">Can Hero Image URL</label>
-                        {canImage.includes('cloudinary.com') && (
-                          <span className="text-[9px] text-cyan-400">CDN</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={canImage}
-                        onChange={(e) => setCanImage(e.target.value)}
-                        placeholder="https://res.cloudinary.com/..."
-                        className="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-white text-[11px]"
-                      />
-                    </div>
+                    {canImage && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage('canImage')}
+                        className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Delete hero image from product"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </div>
 
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <label className="text-[10px] text-white/50 uppercase">Secondary Image URL</label>
-                        {image.includes('cloudinary.com') && (
-                          <span className="text-[9px] text-cyan-400">CDN</span>
-                        )}
-                      </div>
-                      <input
-                        type="text"
-                        value={image}
-                        onChange={(e) => setImage(e.target.value)}
-                        placeholder="/products/apex.webp"
-                        className="w-full bg-[#141414] border border-white/10 rounded-xl px-3 py-2 text-white text-[11px]"
-                      />
-                    </div>
+                  {/* URL Input */}
+                  <div className="space-y-1 pt-1">
+                    <label className="text-[9px] text-white/40 uppercase">Direct Image URL</label>
+                    <input
+                      type="text"
+                      value={canImage}
+                      onChange={(e) => setCanImage(e.target.value)}
+                      placeholder="https://res.cloudinary.com/..."
+                      className="w-full bg-[#111] border border-white/10 rounded-xl px-3 py-1.5 text-white text-[10px]"
+                    />
                   </div>
                 </div>
 
-                {/* Thumbnail Preview Box */}
-                <div className="p-4 rounded-2xl bg-black/60 border border-white/10 flex flex-col items-center justify-center text-center space-y-3 min-h-[200px]">
-                  <span className="text-[10px] text-white/40 uppercase block">Visual Asset Preview</span>
-                  <div className="w-24 h-32 relative flex items-center justify-center bg-white/[0.02] border border-white/10 rounded-xl p-2">
-                    {canImage ? (
-                      <Image
-                        src={canImage}
-                        alt="Product preview"
-                        fill
-                        className="object-contain p-1"
-                        unoptimized={canImage.startsWith('http')}
-                      />
+                {/* 2. Secondary / Card Image */}
+                <div className="p-4 rounded-2xl bg-black/50 border border-white/10 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <span className="text-white font-bold block">Secondary / Card Image</span>
+                      <span className="text-[10px] text-white/40">Shop listing & pack card thumbnail</span>
+                    </div>
+                    {image ? (
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${
+                        image.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
+                      }`}>
+                        {image.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Custom URL'}
+                      </span>
                     ) : (
-                      <span className="text-white/20 text-xs">No Asset</span>
+                      <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/20 text-red-400 uppercase font-bold">
+                        Empty (No Image)
+                      </span>
                     )}
                   </div>
 
-                  <span className="text-[10px] text-white/50 truncate max-w-full">
-                    {canImage.includes('cloudinary.com') ? 'Cloudinary CDN Asset' : 'Local Static Asset'}
-                  </span>
+                  {/* Preview Canvas */}
+                  <div className="w-full h-44 rounded-xl bg-[#141414] border border-white/10 flex items-center justify-center relative overflow-hidden group">
+                    {image ? (
+                      <>
+                        <Image
+                          src={image}
+                          alt="Secondary Image Preview"
+                          fill
+                          className="object-contain p-3"
+                          unoptimized={image.startsWith('http')}
+                        />
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => imageFileInputRef.current?.click()}
+                            className="px-3 py-1.5 rounded-lg bg-white text-black text-[10px] font-bold cursor-pointer hover:bg-neutral-200"
+                          >
+                            Replace
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteImage('image')}
+                            className="px-3 py-1.5 rounded-lg bg-red-500/80 text-white text-[10px] font-bold cursor-pointer hover:bg-red-600"
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center text-white/30 space-y-1">
+                        <UploadCloud className="w-6 h-6 text-white/20" />
+                        <span className="text-[11px]">No Secondary Image</span>
+                        <span className="text-[9px] text-white/20">Upload to populate database</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => imageFileInputRef.current?.click()}
+                      className="flex-1 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] font-bold flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-50"
+                    >
+                      {isUploading ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>Uploading...</span>
+                        </>
+                      ) : (
+                        <>
+                          <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
+                          <span>{image ? 'Upload & Replace' : 'Upload to Cloudinary'}</span>
+                        </>
+                      )}
+                    </button>
+
+                    {image && (
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteImage('image')}
+                        className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 text-[11px] font-bold flex items-center gap-1 transition-colors cursor-pointer"
+                        title="Delete secondary image from product"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Delete</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* URL Input */}
+                  <div className="space-y-1 pt-1">
+                    <label className="text-[9px] text-white/40 uppercase">Direct Image URL</label>
+                    <input
+                      type="text"
+                      value={image}
+                      onChange={(e) => setImage(e.target.value)}
+                      placeholder="https://res.cloudinary.com/..."
+                      className="w-full bg-[#111] border border-white/10 rounded-xl px-3 py-1.5 text-white text-[10px]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* 3. Product Gallery & Additional Media */}
+              <div className="pt-2 border-t border-white/10 space-y-4 font-mono text-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-white font-bold text-xs uppercase flex items-center gap-2">
+                      <Boxes className="w-3.5 h-3.5 text-cyan-400" />
+                      Product Gallery & Extra Media ({galleryImages.length})
+                    </h4>
+                    <p className="text-[10px] text-white/40 mt-0.5">
+                      Additional product angles, ingredient close-ups, or lifestyle shots displayed on the product detail page.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    disabled={isGalleryUploading}
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    className="px-3.5 py-2 rounded-xl bg-white text-black font-extrabold text-[10px] uppercase flex items-center gap-1.5 hover:bg-neutral-200 cursor-pointer transition-all disabled:opacity-50 self-start sm:self-auto"
+                  >
+                    {isGalleryUploading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>Uploading...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Upload Gallery Image</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+
+                {/* Gallery Grid */}
+                {galleryImages.length > 0 ? (
+                  <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {galleryImages.map((imgUrl, idx) => (
+                      <div
+                        key={idx}
+                        className="rounded-xl bg-[#141414] border border-white/10 p-2 flex flex-col items-center justify-between space-y-2 relative group overflow-hidden"
+                      >
+                        <div className="w-full h-24 relative flex items-center justify-center">
+                          <Image
+                            src={imgUrl}
+                            alt={`Gallery image ${idx + 1}`}
+                            fill
+                            className="object-contain p-1"
+                            unoptimized={imgUrl.startsWith('http')}
+                          />
+                        </div>
+                        <div className="w-full flex items-center justify-between text-[9px] text-white/50 pt-1 border-t border-white/5">
+                          <span>#{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => handleDeleteGalleryImage(idx)}
+                            className="text-red-400 hover:text-red-300 p-1 rounded hover:bg-red-500/10 cursor-pointer"
+                            title="Delete this gallery image"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="p-6 rounded-xl border border-dashed border-white/10 bg-black/30 text-center flex flex-col items-center justify-center space-y-2">
+                    <p className="text-white/40 text-xs">No extra gallery images added yet</p>
+                    <button
+                      type="button"
+                      disabled={isGalleryUploading}
+                      onClick={() => galleryFileInputRef.current?.click()}
+                      className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold cursor-pointer transition-colors"
+                    >
+                      + Upload First Gallery Asset
+                    </button>
+                  </div>
+                )}
+
+                {/* Direct Gallery URL Adder */}
+                <div className="flex items-center gap-2 pt-2">
+                  <input
+                    type="text"
+                    value={newGalleryUrl}
+                    onChange={(e) => setNewGalleryUrl(e.target.value)}
+                    placeholder="Or paste external Cloudinary image URL to add to gallery..."
+                    className="flex-1 bg-[#111] border border-white/10 rounded-xl px-3 py-2 text-white text-[10px]"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleAddGalleryUrl}
+                    className="px-3 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[10px] font-bold cursor-pointer transition-colors"
+                  >
+                    Add URL
+                  </button>
                 </div>
               </div>
             </div>

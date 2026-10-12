@@ -200,51 +200,42 @@ export default function ShopPage() {
                         }}
                       />
 
-                      {/* Display authentic Can Render */}
-                      {isVariety ? (
-                        /* Variety Pack: Trio of Cans */
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <div className="relative w-24 h-36 -mr-10 -rotate-6 z-10 transition-transform duration-500 group-hover:-translate-x-2 group-hover:-rotate-12">
-                            <Image
-                              src="/products/aviva.webp"
-                              alt="AVIVA"
-                              fill
-                              sizes="120px"
-                              className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.85)]"
-                            />
+                      {/* Display authentic Can Render from DB / Cloudinary */}
+                      {(() => {
+                        const productImg = p.image || p.canImage;
+                        if (productImg) {
+                          return (
+                            <div className="relative w-36 sm:w-40 h-40 sm:h-44 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
+                              <Image
+                                src={productImg}
+                                alt={p.name}
+                                fill
+                                sizes="180px"
+                                className="object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
+                                priority={p.id === 'apex'}
+                                unoptimized={productImg.startsWith('http')}
+                              />
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="w-full h-44 flex flex-col items-center justify-center text-center p-3">
+                            <div className="w-20 h-32 rounded-2xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-inner group-hover:border-white/30 transition-colors">
+                              <div className="w-6 h-1 rounded-full bg-white/20 mb-2" />
+                              <span className="font-bold text-[9px] text-white/70 tracking-widest uppercase font-mono px-1 truncate max-w-full">
+                                {p.name}
+                              </span>
+                              <span className="text-[7.5px] text-white/30 uppercase font-mono mt-1 px-1 truncate max-w-full">
+                                {p.flavor || '250ML'}
+                              </span>
+                              <div className="w-6 h-1 rounded-full bg-white/10 mt-3" />
+                            </div>
+                            <span className="text-[8.5px] text-white/30 font-mono uppercase tracking-wider mt-2">
+                              Artwork Pending
+                            </span>
                           </div>
-                          <div className="relative w-28 h-40 z-20 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
-                            <Image
-                              src="/products/apex.webp"
-                              alt="APEX"
-                              fill
-                              sizes="140px"
-                              className="object-contain drop-shadow-[0_15px_25px_rgba(0,0,0,0.9)]"
-                            />
-                          </div>
-                          <div className="relative w-24 h-36 -ml-10 rotate-6 z-10 transition-transform duration-500 group-hover:translate-x-2 group-hover:rotate-12">
-                            <Image
-                              src="/products/capella.webp"
-                              alt="CAPELLA"
-                              fill
-                              sizes="120px"
-                              className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.85)]"
-                            />
-                          </div>
-                        </div>
-                      ) : (
-                        /* Single Flagship Can Render */
-                        <div className="relative w-36 sm:w-40 h-40 sm:h-44 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
-                          <Image
-                            src={p.image || p.canImage}
-                            alt={p.name}
-                            fill
-                            sizes="180px"
-                            className="object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
-                            priority={p.id === 'apex'}
-                          />
-                        </div>
-                      )}
+                        );
+                      })()}
                     </Link>
 
                     {/* Title & Descriptor */}

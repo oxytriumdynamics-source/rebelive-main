@@ -477,23 +477,24 @@ export default function ProductDetailPage() {
   const galleryList = useMemo(() => {
     if (!product) return [];
     if (product.gallery && product.gallery.length > 0) {
-      return product.gallery;
+      const parsed = product.gallery
+        .map((g: any, i: number) => {
+          const src = typeof g === 'string' ? g : (g.src || g.url);
+          if (!src) return null;
+          return { id: `gallery-${i}`, label: `View ${i + 1}`, src, type: 'render' as const };
+        })
+        .filter(Boolean) as { id: string; label: string; src: string; type: 'render' }[];
+      if (parsed.length > 0) return parsed;
     }
-    return [
-      { id: 'render', label: '3D Studio Render', src: product.image || product.canImage, type: 'render' as const },
-      { id: 'clean', label: 'Clean Silhouette', src: product.renderImage || product.image, type: 'render' as const },
-      { id: 'wrap', label: '360° Can Wrap', src: product.canImage, type: 'wrap' as const },
-      { id: 'logo', label: 'Brand Emblem', src: product.brandLogo, type: 'logo' as const },
-      { id: 'mood', label: 'Atmosphere Visual', src: product.bgImage, type: 'mood' as const },
+    const candidates = [
+      { id: 'hero', label: 'Can Hero', src: product.canImage, type: 'render' as const },
+      { id: 'secondary', label: 'Secondary View', src: product.image, type: 'render' as const },
+      { id: 'wrap', label: '360° Wrap', src: product.renderImage, type: 'wrap' as const },
     ];
+    return candidates.filter((item): item is { id: string; label: string; src: string; type: 'render' | 'wrap' } => Boolean(item.src));
   }, [product]);
 
-  const activePhoto = galleryList[selectedPhotoIndex] || galleryList[0] || {
-    id: 'placeholder',
-    label: 'Formula',
-    src: '',
-    type: 'render' as const,
-  };
+  const activePhoto = galleryList[selectedPhotoIndex] || galleryList[0] || null;
 
   const handleNextPhoto = () => {
     if (galleryList.length === 0) return;
@@ -677,43 +678,15 @@ export default function ProductDetailPage() {
 
                 {/* Interactive Center Stage Render / Photo */}
                 <div
-                  className="relative w-full h-[220px] xs:h-[260px] sm:h-[300px] md:h-[320px] lg:h-[340px] flex items-center justify-center z-10 cursor-zoom-in"
-                  onClick={() => setIsLightboxOpen(true)}
+                  className={`relative w-full h-[220px] xs:h-[260px] sm:h-[300px] md:h-[320px] lg:h-[340px] flex items-center justify-center z-10 ${
+                    activePhoto?.src ? 'cursor-zoom-in' : ''
+                  }`}
+                  onClick={() => {
+                    if (activePhoto?.src) setIsLightboxOpen(true);
+                  }}
                 >
-                  {isVariety && selectedPhotoIndex === 0 ? (
-                    /* Variety Pack: Trio Cluster */
-                    <div className="relative w-full h-full flex items-center justify-center">
-                      <div className="relative w-24 xs:w-28 sm:w-36 h-36 xs:h-44 sm:h-56 -mr-8 xs:-mr-12 sm:-mr-16 -rotate-6 z-10 transition-transform duration-500 group-hover:-translate-x-3 group-hover:-rotate-12">
-                        <Image
-                          src="/products/aviva.webp"
-                          alt="AVIVA"
-                          fill
-                          sizes="(max-width: 640px) 120px, 180px"
-                          className="object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]"
-                        />
-                      </div>
-                      <div className="relative w-28 xs:w-34 sm:w-44 h-42 xs:h-50 sm:h-64 z-20 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-2">
-                        <Image
-                          src="/products/apex.webp"
-                          alt="APEX"
-                          fill
-                          sizes="(max-width: 640px) 140px, 200px"
-                          priority
-                          className="object-contain drop-shadow-[0_20px_35px_rgba(0,0,0,0.95)]"
-                        />
-                      </div>
-                      <div className="relative w-24 xs:w-28 sm:w-36 h-36 xs:h-44 sm:h-56 -ml-8 xs:-ml-12 sm:-ml-16 rotate-6 z-10 transition-transform duration-500 group-hover:translate-x-3 group-hover:rotate-12">
-                        <Image
-                          src="/products/capella.webp"
-                          alt="CAPELLA"
-                          fill
-                          sizes="(max-width: 640px) 120px, 180px"
-                          className="object-contain drop-shadow-[0_15px_30px_rgba(0,0,0,0.9)]"
-                        />
-                      </div>
-                    </div>
-                  ) : (
-                    /* Selected Photo View */
+                  {activePhoto?.src ? (
+                    /* Selected Photo View from DB / Cloudinary */
                     <div className="relative w-36 xs:w-44 sm:w-56 md:w-56 lg:w-60 h-52 xs:h-60 sm:h-72 md:h-72 lg:h-76 transition-all duration-300 group-hover:scale-[1.03]">
                       <Image
                         key={activePhoto.src}
@@ -723,7 +696,25 @@ export default function ProductDetailPage() {
                         sizes="(max-width: 640px) 220px, (max-width: 1024px) 300px, 400px"
                         priority
                         className="object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] transition-all duration-300"
+                        unoptimized={activePhoto.src.startsWith('http')}
                       />
+                    </div>
+                  ) : (
+                    /* Clean Dark Placeholder (No Local Dummy Files) */
+                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-4">
+                      <div className="w-28 xs:w-32 sm:w-36 h-44 xs:h-52 sm:h-60 rounded-3xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-2xl group-hover:border-white/30 transition-colors">
+                        <div className="w-8 h-1 rounded-full bg-white/20 mb-3" />
+                        <span className="font-bold text-xs sm:text-sm text-white/70 tracking-widest uppercase font-mono px-2 truncate max-w-full">
+                          {product.name}
+                        </span>
+                        <span className="text-[9px] sm:text-[10px] text-white/30 uppercase font-mono mt-1 px-2 truncate max-w-full">
+                          {product.flavor || '250ML'}
+                        </span>
+                        <div className="w-8 h-1 rounded-full bg-white/10 mt-4" />
+                      </div>
+                      <span className="text-[10px] sm:text-xs text-white/40 font-mono uppercase tracking-wider mt-3">
+                        Artwork Pending (Upload via Admin)
+                      </span>
                     </div>
                   )}
                 </div>
@@ -733,45 +724,48 @@ export default function ProductDetailPage() {
               </div>
 
               {/* ── Photo Options Thumbnails Carousel ── */}
-              <div className="w-full mt-3 sm:mt-4 flex flex-col gap-2">
-                <div className="grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-2.5 w-full">
-                  {galleryList.map((item, idx) => {
-                    const isSelected = selectedPhotoIndex === idx;
-                    return (
-                      <button
-                        key={item.id}
-                        type="button"
-                        onClick={() => setSelectedPhotoIndex(idx)}
-                        className={`group relative rounded-lg sm:rounded-xl aspect-square p-1 sm:p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden border cursor-pointer ${isSelected
-                          ? 'bg-neutral-900 border-white scale-[1.02]'
-                          : 'bg-neutral-950/70 border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
-                          }`}
-                        title={item.label}
-                      >
-                        <div className="relative w-full h-full flex items-center justify-center">
-                          <Image
-                            src={item.src}
-                            alt={item.label}
-                            fill
-                            sizes="70px"
-                            className="object-contain p-0.5 sm:p-1 group-hover:scale-105 transition-transform"
-                          />
-                        </div>
+              {galleryList.length > 1 && (
+                <div className="w-full mt-3 sm:mt-4 flex flex-col gap-2">
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-2.5 w-full">
+                    {galleryList.map((item, idx) => {
+                      const isSelected = selectedPhotoIndex === idx;
+                      return (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setSelectedPhotoIndex(idx)}
+                          className={`group relative rounded-lg sm:rounded-xl aspect-square p-1 sm:p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden border cursor-pointer ${isSelected
+                            ? 'bg-neutral-900 border-white scale-[1.02]'
+                            : 'bg-neutral-950/70 border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
+                            }`}
+                          title={item.label}
+                        >
+                          <div className="relative w-full h-full flex items-center justify-center">
+                            <Image
+                              src={item.src}
+                              alt={item.label}
+                              fill
+                              sizes="70px"
+                              className="object-contain p-0.5 sm:p-1 group-hover:scale-105 transition-transform"
+                              unoptimized={item.src.startsWith('http')}
+                            />
+                          </div>
 
-                        {/* Subtle Active Accent Dot */}
-                        {isSelected && (
-                          <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white" />
-                        )}
+                          {/* Subtle Active Accent Dot */}
+                          {isSelected && (
+                            <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white" />
+                          )}
 
-                        {/* Mini Label badge on hover */}
-                        <div className="absolute inset-x-0 bottom-0 py-0.5 bg-black/85 backdrop-blur-sm text-[8px] font-mono text-center text-white/80 truncate px-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {item.label}
-                        </div>
-                      </button>
-                    );
-                  })}
+                          {/* Mini Label badge on hover */}
+                          <div className="absolute inset-x-0 bottom-0 py-0.5 bg-black/85 backdrop-blur-sm text-[8px] font-mono text-center text-white/80 truncate px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            {item.label}
+                          </div>
+                        </button>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* ── Right Column: Specs, Pricing, Pack Selector & CTAs (6 cols on tablet/desktop) ── */}
@@ -1675,15 +1669,33 @@ export default function ProductDetailPage() {
                 >
                   <div>
                     <div className="relative w-full h-32 sm:h-36 my-2 sm:my-3 flex items-center justify-center">
-                      <div className="relative w-24 sm:w-28 h-28 sm:h-32 transition-transform duration-300 group-hover:scale-105">
-                        <Image
-                          src={other.image || other.canImage}
-                          alt={other.name}
-                          fill
-                          sizes="140px"
-                          className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
-                        />
-                      </div>
+                      {(() => {
+                        const otherImg = other.image || other.canImage;
+                        if (otherImg) {
+                          return (
+                            <div className="relative w-24 sm:w-28 h-28 sm:h-32 transition-transform duration-300 group-hover:scale-105">
+                              <Image
+                                src={otherImg}
+                                alt={other.name}
+                                fill
+                                sizes="140px"
+                                className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
+                                unoptimized={otherImg.startsWith('http')}
+                              />
+                            </div>
+                          );
+                        }
+                        return (
+                          <div className="w-20 h-28 rounded-xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-inner">
+                            <span className="font-bold text-[8.5px] text-white/60 font-mono uppercase truncate max-w-full px-1">
+                              {other.name}
+                            </span>
+                            <span className="text-[7px] text-white/30 font-mono uppercase mt-0.5">
+                              Pending
+                            </span>
+                          </div>
+                        );
+                      })()}
                     </div>
 
                     <h3 className="text-base sm:text-lg font-bold uppercase text-white tracking-tight">
@@ -1718,7 +1730,7 @@ export default function ProductDetailPage() {
         </main>
 
         {/* ── High-Resolution Photo Lightbox Modal ── */}
-        {isLightboxOpen && (
+        {isLightboxOpen && activePhoto?.src && (
           <div
             role="dialog"
             aria-modal="true"
@@ -1788,6 +1800,7 @@ export default function ProductDetailPage() {
                   sizes="(max-width: 1200px) 100vw, 1200px"
                   className="object-contain drop-shadow-[0_25px_60px_rgba(0,0,0,0.95)]"
                   priority
+                  unoptimized={activePhoto.src.startsWith('http')}
                 />
               </div>
             </div>
@@ -1808,7 +1821,14 @@ export default function ProductDetailPage() {
                     }`}
                   title={item.label}
                 >
-                  <Image src={item.src} alt={item.label} fill sizes="64px" className="object-contain p-0.5 sm:p-1" />
+                  <Image
+                    src={item.src}
+                    alt={item.label}
+                    fill
+                    sizes="64px"
+                    className="object-contain p-0.5 sm:p-1"
+                    unoptimized={item.src.startsWith('http')}
+                  />
                 </button>
               ))}
             </div>

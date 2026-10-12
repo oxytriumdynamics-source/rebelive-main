@@ -13,13 +13,20 @@ export interface Testimonial {
   imagePosition?: string;
 }
 
+function getInitials(name: string): string {
+  if (!name) return 'R';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 const TESTIMONIALS: Testimonial[] = [
   {
     id: 'nishant',
     name: 'NISHANT MISHRA',
     quote: 'Clean sustained mental clarity through long coding sessions without any crash or anxiety. Rebelive is literally in a class of its own.',
     rating: 5,
-    image: '/testimonials/rebel-nishant.webp',
+    image: '',
     imagePosition: 'center 15%',
   },
   {
@@ -27,7 +34,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'ASHRAY VASU',
     quote: 'The calm focus and zero-sugar formulation completely upgraded my workday routine. No jitters, pure natural flow state.',
     rating: 5,
-    image: '/testimonials/rebel-ashray.webp',
+    image: '',
     imagePosition: 'center 15%',
   },
   {
@@ -35,7 +42,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'VAIBHAV MITTAL',
     quote: 'Unmatched sustained energy that keeps me dialed in and sharp throughout the day. Zero sugar crash, just pure cognitive momentum.',
     rating: 5,
-    image: '/testimonials/rebel-vaibhav.webp',
+    image: '',
     imagePosition: 'center 18%',
   },
   {
@@ -43,7 +50,7 @@ const TESTIMONIALS: Testimonial[] = [
     name: 'DHIRENDRA SINGH KAUSHIK',
     quote: 'Game-changing endurance and crisp mental sharpness. Zero jitters, no crash, just pure sustained high performance all day long.',
     rating: 5,
-    image: '/testimonials/rebel-dhirendra.webp',
+    image: '',
     imagePosition: 'center 20%',
   },
 ];
@@ -59,18 +66,25 @@ const TestimonialCard: React.FC<{ item: Testimonial; priority?: boolean }> = ({ 
     <div
       className="flex-shrink-0 w-[260px] sm:w-[280px] md:w-[300px] lg:w-[320px] h-[340px] sm:h-[360px] rounded-2xl sm:rounded-3xl relative overflow-hidden bg-neutral-950/70 hover:bg-neutral-900/90 border border-white/10 hover:border-white/25 backdrop-blur-xl transition-all duration-300 group/card p-6 sm:p-7 flex flex-col justify-between items-center text-center select-none hover:-translate-y-1 cursor-pointer"
     >
-      {/* Top: Circular Photo with Grayscale to Color on Hover */}
+      {/* Top: Circular Photo or Initials Badge */}
       <div className="flex flex-col items-center w-full">
-        <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-30 md:h-30 rounded-full overflow-hidden border border-white/20 group-hover/card:border-white/50 transition-all duration-500 shrink-0">
-          <Image
-            src={item.image}
-            alt={`${item.name} Rebelive Review`}
-            fill
-            sizes="128px"
-            style={{ objectPosition: item.imagePosition || 'center 18%' }}
-            className="object-cover  transition-all duration-500 ease-out"
-            priority={priority}
-          />
+        <div className="relative w-24 h-24 sm:w-28 sm:h-28 md:w-30 md:h-30 rounded-full overflow-hidden border border-white/20 group-hover/card:border-white/50 transition-all duration-500 shrink-0 flex items-center justify-center">
+          {item.image ? (
+            <Image
+              src={item.image}
+              alt={`${item.name} Rebelive Review`}
+              fill
+              sizes="128px"
+              style={{ objectPosition: item.imagePosition || 'center 18%' }}
+              className="object-cover transition-all duration-500 ease-out"
+              priority={priority}
+              unoptimized={item.image.startsWith('http')}
+            />
+          ) : (
+            <div className="w-full h-full bg-gradient-to-br from-neutral-800 via-neutral-900 to-black flex items-center justify-center font-bold text-white text-xl sm:text-2xl tracking-widest border border-white/10 group-hover/card:border-white/30 transition-colors">
+              {getInitials(item.name)}
+            </div>
+          )}
         </div>
       </div>
 
@@ -101,20 +115,53 @@ export const TestimonialsSection: React.FC<TestimonialsSectionProps> = ({
 
   // Sync with live database or admin cache if updated
   useEffect(() => {
-    if (typeof window !== 'undefined') {
+    let isMounted = true;
+    const fetchLiveTestimonials = async () => {
       try {
-        const raw = localStorage.getItem('rebelive_testimonials_cache');
-        if (raw) {
-          const parsed = JSON.parse(raw);
-          if (Array.isArray(parsed) && parsed.length > 0) {
-            const featured = parsed.filter((t: any) => t.isFeatured !== false);
-            if (featured.length > 0) {
-              setItems(featured);
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+        const res = await fetch(`${apiUrl}/content/testimonials`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.status === 'success' && Array.isArray(json.data) && json.data.length > 0) {
+            if (isMounted) {
+              setItems(
+                json.data.map((t: any) => ({
+                  id: t.id,
+                  name: t.name,
+                  quote: t.quote,
+                  rating: t.rating || 5,
+                  image: t.image || '',
+                  imagePosition: t.imagePosition || 'center 15%',
+                }))
+              );
+              return;
             }
           }
         }
-      } catch {}
-    }
+      } catch (err) {
+        // Fall back to local cache if offline
+      }
+
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('rebelive_testimonials_cache');
+          if (raw) {
+            const parsed = JSON.parse(raw);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              const featured = parsed.filter((t: any) => t.isFeatured !== false);
+              if (featured.length > 0 && isMounted) {
+                setItems(featured);
+              }
+            }
+          }
+        } catch {}
+      }
+    };
+
+    fetchLiveTestimonials();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   // Double items per track so every track is expansive and seamless

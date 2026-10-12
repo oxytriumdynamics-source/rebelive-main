@@ -175,7 +175,7 @@ export function RootProductsTab() {
     setCalories('10 kcal');
     setDescription('');
     setStory('');
-    setCanImage('/products/apex.webp');
+    setCanImage('');
     setPrimaryTone('#d8ac52');
     setNetQuantity('250 ml');
     setIsVegetarian(true);
@@ -218,7 +218,7 @@ export function RootProductsTab() {
     setCalories(prod.calories || '10 kcal');
     setDescription(prod.description);
     setStory(prod.story || '');
-    setCanImage(prod.canImage || prod.image || '/products/apex.webp');
+    setCanImage(prod.canImage || prod.image || '');
     setPrimaryTone(prod.primaryTone || '#d8ac52');
     setNetQuantity(prod.netQuantity || '250 ml');
     setIsVegetarian(prod.isVegetarian !== false);
@@ -407,13 +407,26 @@ export function RootProductsTab() {
                 {/* Product Header */}
                 <div className="flex items-start gap-4">
                   <div className="w-16 h-20 relative shrink-0 bg-white/[0.02] border border-white/10 rounded-xl flex items-center justify-center p-1 overflow-hidden">
-                    <Image
-                      src={prod.canImage || prod.image || '/products/apex.webp'}
-                      alt={prod.name}
-                      fill
-                      className="object-contain p-1"
-                      unoptimized={Boolean(prod.canImage?.startsWith('http') || prod.image?.startsWith('http'))}
-                    />
+                    {(() => {
+                      const displayImg = prod.canImage || prod.image;
+                      if (displayImg) {
+                        return (
+                          <Image
+                            src={displayImg}
+                            alt={prod.name}
+                            fill
+                            className="object-contain p-1"
+                            unoptimized={displayImg.startsWith('http')}
+                          />
+                        );
+                      }
+                      return (
+                        <div className="flex flex-col items-center justify-center text-center">
+                          <span className="font-bold text-[8px] font-mono text-white/50">{prod.name.slice(0, 4)}</span>
+                          <span className="text-[6.5px] font-mono text-white/30 uppercase mt-0.5">No Img</span>
+                        </div>
+                      );
+                    })()}
                   </div>
 
                   <div className="flex-1 min-w-0">
@@ -648,10 +661,17 @@ export function RootProductsTab() {
                             unoptimized={canImage.startsWith('http')}
                           />
                         </div>
-                        <div className="mt-2 text-center w-full">
+                        <div className="mt-2 text-center w-full flex items-center justify-center gap-1.5 flex-wrap">
                           <span className="inline-block px-1.5 py-0.5 rounded text-[8px] font-mono uppercase font-bold tracking-wider bg-white/10 text-white/70 border border-white/20">
-                            {canImage.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Local / Asset'}
+                            {canImage.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Custom Asset'}
                           </span>
+                          <button
+                            type="button"
+                            onClick={() => setCanImage('')}
+                            className="px-1.5 py-0.5 rounded text-[8px] font-mono uppercase font-bold text-red-400 bg-red-500/10 border border-red-500/20 hover:bg-red-500/20 cursor-pointer"
+                          >
+                            Remove
+                          </button>
                         </div>
                         {canImage.startsWith('http') && (
                           <a

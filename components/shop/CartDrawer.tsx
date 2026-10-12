@@ -103,13 +103,20 @@ export function CartDrawer() {
                 >
                   {/* Can Thumbnail */}
                   <div className="w-12 h-16 relative shrink-0 bg-white/[0.02] rounded-lg border border-white/5 flex items-center justify-center p-1">
-                    <Image
-                      src={item.image}
-                      alt={item.name}
-                      fill
-                      sizes="48px"
-                      className="object-contain p-1"
-                    />
+                    {item.image ? (
+                      <Image
+                        src={item.image}
+                        alt={item.name}
+                        fill
+                        sizes="48px"
+                        className="object-contain p-1"
+                        unoptimized={item.image.startsWith('http')}
+                      />
+                    ) : (
+                      <span className="text-[9px] font-mono font-bold text-white/50 tracking-wider">
+                        {item.name ? item.name.slice(0, 3).toUpperCase() : 'CAN'}
+                      </span>
+                    )}
                   </div>
 
                   {/* Details */}

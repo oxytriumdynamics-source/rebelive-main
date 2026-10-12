@@ -68,6 +68,8 @@ export interface AdminProduct {
   canImage?: string | null;
   image?: string | null;
   renderImage?: string | null;
+  gallery?: any;
+  images?: any;
   brandLogo?: string | null;
   bgImage?: string | null;
   bgGradient?: string | null;
@@ -670,7 +672,7 @@ export const INITIAL_TESTIMONIALS: AdminTestimonial[] = [
     role: 'Software Architect & Biohacker',
     quote: 'Clean sustained mental clarity through long coding sessions without any crash or anxiety. Rebelive is literally in a class of its own.',
     rating: 5,
-    image: '/testimonials/rebel-nishant.webp',
+    image: '',
     imagePosition: 'center 15%',
     isFeatured: true,
     sortOrder: 1,
@@ -681,7 +683,7 @@ export const INITIAL_TESTIMONIALS: AdminTestimonial[] = [
     role: 'Product Designer',
     quote: 'The calm focus and zero-sugar formulation completely upgraded my workday routine. No jitters, pure natural flow state.',
     rating: 5,
-    image: '/testimonials/rebel-ashray.webp',
+    image: '',
     imagePosition: 'center 15%',
     isFeatured: true,
     sortOrder: 2,
@@ -692,7 +694,7 @@ export const INITIAL_TESTIMONIALS: AdminTestimonial[] = [
     role: 'Founder & Endurance Athlete',
     quote: 'Unmatched sustained energy that keeps me dialed in and sharp throughout the day. Zero sugar crash, just pure cognitive momentum.',
     rating: 5,
-    image: '/testimonials/rebel-vaibhav.webp',
+    image: '',
     imagePosition: 'center 18%',
     isFeatured: true,
     sortOrder: 3,
@@ -703,7 +705,7 @@ export const INITIAL_TESTIMONIALS: AdminTestimonial[] = [
     role: 'Creative Director',
     quote: 'Game-changing endurance and crisp mental sharpness. Zero jitters, no crash, just pure sustained high performance all day long.',
     rating: 5,
-    image: '/testimonials/rebel-dhirendra.webp',
+    image: '',
     imagePosition: 'center 20%',
     isFeatured: true,
     sortOrder: 4,
@@ -778,7 +780,7 @@ export async function createAdminTestimonial(data: Partial<AdminTestimonial>): P
     role: data.role || null,
     quote: data.quote || '',
     rating: data.rating || 5,
-    image: data.image || '/testimonials/rebel-nishant.webp',
+    image: data.image || '',
     imagePosition: data.imagePosition || 'center 15%',
     isFeatured: data.isFeatured !== undefined ? data.isFeatured : true,
     sortOrder: data.sortOrder || 0,

@@ -33,6 +33,13 @@ import { compressImage, formatFileSize } from '@/lib/imageCompression';
 
 const MONO = "'JetBrains Mono', monospace";
 
+function getInitials(name: string): string {
+  if (!name) return 'R';
+  const parts = name.trim().split(/\s+/);
+  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
 export function RootTestimonialsTab() {
   const [testimonials, setTestimonials] = useState<AdminTestimonial[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -48,7 +55,7 @@ export function RootTestimonialsTab() {
   const [role, setRole] = useState('');
   const [quote, setQuote] = useState('');
   const [rating, setRating] = useState(5);
-  const [image, setImage] = useState('/testimonials/rebel-nishant.webp');
+  const [image, setImage] = useState('');
   const [imagePosition, setImagePosition] = useState('center 15%');
   const [isFeatured, setIsFeatured] = useState(true);
   const [sortOrder, setSortOrder] = useState(1);
@@ -87,7 +94,7 @@ export function RootTestimonialsTab() {
     setRole('');
     setQuote('');
     setRating(5);
-    setImage('/testimonials/rebel-nishant.webp');
+    setImage('');
     setImagePosition('center 15%');
     setIsFeatured(true);
     setSortOrder(testimonials.length + 1);
@@ -101,7 +108,7 @@ export function RootTestimonialsTab() {
     setRole(item.role || '');
     setQuote(item.quote);
     setRating(item.rating || 5);
-    setImage(item.image);
+    setImage(item.image || '');
     setImagePosition(item.imagePosition || 'center 15%');
     setIsFeatured(item.isFeatured !== false);
     setSortOrder(item.sortOrder || 1);
@@ -112,6 +119,11 @@ export function RootTestimonialsTab() {
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setEditingItem(null);
+    setCompressionStats(null);
+  };
+
+  const handleClearImage = () => {
+    setImage('');
     setCompressionStats(null);
   };
 
@@ -359,16 +371,23 @@ export function RootTestimonialsTab() {
                 {/* Top Row: Avatar + Info */}
                 <div>
                   <div className="flex items-start gap-3.5 mb-3.5">
-                    {/* Portrait Thumbnail */}
-                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0">
-                      <Image
-                        src={item.image}
-                        alt={item.name}
-                        fill
-                        sizes="64px"
-                        style={{ objectFit: 'cover', objectPosition: item.imagePosition || 'center 15%' }}
-                        className="transition-transform duration-300 group-hover:scale-105"
-                      />
+                    {/* Portrait Thumbnail / Initials */}
+                    <div className="relative w-14 h-14 rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0 flex items-center justify-center">
+                      {item.image ? (
+                        <Image
+                          src={item.image}
+                          alt={item.name}
+                          fill
+                          sizes="64px"
+                          style={{ objectFit: 'cover', objectPosition: item.imagePosition || 'center 15%' }}
+                          className="transition-transform duration-300 group-hover:scale-105"
+                          unoptimized={item.image.startsWith('http')}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-black flex items-center justify-center font-bold text-white text-xs tracking-wider">
+                          {getInitials(item.name)}
+                        </div>
+                      )}
                     </div>
 
                     <div className="flex-1 min-w-0">
@@ -410,9 +429,13 @@ export function RootTestimonialsTab() {
                       <span className="px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[10px]">
                         Cloudinary CDN
                       </span>
-                    ) : (
+                    ) : item.image ? (
                       <span className="px-2 py-0.5 rounded-md bg-white/5 border border-white/10 text-white/40 text-[10px]">
-                        Local Asset
+                        Custom Image
+                      </span>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-md bg-amber-500/10 border border-amber-500/30 text-amber-300 text-[10px]">
+                        Initials Avatar
                       </span>
                     )}
 
@@ -686,19 +709,37 @@ export function RootTestimonialsTab() {
                     Live Storefront Card Preview
                   </span>
                   <div className="flex items-center gap-4 bg-[#141416] p-4 rounded-xl border border-white/10">
-                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0">
-                      <Image
-                        src={image || '/testimonials/rebel-nishant.webp'}
-                        alt={name || 'Preview'}
-                        fill
-                        sizes="64px"
-                        style={{ objectFit: 'cover', objectPosition: imagePosition || 'center 15%' }}
-                      />
+                    <div className="relative w-16 h-16 rounded-2xl overflow-hidden bg-neutral-900 border border-white/10 shrink-0 flex items-center justify-center">
+                      {image ? (
+                        <Image
+                          src={image}
+                          alt={name || 'Preview'}
+                          fill
+                          sizes="64px"
+                          style={{ objectFit: 'cover', objectPosition: imagePosition || 'center 15%' }}
+                          unoptimized={image.startsWith('http')}
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-gradient-to-br from-neutral-800 to-black flex items-center justify-center font-bold text-white text-sm tracking-wider">
+                          {getInitials(name)}
+                        </div>
+                      )}
                     </div>
-                    <div className="min-w-0">
-                      <p className="font-bold text-xs uppercase text-white truncate">
-                        {name || 'REBEL NAME'}
-                      </p>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between">
+                        <p className="font-bold text-xs uppercase text-white truncate">
+                          {name || 'REBEL NAME'}
+                        </p>
+                        {image && (
+                          <button
+                            type="button"
+                            onClick={handleClearImage}
+                            className="text-[10px] text-red-400 hover:text-red-300 font-mono px-2 py-0.5 rounded bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 cursor-pointer"
+                          >
+                            Remove Photo
+                          </button>
+                        )}
+                      </div>
                       <p className="text-[10px] text-white/40 truncate">{role || 'Role / Persona'}</p>
                       <div className="flex items-center gap-0.5 mt-1">
                         {Array.from({ length: rating }).map((_, i) => (
