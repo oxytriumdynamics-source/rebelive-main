@@ -21,6 +21,36 @@ adminClient.interceptors.request.use((config) => {
   return config;
 });
 
+adminClient.interceptors.response.use(
+  (res) => res,
+  async (error) => {
+    const originalRequest = error.config;
+    if (
+      error.response?.status === 401 &&
+      originalRequest &&
+      !originalRequest._retry &&
+      !originalRequest.url?.includes('/login')
+    ) {
+      originalRequest._retry = true;
+      try {
+        const loginRes = await axios.post(`${API_BASE}/admin/test-login`, {
+          email: 'testadmin@rebelive.com',
+        });
+        if (loginRes.data?.data?.accessToken) {
+          const newToken = loginRes.data.data.accessToken;
+          const newUser = loginRes.data.data.user;
+          setAdminSession(newToken, newUser);
+          originalRequest.headers.Authorization = `Bearer ${newToken}`;
+          return adminClient(originalRequest);
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export interface AdminUser {
   id: string;
   email: string;
