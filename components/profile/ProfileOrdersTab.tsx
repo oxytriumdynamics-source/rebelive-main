@@ -12,7 +12,6 @@ import {
 } from "lucide-react";
 import { Order, OrderStatus, fetchOrders } from "@/lib/profileApi";
 import OrderDetailsModal from "./OrderDetailsModal";
-import { soundEngine } from "@/lib/audio";
 
 interface ProfileOrdersTabProps {
   accentColor?: string;
@@ -48,7 +47,6 @@ export default function ProfileOrdersTab({
   }
 
   function handleViewDetails(order: Order) {
-    soundEngine.playClick();
     setSelectedOrder(order);
     setIsModalOpen(true);
   }
@@ -121,7 +119,6 @@ export default function ProfileOrdersTab({
                 key={f}
                 type="button"
                 onClick={() => {
-                  soundEngine.playClick();
                   setActiveFilter(f);
                 }}
                 className={`rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-all cursor-pointer ${

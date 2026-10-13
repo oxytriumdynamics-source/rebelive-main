@@ -9,18 +9,19 @@ import {
   Package,
   Shield,
   CheckCircle2,
+  Copy,
 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import EverestPattern from "@/components/persona/EverestPattern";
 import { PERSONAS } from "@/data/personas";
 import { AuthUser, logoutUser } from "@/store/slices/authslice";
+import { formatRebelId } from "@/lib/auth";
 import { fetchOrders, fetchAddresses } from "@/lib/profileApi";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import ProfileOverviewTab from "./ProfileOverviewTab";
 import ProfileOrdersTab from "./ProfileOrdersTab";
 import ProfileAddressesTab from "./ProfileAddressesTab";
 import ProfileDetailsTab from "./ProfileDetailsTab";
-import { soundEngine } from "@/lib/audio";
 
 const MONO = "JetBrains Mono, Courier New, monospace";
 const DISPLAY = "'Code Next', Anton, 'Arial Narrow', sans-serif";
@@ -88,7 +89,6 @@ export default function ProfileStage({
   }
 
   function handleTabChange(tab: ProfileTab) {
-    soundEngine.playClick();
     setActiveTab(tab);
     // Update URL query param without full page reload
     const url = new URL(window.location.href);
@@ -97,13 +97,12 @@ export default function ProfileStage({
   }
 
   async function handleLogout() {
-    soundEngine.playClick();
     await dispatch(logoutUser());
     if (typeof window !== "undefined") {
       localStorage.removeItem("accessToken");
       localStorage.removeItem("rebelive_auth_token");
       sessionStorage.clear();
-      router.push("/");
+      window.location.href = "/";
     }
   }
 
@@ -149,9 +148,26 @@ export default function ProfileStage({
             {user.firstName || "REBEL"} {user.lastName || "OPERATOR"}
           </h1>
 
-          <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest mt-1">
-            REBEL ID: {user.id ? user.id.replace("REBEL-", "#") : "#8848"} · {persona?.name || "APEX"} ARCHETYPE
-          </p>
+          <div className="flex items-center gap-2 mt-1">
+            <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest">
+              REBEL ID: <span className="text-white font-bold tracking-wider">{formatRebelId(user.rebelId || user.id)}</span> · {persona?.name || "APEX"} ARCHETYPE
+            </p>
+            <button
+              type="button"
+              id="copy-rebel-id-btn"
+              onClick={() => {
+                const code = formatRebelId(user.rebelId || user.id);
+                navigator.clipboard?.writeText(code);
+                setToastMessage("REBEL ID COPIED");
+                setTimeout(() => setToastMessage(null), 2500);
+              }}
+              title="Copy Rebel ID"
+              className="flex items-center gap-1 rounded px-1.5 py-0.5 border border-white/10 bg-white/[0.04] hover:bg-white/10 text-white/50 hover:text-white transition-all text-[8.5px] font-mono cursor-pointer"
+            >
+              <Copy className="h-2.5 w-2.5" />
+              <span>COPY</span>
+            </button>
+          </div>
         </div>
 
         <div className="flex items-center gap-2.5 self-start sm:self-auto">

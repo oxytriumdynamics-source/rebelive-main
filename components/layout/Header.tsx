@@ -10,6 +10,7 @@ import { useAppSelector, useAppDispatch } from '@/store/hooks';
 import { openCart } from '@/store/slices/cartSlice';
 import { soundEngine } from '@/lib/audio';
 import { scrollToLenis } from './SmoothScroll';
+import { formatRebelId } from '@/lib/auth';
 import { hasIntroLoaded, subscribeIntroLoaded } from '@/lib/introState';
 import { animationState, subscribeScrollProgress } from '@/lib/animationState';
 import { HoverRollText } from '@/components/ui/HoverRollText';
@@ -173,7 +174,7 @@ export const Header: React.FC<HeaderProps> = ({
 
   const userAvatar = user?.avatarUrl || '/brand/panther_white_icon-transparent.webp';
   const displayName = user?.firstName || 'Operator';
-  const rebelId = user?.id || 'REBEL-0000';
+  const rebelId = formatRebelId(user?.rebelId || user?.id);
   const personaSlug = user?.preferences?.personalityType?.slug || 'apex';
 
   return (
@@ -249,21 +250,7 @@ export const Header: React.FC<HeaderProps> = ({
               <HoverRollText text="SHOP" />
             </Link>
 
-            {isUserAuthenticated && (
-              <Link
-                href="/profile"
-                className={`group text-[11px] xl:text-xs font-tech tracking-[0.2em] uppercase transition-all cursor-pointer pb-0.5 ${isProfile
-                    ? isDark
-                      ? 'font-bold text-white border-b-2 border-white'
-                      : 'font-bold text-black border-b-2 border-black'
-                    : isDark
-                      ? 'font-medium text-white/80 hover:text-white border-b-2 border-transparent'
-                      : 'font-medium text-black/80 hover:text-black border-b-2 border-transparent'
-                  }`}
-              >
-                <HoverRollText text="PROFILE" />
-              </Link>
-            )}
+     
           </nav>
         </div>
 
@@ -299,7 +286,7 @@ export const Header: React.FC<HeaderProps> = ({
           <button
             type="button"
             onClick={() => {
-              soundEngine.playClick();
+              if (isHome) soundEngine.playClick();
               dispatch(openCart());
             }}
             className={`flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-3.5 py-1.5 rounded-full border transition-all duration-300 cursor-pointer group active:scale-95 relative ${isDark
@@ -388,7 +375,7 @@ export const Header: React.FC<HeaderProps> = ({
                     className={`text-[8px] font-mono tracking-widest leading-none mt-0.5 ${isDark ? 'text-white/60' : 'text-black/60 font-semibold'
                       }`}
                   >
-                    {rebelId.replace('REBEL-', '#')}
+                    {rebelId}
                   </span>
                 </div>
 
@@ -427,7 +414,7 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                       <span className="inline-flex items-center gap-1 text-[8.5px] font-tech text-white/70 font-bold uppercase tracking-widest mt-0.5">
                         <ShieldCheck className="w-3 h-3 text-white" />
-                        REBEL ID VERIFIED
+                        {rebelId} · VERIFIED
                       </span>
                     </div>
                   </div>

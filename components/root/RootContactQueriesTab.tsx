@@ -25,7 +25,9 @@ import {
   fetchContactQueries,
   updateContactQueryStatus,
   deleteContactQuery,
+  getStoredAdminUser,
   AdminContactQuery,
+  AdminUser,
   QueryStatus,
   QueryCounts,
 } from '@/lib/adminApi';
@@ -92,6 +94,7 @@ export function RootContactQueriesTab() {
   const [noteDraft, setNoteDraft] = useState('');
   const [isUpdatingStatus, setIsUpdatingStatus] = useState<string | null>(null);
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
 
   const loadData = async () => {
     setIsLoading(true);
@@ -105,6 +108,10 @@ export function RootContactQueriesTab() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    setCurrentAdmin(getStoredAdminUser());
+  }, []);
 
   useEffect(() => {
     loadData();
@@ -138,6 +145,10 @@ export function RootContactQueriesTab() {
   };
 
   const handleDelete = async (queryId: string, name: string) => {
+    if (currentAdmin?.role !== 'SUPERADMIN') {
+      showAdminToast('Only Super Admin is authorized to delete contact inquiries.', 'error', 'Permission Denied');
+      return;
+    }
     if (!window.confirm(`Are you sure you want to delete the contact query from "${name}"?`)) {
       return;
     }
@@ -366,13 +377,15 @@ export function RootContactQueriesTab() {
                       Details
                     </button>
 
-                    <button
-                      onClick={() => handleDelete(q.id, fullName)}
-                      className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-white/40 hover:text-rose-400 transition-colors cursor-pointer"
-                      title="Delete query"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {currentAdmin?.role === 'SUPERADMIN' && (
+                      <button
+                        onClick={() => handleDelete(q.id, fullName)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer"
+                        title="Delete query"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
 

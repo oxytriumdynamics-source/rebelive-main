@@ -3,9 +3,18 @@ import Link from 'next/link';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service - REBELIVE',
+  title: 'Terms of Service | User Agreement & Legal Notice',
   description:
-    'Terms and Conditions for rebelive.com, operated by Oxytrium Dynamics Private Limited.',
+    'Terms and Conditions for rebelive.com, operated by Oxytrium Dynamics Private Limited. Covers orders, subscriptions, intellectual property, and user terms.',
+  alternates: {
+    canonical: '/terms',
+  },
+  openGraph: {
+    title: 'Terms of Service | REBELIVE',
+    description: 'Terms and Conditions for rebelive.com by Oxytrium Dynamics Private Limited.',
+    url: 'https://rebelive.com/terms',
+    siteName: 'REBELIVE',
+  },
 };
 
 const MONO = "'Poppins', sans-serif";

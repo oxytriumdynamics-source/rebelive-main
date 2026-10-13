@@ -23,6 +23,7 @@ export interface UserPreference {
 
 export interface AuthUser {
   id: string;
+  rebelId?: string;
   email: string;
   firstName: string;
   lastName: string;
@@ -156,8 +157,10 @@ function generateFallbackUser(email: string, firstName?: string, lastName?: stri
   const parts = email.split('@')[0].split('.');
   const f = firstName || (parts[0] ? parts[0].charAt(0).toUpperCase() + parts[0].slice(1) : 'Rebel');
   const l = lastName || (parts[1] ? parts[1].charAt(0).toUpperCase() + parts[1].slice(1) : 'Operator');
+  const randomNum = Math.floor(1000 + Math.random() * 9000);
   return {
-    id: `REBEL-${Math.floor(1000 + Math.random() * 9000)}`,
+    id: `REBEL-${randomNum}`,
+    rebelId: `#RBL-${randomNum}`,
     email,
     firstName: f,
     lastName: l,
@@ -260,6 +263,35 @@ export const verifyOtp = createAsyncThunk(
       return data.data as { user: AuthUser; accessToken: string; emailVerified: boolean };
     } catch (err: unknown) {
       return rejectWithValue(extractErrorMessage(err, 'OTP verification failed'));
+    }
+  },
+);
+
+/** Request password reset OTP */
+export const forgotPasswordRequest = createAsyncThunk(
+  'auth/forgotPasswordRequest',
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const { data } = await API.post('/auth/forgot-password-request', { email });
+      return (data.message ?? 'Verification code sent to your email.') as string;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err, 'Could not send verification code'));
+    }
+  },
+);
+
+/** Verify reset OTP and apply new password */
+export const forgotPasswordVerify = createAsyncThunk(
+  'auth/forgotPasswordVerify',
+  async (
+    payload: { email: string; otp: string; newPassword: string },
+    { rejectWithValue },
+  ) => {
+    try {
+      const { data } = await API.post('/auth/forgot-password-verify', payload);
+      return data.data as { user: AuthUser; accessToken: string };
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err, 'Password reset verification failed'));
     }
   },
 );
@@ -547,6 +579,45 @@ const authSlice = createSlice({
         state.error = payload as string;
       });
 
+    // ── Forgot Password Request ───────────────────────
+    builder
+      .addCase(forgotPasswordRequest.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(forgotPasswordRequest.fulfilled, (state) => {
+        state.loading = false;
+        state.otpSent = true;
+        state.error = null;
+      })
+      .addCase(forgotPasswordRequest.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload as string;
+      });
+
+    // ── Forgot Password Verify ────────────────────────
+    builder
+      .addCase(forgotPasswordVerify.pending, (state) => {
+        state.otpVerifying = true;
+        state.otpError = null;
+      })
+      .addCase(forgotPasswordVerify.fulfilled, (state, { payload }) => {
+        state.otpVerifying = false;
+        state.otpSent = false;
+        state.user = payload.user;
+        state.accessToken = payload.accessToken;
+        state.isAuthenticated = true;
+        state.emailVerified = true;
+        saveToken(payload.accessToken);
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('authUser', JSON.stringify(payload.user));
+        }
+      })
+      .addCase(forgotPasswordVerify.rejected, (state, { payload }) => {
+        state.otpVerifying = false;
+        state.otpError = payload as string;
+      });
+
     // ── Logout ────────────────────────────────────────
     builder
       .addCase(logoutUser.fulfilled, (state) => {
@@ -559,6 +630,7 @@ const authSlice = createSlice({
           localStorage.removeItem('authUser');
           localStorage.removeItem('rebelive_auth_token');
           sessionStorage.clear();
+          window.location.reload();
         }
       });
   },

@@ -27,7 +27,9 @@ import {
   updateAdminTestimonial,
   deleteAdminTestimonial,
   uploadTestimonialImage,
+  getStoredAdminUser,
   AdminTestimonial,
+  AdminUser,
 } from '@/lib/adminApi';
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
 import { showAdminToast } from './AdminToaster';
@@ -43,6 +45,7 @@ function getInitials(name: string): string {
 
 export function RootTestimonialsTab() {
   const [testimonials, setTestimonials] = useState<AdminTestimonial[]>([]);
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [feedback, setFeedback] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -73,6 +76,7 @@ export function RootTestimonialsTab() {
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
+    setCurrentAdmin(getStoredAdminUser());
     loadTestimonials();
   }, []);
 
@@ -211,6 +215,11 @@ export function RootTestimonialsTab() {
 
   // Delete
   const handleDelete = async (id: string, rebelName: string) => {
+    if (currentAdmin?.role !== 'SUPERADMIN') {
+      showAdminToast('Only Super Admin is authorized to delete testimonials.', 'error', 'Permission Denied');
+      return;
+    }
+
     if (!confirm(`Are you sure you want to remove the testimonial by ${rebelName}?`)) {
       return;
     }
@@ -455,13 +464,15 @@ export function RootTestimonialsTab() {
                     >
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
-                    <button
-                      onClick={() => handleDelete(item.id, item.name)}
-                      className="p-1.5 rounded-lg bg-white/5 hover:bg-rose-500/20 text-white/40 hover:text-rose-300 transition-colors cursor-pointer"
-                      title="Delete Testimonial"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                    {currentAdmin?.role === 'SUPERADMIN' && (
+                      <button
+                        onClick={() => handleDelete(item.id, item.name)}
+                        className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors cursor-pointer"
+                        title="Delete Testimonial"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    )}
                   </div>
                 </div>
               </div>

@@ -15,7 +15,6 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import { Order, OrderStatus, cancelOrder } from "@/lib/profileApi";
-import { soundEngine } from "@/lib/audio";
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -51,7 +50,6 @@ export default function OrderDetailsModal({
 
   async function handleCancelOrder() {
     if (!order) return;
-    soundEngine.playClick();
     setCancelling(true);
     setCancelError(null);
 
@@ -122,7 +120,6 @@ export default function OrderDetailsModal({
       <div
         className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity cursor-pointer animate-in fade-in duration-200"
         onClick={() => {
-          soundEngine.playClick();
           onClose();
         }}
       />
@@ -153,7 +150,6 @@ export default function OrderDetailsModal({
           </div>
           <button
             onClick={() => {
-              soundEngine.playClick();
               onClose();
             }}
             className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
@@ -370,7 +366,6 @@ export default function OrderDetailsModal({
               <button
                 type="button"
                 onClick={() => {
-                  soundEngine.playClick();
                   setShowCancelConfirm(true);
                 }}
                 className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/[0.04] px-4 py-2 font-mono text-[10px] uppercase tracking-wider text-white/70 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"

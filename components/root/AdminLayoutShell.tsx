@@ -26,6 +26,7 @@ import {
   EyeOff,
   AlertCircle,
   CheckCircle2,
+  SlidersHorizontal,
 } from 'lucide-react';
 import {
   getStoredAdminToken,
@@ -41,9 +42,9 @@ const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 interface AdminLayoutShellProps {
-  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket';
+  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings';
   children: React.ReactNode;
-  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket') => void;
+  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings') => void;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
@@ -95,7 +96,7 @@ export function AdminLayoutShell({
     clearAdminSession();
     setAdminUser(null);
     showAdminToast('Signed out of Admin console.', 'info', 'Session Ended');
-    router.push('/root');
+    window.location.href = '/root';
   };
 
   const handlePasswordChangeSubmit = async (e: React.FormEvent) => {
@@ -156,7 +157,23 @@ export function AdminLayoutShell({
     return <RootAuthGateway onAuthenticated={handleAuthenticated} />;
   }
 
-  const NAV_TABS = [
+  type AdminTabId =
+    | 'overview'
+    | 'orders'
+    | 'products'
+    | 'testimonials'
+    | 'contact-queries'
+    | 'corporate-queries'
+    | 'users'
+    | 'shiprocket'
+    | 'settings';
+
+  const NAV_TABS: Array<{
+    id: AdminTabId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+    href: string;
+  }> = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
     { id: 'orders', label: 'My Tasks / Orders', icon: Package, href: '/root?tab=orders' },
     { id: 'products', label: 'Products / Catalog', icon: Boxes, href: '/root?tab=products' },
@@ -165,9 +182,23 @@ export function AdminLayoutShell({
     { id: 'corporate-queries', label: 'Corporate & Bulk', icon: Building2, href: '/root?tab=corporate-queries' },
     { id: 'users', label: 'Messages / Users', icon: Users, href: '/root?tab=users' },
     { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck, href: '/root?tab=shiprocket' },
-  ] as const;
+    ...(adminUser.role === 'SUPERADMIN'
+      ? [{ id: 'settings' as const, label: 'Settings / Admins', icon: SlidersHorizontal, href: '/root?tab=settings' }]
+      : []),
+  ];
 
-  const handleTabClick = (tabId: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket') => {
+  const handleTabClick = (
+    tabId:
+      | 'overview'
+      | 'orders'
+      | 'products'
+      | 'testimonials'
+      | 'contact-queries'
+      | 'corporate-queries'
+      | 'users'
+      | 'shiprocket'
+      | 'settings'
+  ) => {
     setMobileMenuOpen(false);
     if (onTabChange) {
       onTabChange(tabId);
@@ -253,14 +284,16 @@ export function AdminLayoutShell({
 
           {/* Bottom Sidebar Actions */}
           <div className="p-4 border-t border-white/5 space-y-1">
-            <button
-              onClick={() => setPasswordModalOpen(true)}
-              className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/70 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3 cursor-pointer text-left"
-              title="Change Password"
-            >
-              <KeyRound className="w-4 h-4 shrink-0" />
-              <span>Change Password</span>
-            </button>
+            {adminUser.role === 'SUPERADMIN' && (
+              <button
+                onClick={() => setPasswordModalOpen(true)}
+                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/70 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3 cursor-pointer text-left"
+                title="Change Password"
+              >
+                <KeyRound className="w-4 h-4 shrink-0" />
+                <span>Change Password</span>
+              </button>
+            )}
 
             <Link
               href="/"
@@ -386,16 +419,18 @@ export function AdminLayoutShell({
                     </div>
 
                     <div className="space-y-1">
-                      <button
-                        onClick={() => {
-                          setProfileMenuOpen(false);
-                          setPasswordModalOpen(true);
-                        }}
-                        className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-white/80 hover:text-white hover:bg-white/5 transition-colors cursor-pointer font-mono text-xs"
-                      >
-                        <KeyRound className="w-3.5 h-3.5" />
-                        <span>Change Password</span>
-                      </button>
+                      {adminUser.role === 'SUPERADMIN' && (
+                        <button
+                          onClick={() => {
+                            setProfileMenuOpen(false);
+                            setPasswordModalOpen(true);
+                          }}
+                          className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-left text-white/80 hover:text-white hover:bg-white/5 transition-colors cursor-pointer font-mono text-xs"
+                        >
+                          <KeyRound className="w-3.5 h-3.5" />
+                          <span>Change Password</span>
+                        </button>
+                      )}
 
                       <button
                         onClick={() => {

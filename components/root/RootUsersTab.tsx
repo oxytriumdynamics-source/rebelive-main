@@ -15,7 +15,14 @@ import {
   CreditCard,
   ShoppingBag,
 } from 'lucide-react';
-import { fetchAdminUsers, updateAdminUser, getStoredAdminUser, AdminUser } from '@/lib/adminApi';
+import {
+  fetchAdminUsers,
+  updateAdminUser,
+  restrictAdminUser,
+  getStoredAdminUser,
+  AdminUser,
+} from '@/lib/adminApi';
+import { formatRebelId } from '@/lib/auth';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
@@ -50,6 +57,34 @@ export function RootUsersTab() {
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     loadUsers();
+  };
+
+  const handleToggleRestrict = async (userId: string, currentRestricted: boolean) => {
+    if (currentAdmin?.role !== 'SUPERADMIN') {
+      showAdminToast('Only Super Admin is authorized to restrict accounts.', 'error', 'Permission Denied');
+      return;
+    }
+
+    if (selectedUser?.email === 'oxytriumdynamics@gmail.com') {
+      showAdminToast('The master Super Admin account cannot be restricted.', 'error', 'Protected Account');
+      return;
+    }
+
+    const nextState = !currentRestricted;
+    try {
+      const updated = await restrictAdminUser(userId, nextState);
+      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, isRestricted: updated.isRestricted } : u)));
+      if (selectedUser?.id === userId) {
+        setSelectedUser((prev) => (prev ? { ...prev, isRestricted: updated.isRestricted } : null));
+      }
+      showAdminToast(
+        `User ${nextState ? 'restricted' : 'restriction lifted'}.`,
+        nextState ? 'info' : 'success',
+        nextState ? 'Account Restricted' : 'Account Restored'
+      );
+    } catch (err: any) {
+      showAdminToast(err.message || 'Error updating user restriction status', 'error', 'Action Failed');
+    }
   };
 
   const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN') => {
@@ -142,26 +177,38 @@ export function RootUsersTab() {
                 users.map((u) => (
                   <tr key={u.id} className="hover:bg-white/[0.02] transition-colors">
                     <td className="py-4 px-4 sm:px-6">
-                      <span className="font-bold text-white block text-xs">
-                        {u.firstName} {u.lastName}
-                      </span>
-                      <span className="text-[10px] text-white/50 font-mono block">
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-white block text-xs">
+                          {u.firstName} {u.lastName}
+                        </span>
+                        <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white/80 border border-white/15">
+                          {formatRebelId(u.id)}
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-white/50 font-mono block mt-0.5">
                         {u.email}
                       </span>
                     </td>
 
                     <td className="py-4 px-4">
-                      <span
-                        className={`inline-block px-2.5 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase ${
-                          u.role === 'SUPERADMIN'
-                            ? 'bg-white text-black border border-white'
-                            : u.role === 'ADMIN'
-                            ? 'bg-white/20 text-white border border-white/30'
-                            : 'bg-white/10 text-white/70 border border-white/15'
-                        }`}
-                      >
-                        {u.role}
-                      </span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <span
+                          className={`inline-block px-2.5 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase ${
+                            u.role === 'SUPERADMIN'
+                              ? 'bg-white text-black border border-white'
+                              : u.role === 'ADMIN'
+                              ? 'bg-white/20 text-white border border-white/30'
+                              : 'bg-white/10 text-white/70 border border-white/15'
+                          }`}
+                        >
+                          {u.role}
+                        </span>
+                        {u.isRestricted && (
+                          <span className="inline-block px-2 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase bg-white/10 text-white/50 border border-white/20">
+                            RESTRICTED
+                          </span>
+                        )}
+                      </div>
                     </td>
 
                     <td className="py-4 px-4 font-mono text-[11px] text-white/70">
@@ -207,7 +254,7 @@ export function RootUsersTab() {
             <div className="flex items-center justify-between pb-3 border-b border-white/10">
               <div>
                 <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block">
-                  USER PROFILE DOSSIER
+                  USER PROFILE DOSSIER · {formatRebelId(selectedUser.id)}
                 </span>
                 <h3 className="text-lg font-bold font-mono text-white uppercase">
                   {selectedUser.firstName} {selectedUser.lastName}
@@ -223,7 +270,12 @@ export function RootUsersTab() {
 
             <div className="space-y-3 text-xs">
               <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-1">
-                <span className="text-[10px] font-mono text-white/40 uppercase block">Account Credentials</span>
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-white/40 uppercase block">Account Credentials</span>
+                  <span className="text-[9.5px] font-mono text-white font-bold bg-white/10 px-2 py-0.5 rounded border border-white/15">
+                    {formatRebelId(selectedUser.id)}
+                  </span>
+                </div>
                 <p className="text-white font-mono">{selectedUser.email}</p>
                 <p className="text-white/60 font-mono">Mobile: {selectedUser.phone || 'None'}</p>
                 <p className="text-white/70 font-mono text-[11px]">
@@ -285,6 +337,50 @@ export function RootUsersTab() {
                       Only Super Admin can assign or change roles
                     </span>
                   </div>
+                )}
+              </div>
+
+              {/* Account Restriction Enforcement (Super Admin only) */}
+              <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] font-mono text-white/40 uppercase block">
+                    Account Access Enforcement
+                  </span>
+                  <span
+                    className={`text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase ${
+                      selectedUser.isRestricted
+                        ? 'bg-white/10 text-white/50 border border-white/20'
+                        : 'bg-white/5 text-white border border-white/20'
+                    }`}
+                  >
+                    {selectedUser.isRestricted ? 'RESTRICTED' : 'ACTIVE'}
+                  </span>
+                </div>
+
+                {selectedUser.email === 'oxytriumdynamics@gmail.com' ? (
+                  <p className="text-[10px] font-mono text-white/40">
+                    Master account cannot be restricted.
+                  </p>
+                ) : currentAdmin?.role === 'SUPERADMIN' ? (
+                  <div className="space-y-2">
+                    <button
+                      onClick={() => handleToggleRestrict(selectedUser.id, !!selectedUser.isRestricted)}
+                      className={`w-full py-2 px-3 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
+                        selectedUser.isRestricted
+                          ? 'bg-white text-black hover:bg-neutral-200'
+                          : 'bg-white/10 text-white hover:bg-white/20 border border-white/20'
+                      }`}
+                    >
+                      {selectedUser.isRestricted ? 'Lift Account Restriction' : 'Restrict User Account'}
+                    </button>
+                    <p className="text-[10px] font-mono text-white/40 leading-relaxed">
+                      Restricting a user account instantly terminates all active access tokens and prevents future logins.
+                    </p>
+                  </div>
+                ) : (
+                  <p className="text-[10px] font-mono text-white/40">
+                    Only Super Admin can restrict or unrestrict users.
+                  </p>
                 )}
               </div>
 

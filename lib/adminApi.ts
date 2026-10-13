@@ -42,6 +42,7 @@ export interface AdminUser {
   role: 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN';
   phone?: string | null;
   emailVerified: boolean;
+  isRestricted?: boolean;
   avatarUrl?: string | null;
   createdAt: string;
   lastLoginAt?: string | null;
@@ -633,6 +634,16 @@ export async function fetchAdminUsers(params?: {
 
 export async function updateAdminUser(userId: string, data: Partial<AdminUser>): Promise<AdminUser> {
   const res = await adminClient.patch(`/users/${userId}`, data);
+  return res.data?.data;
+}
+
+export async function fetchAdminAdmins(): Promise<AdminUser[]> {
+  const res = await adminClient.get('/admins');
+  return res.data?.data || [];
+}
+
+export async function restrictAdminUser(userId: string, isRestricted?: boolean): Promise<AdminUser> {
+  const res = await adminClient.patch(`/users/${userId}/restrict`, { isRestricted });
   return res.data?.data;
 }
 

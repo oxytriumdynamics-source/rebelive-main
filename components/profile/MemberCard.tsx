@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Image from "next/image";
 import { PersonaProfile } from "@/data/personas";
 import { RotateCcw, Share2, Check } from "lucide-react";
+import { formatRebelId } from "@/lib/auth";
 
 const MONO = "'Poppins', sans-serif";
 
@@ -19,11 +20,13 @@ function getIssuedDate(): string {
 export default function MemberCard({
   persona,
   memberName = "",
+  rebelId,
   showActions = true,
   compact = false,
 }: {
   persona: PersonaProfile;
   memberName?: string;
+  rebelId?: string;
   showActions?: boolean;
   compact?: boolean;
 }) {
@@ -620,7 +623,7 @@ export default function MemberCard({
                 }}
               >
                 <span>ISSUED: {issuedDate}</span>
-                <span className="opacity-40">MEMBER ID</span>
+                <span className="opacity-60 font-mono tracking-widest">{formatRebelId(rebelId)}</span>
               </div>
             </div>
 

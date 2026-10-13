@@ -104,8 +104,13 @@ class SoundEngine {
     }
   }
 
+  private isHomePage(): boolean {
+    if (typeof window === 'undefined') return false;
+    return window.location.pathname === '/';
+  }
+
   private playBuffer(buffer: AudioBuffer, volume = 1.0, playbackRate = 1.0): boolean {
-    if (this.muted) return false;
+    if (this.muted || !this.isHomePage()) return false;
     const ctx = this.getContext();
     if (!ctx) return false;
     try {
@@ -209,7 +214,7 @@ class SoundEngine {
    * Tactile Click: Uses public/brand/aud/click.mp3
    */
   public playClick(pitch: number = 800) {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     const now = Date.now();
     if (now - this.lastClickTime < 40) return;
     this.lastClickTime = now;
@@ -257,7 +262,7 @@ class SoundEngine {
   }
 
   public playTransition(direction: 'forward' | 'backward' = 'forward') {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     if (this.transBuffer || this.transAudio) {
       this.playCurtainSlide();
       return;
@@ -295,7 +300,7 @@ class SoundEngine {
   }
 
   public playDeepChime() {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     try {
       const ctx = this.getContext();
       if (!ctx) return;
@@ -322,7 +327,7 @@ class SoundEngine {
    * Uses public/brand/aud/trans.mp3
    */
   public playCurtainSlide() {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     if (Date.now() - this.lastIntroTime < 380) return;
     this.lastIntroTime = Date.now();
 
@@ -429,7 +434,7 @@ class SoundEngine {
    * Smooth, velvety high-altitude air release as the 3D can floats into space.
    */
   public playCanOutro() {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     if (Date.now() - this.lastOutroTime < 380) return;
     this.lastOutroTime = Date.now();
     try {
@@ -467,7 +472,7 @@ class SoundEngine {
    * Muted, ultra-short physical tock (18ms) - zero video game synth beeps.
    */
   public playFeatureTransition(featureIdx: number = 0) {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     if (Date.now() - this.lastFeatureTime < 200) return;
     this.lastFeatureTime = Date.now();
     try {
@@ -516,7 +521,7 @@ class SoundEngine {
    * Authoritative IMAX-style acoustic sub impact (ZERO laser pitch sweeps, zero cartoon pings).
    */
   public playStatementImpact(statementIdx: number = 1) {
-    if (this.muted) return;
+    if (this.muted || !this.isHomePage()) return;
     if (Date.now() - this.lastStatementTime < 300) return;
     this.lastStatementTime = Date.now();
     try {

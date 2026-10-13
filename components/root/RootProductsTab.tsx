@@ -31,7 +31,9 @@ import {
   updateAdminProduct,
   deleteAdminProduct,
   uploadProductImage,
+  getStoredAdminUser,
   AdminProduct,
+  AdminUser,
 } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
@@ -39,6 +41,7 @@ const MONO = "'JetBrains Mono', monospace";
 
 export function RootProductsTab() {
   const [products, setProducts] = useState<AdminProduct[]>([]);
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [feedbackMsg, setFeedbackMsg] = useState('');
@@ -164,6 +167,7 @@ export function RootProductsTab() {
   };
 
   useEffect(() => {
+    setCurrentAdmin(getStoredAdminUser());
     loadProducts();
   }, []);
 
@@ -349,6 +353,10 @@ export function RootProductsTab() {
   };
 
   const handleDeleteProduct = async (prodId: string, prodName: string) => {
+    if (currentAdmin?.role !== 'SUPERADMIN') {
+      showAdminToast('Only Super Admin is authorized to deactivate or delete products.', 'error', 'Permission Denied');
+      return;
+    }
     if (!confirm(`Are you sure you want to deactivate product "${prodName}"?`)) return;
     try {
       await deleteAdminProduct(prodId);
@@ -494,13 +502,15 @@ export function RootProductsTab() {
                     <span>Edit</span>
                   </Link>
 
-                  <button
-                    onClick={() => handleDeleteProduct(prod.id, prod.name)}
-                    className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Trash2 className="w-3 h-3" />
-                    <span>Deactivate</span>
-                  </button>
+                  {currentAdmin?.role === 'SUPERADMIN' && (
+                    <button
+                      onClick={() => handleDeleteProduct(prod.id, prod.name)}
+                      className="px-3.5 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/60 hover:text-white text-xs font-mono uppercase tracking-wider flex items-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      <span>Deactivate</span>
+                    </button>
+                  )}
                 </div>
               </div>
             );

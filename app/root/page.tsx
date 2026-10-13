@@ -36,8 +36,9 @@ import { RootContactQueriesTab } from '@/components/root/RootContactQueriesTab';
 import { RootCorporateQueriesTab } from '@/components/root/RootCorporateQueriesTab';
 import { RootUsersTab } from '@/components/root/RootUsersTab';
 import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
+import { RootSettingsTab } from '@/components/root/RootSettingsTab';
 import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
-import { Building2, Mail } from 'lucide-react';
+import { Building2, Mail, SlidersHorizontal } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
@@ -45,7 +46,15 @@ const SANS = "'Poppins', sans-serif";
 export default function AdminRootPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket'
+    | 'overview'
+    | 'orders'
+    | 'products'
+    | 'testimonials'
+    | 'contact-queries'
+    | 'corporate-queries'
+    | 'users'
+    | 'shiprocket'
+    | 'settings'
   >('overview');
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -77,9 +86,12 @@ export default function AdminRootPage() {
           'corporate-queries',
           'users',
           'shiprocket',
+          'settings',
         ].includes(tab)
       ) {
-        setActiveTab(tab);
+        if (tab !== 'settings' || user?.role === 'SUPERADMIN') {
+          setActiveTab(tab);
+        }
       }
     }
 
@@ -106,6 +118,7 @@ export default function AdminRootPage() {
     setAdminUser(null);
     setDashboardData(null);
     showAdminToast('Signed out of Admin console.', 'info', 'Session Ended');
+    window.location.href = '/root';
   };
 
   // If initial load checking
@@ -125,16 +138,34 @@ export default function AdminRootPage() {
     return <RootAuthGateway onAuthenticated={handleAuthenticated} />;
   }
 
-  const NAV_TABS = [
+  type RootTabId =
+    | 'overview'
+    | 'orders'
+    | 'products'
+    | 'testimonials'
+    | 'contact-queries'
+    | 'corporate-queries'
+    | 'users'
+    | 'shiprocket'
+    | 'settings';
+
+  const NAV_TABS: Array<{
+    id: RootTabId;
+    label: string;
+    icon: React.ComponentType<{ className?: string }>;
+  }> = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'orders', label: 'My Tasks / Orders', icon: Package },
-    { id: 'products', label: 'Projects / Catalog', icon: Boxes },
-    { id: 'testimonials', label: 'Testimonials / Voices', icon: Quote },
+    { id: 'orders', label: 'Orders', icon: Package },
+    { id: 'products', label: 'Catalog', icon: Boxes },
+    { id: 'testimonials', label: 'Testimonials', icon: Quote },
     { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail },
     { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2 },
-    { id: 'users', label: 'Messages / Users', icon: Users },
-    { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck },
-  ] as const;
+    { id: 'users', label: 'Users', icon: Users },
+    { id: 'shiprocket', label: 'Logistics', icon: Truck },
+    ...(adminUser.role === 'SUPERADMIN'
+      ? [{ id: 'settings' as const, label: 'Settings', icon: SlidersHorizontal }]
+      : []),
+  ];
 
   return (
     <AdminToastProvider>
@@ -322,6 +353,7 @@ export default function AdminRootPage() {
           {activeTab === 'corporate-queries' && <RootCorporateQueriesTab />}
           {activeTab === 'users' && <RootUsersTab />}
           {activeTab === 'shiprocket' && <RootShiprocketTab />}
+          {activeTab === 'settings' && <RootSettingsTab adminUser={adminUser} />}
         </main>
       </div>
     </div>

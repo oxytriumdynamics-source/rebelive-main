@@ -4,7 +4,6 @@ import React, { useState, useEffect } from "react";
 import { Plus, MapPin, Building, Home, Briefcase, Trash2, Edit3, ShieldCheck } from "lucide-react";
 import { Address, fetchAddresses, deleteAddress, updateAddress } from "@/lib/profileApi";
 import AddressModal from "./AddressModal";
-import { soundEngine } from "@/lib/audio";
 
 interface ProfileAddressesTabProps {
   accentColor?: string;
@@ -39,7 +38,6 @@ export default function ProfileAddressesTab({
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to remove this delivery location?")) return;
-    soundEngine.playClick();
     setActionLoadingId(id);
     try {
       await deleteAddress(id);
@@ -53,7 +51,6 @@ export default function ProfileAddressesTab({
   }
 
   async function handleSetDefault(address: Address) {
-    soundEngine.playClick();
     setActionLoadingId(address.id);
     try {
       await updateAddress(address.id, { isDefault: true });
@@ -72,13 +69,11 @@ export default function ProfileAddressesTab({
   }
 
   function handleOpenAdd() {
-    soundEngine.playClick();
     setEditingAddress(null);
     setIsModalOpen(true);
   }
 
   function handleOpenEdit(addr: Address) {
-    soundEngine.playClick();
     setEditingAddress(addr);
     setIsModalOpen(true);
   }

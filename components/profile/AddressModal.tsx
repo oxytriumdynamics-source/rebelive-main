@@ -3,7 +3,6 @@
 import React, { useState, useEffect } from "react";
 import { X, MapPin, Building, Home, Briefcase, Compass, Check, AlertCircle } from "lucide-react";
 import { Address, CreateAddressInput, createAddress, updateAddress } from "@/lib/profileApi";
-import { soundEngine } from "@/lib/audio";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -66,7 +65,6 @@ export default function AddressModal({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    soundEngine.playClick();
     setError(null);
 
     if (!line1.trim()) {
@@ -122,7 +120,6 @@ export default function AddressModal({
       <div
         className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity cursor-pointer animate-in fade-in duration-200"
         onClick={() => {
-          soundEngine.playClick();
           onClose();
         }}
       />
@@ -146,7 +143,6 @@ export default function AddressModal({
           </div>
           <button
             onClick={() => {
-              soundEngine.playClick();
               onClose();
             }}
             className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
@@ -180,7 +176,6 @@ export default function AddressModal({
                     key={preset.name}
                     type="button"
                     onClick={() => {
-                      soundEngine.playClick();
                       setLabel(preset.name);
                     }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-mono uppercase tracking-wider transition-all cursor-pointer ${
@@ -314,7 +309,6 @@ export default function AddressModal({
             <button
               type="button"
               onClick={() => {
-                soundEngine.playClick();
                 onClose();
               }}
               disabled={loading}

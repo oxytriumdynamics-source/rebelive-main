@@ -296,7 +296,7 @@ export default function AboutPage() {
             whileInView={isMobile ? 'visible' : undefined}
             animate={isMobile ? undefined : (activeSection === 0 ? 'visible' : 'hidden')}
             viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
+            className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-end"
           >
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-5 sm:space-y-7">
@@ -337,9 +337,9 @@ export default function AboutPage() {
             {/* Right: Founder Image */}
             <motion.div
               variants={scaleInItem}
-              className="lg:col-span-5 flex justify-center"
+              className="lg:col-span-5 flex justify-center lg:justify-end self-end w-full"
             >
-              <div className="relative w-full max-w-[420px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
+              <div className="relative w-full max-w-[520px] aspect-[4/3] rounded-3xl overflow-hidden border border-white/15 bg-neutral-900 shadow-[0_20px_60px_rgba(0,0,0,0.85)] group">
                 <Image
                   src="/brand/founders-8137.webp"
                   alt="Krishna and Sai Vaishno - Co-Founders"

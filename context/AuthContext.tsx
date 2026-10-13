@@ -31,6 +31,8 @@ interface AuthContextType {
   }) => Promise<boolean>;
   sendOtp: (email: string) => Promise<boolean>;
   verifyOtp: (data: { email: string; otp: string }) => Promise<boolean>;
+  forgotPasswordRequest: (email: string) => Promise<boolean>;
+  forgotPasswordVerify: (data: { email: string; otp: string; newPassword: string }) => Promise<boolean>;
   logoutUser: () => Promise<void>;
   claimPersona: (slug: string) => void;
   clearError: () => void;
@@ -102,9 +104,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const first = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : "Rebel";
       const last = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : "Operator";
 
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
       const newUser: AuthUser = {
         ...DEMO_USER,
-        id: `REBEL-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: `REBEL-${randomNum}`,
+        rebelId: `#RBL-${randomNum}`,
         email: creds.email,
         firstName: first,
         lastName: last,
@@ -153,10 +157,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Backend offline
       }
 
-      // Local mock: set temporary registered profile awaiting OTP
+      const randomNum = Math.floor(1000 + Math.random() * 9000);
       const pendingUser: AuthUser = {
         ...DEMO_USER,
-        id: `REBEL-${Math.floor(1000 + Math.random() * 9000)}`,
+        id: `REBEL-${randomNum}`,
+        rebelId: `#RBL-${randomNum}`,
         firstName: data.firstName || "Rebel",
         lastName: data.lastName || "Operator",
         email: data.email,
@@ -217,12 +222,71 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  const forgotPasswordRequest = async (email: string): Promise<boolean> => {
+    setLoading(true);
+    clearError();
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${apiBase}/auth/forgot-password-request`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to request password reset code");
+      }
+      setLoading(false);
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to request code";
+      setError(msg);
+      setLoading(false);
+      return false;
+    }
+  };
+
+  const forgotPasswordVerify = async (data: { email: string; otp: string; newPassword: string }): Promise<boolean> => {
+    setLoading(true);
+    clearError();
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${apiBase}/auth/forgot-password-verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const resData = await res.json();
+      if (!res.ok) {
+        throw new Error(resData.message || "Verification failed");
+      }
+      const token = resData.data?.accessToken;
+      const loggedUser = resData.data?.user;
+      if (token && loggedUser) {
+        saveToken(token);
+        saveStoredUser(loggedUser);
+        setAccessToken(token);
+        setUser(loggedUser);
+      }
+      setLoading(false);
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Password reset failed";
+      setError(msg);
+      setLoading(false);
+      return false;
+    }
+  };
+
   const logoutUser = async () => {
     clearToken();
     clearStoredUser();
     setUser(null);
     setAccessToken(null);
     setOtpSent(false);
+    if (typeof window !== "undefined") {
+      window.location.reload();
+    }
   };
 
   const claimPersona = (slug: string) => {
@@ -302,6 +366,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         registerUser,
         sendOtp,
         verifyOtp,
+        forgotPasswordRequest,
+        forgotPasswordVerify,
         logoutUser,
         claimPersona,
         clearError,

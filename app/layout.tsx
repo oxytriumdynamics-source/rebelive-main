@@ -15,14 +15,84 @@ import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
 import { Suspense } from "react";
 import { AuthProvider } from "@/context/AuthContext";
-import { WebVitalsReporter } from "@/components/ui/WebVitalsReporter";
+
 import GlobalHalftoneBackground from "@/components/effects/GlobalHalftoneBackground";
 import { CartDrawer } from "@/components/shop/CartDrawer";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  title: "REBELIVE - Wake. Fuel. Rebel.",
-  description: "Pure Bio-Energy. Zero Bullshit. Engineered Without Compromise.",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://rebelive.com'),
+  title: {
+    default: 'REBELIVE | Wake. Fuel. Rebel. - Next-Gen Clean Energy Drink',
+    template: '%s | REBELIVE',
+  },
+  description:
+    'Engineered Bio-Energy for relentless focus, physical endurance, and clean vitality. Zero sugar, clean caffeine, functional nootropics. Built without compromise.',
+  keywords: [
+    'REBELIVE',
+    'clean energy drink',
+    'bio-energy',
+    'nootropic energy drink',
+    'zero sugar energy drink',
+    'natural caffeine',
+    'apex energy drink',
+    'capella energy drink',
+    'aviva energy drink',
+    'functional energy drink',
+    'focus drink',
+    'fitness energy drink',
+  ],
+  authors: [{ name: 'REBELIVE Labs', url: 'https://rebelive.com' }],
+  creator: 'REBELIVE',
+  publisher: 'Oxytrium Dynamics Private Limited',
+  alternates: {
+    canonical: '/',
+  },
+  openGraph: {
+    title: 'REBELIVE | Wake. Fuel. Rebel.',
+    description:
+      'Engineered Bio-Energy. Zero Sugar. Clean Functional Nootropics for peak human performance.',
+    url: 'https://rebelive.com',
+    siteName: 'REBELIVE',
+    images: [
+      {
+        url: '/brand/APEX.webp',
+        width: 1200,
+        height: 630,
+        alt: 'REBELIVE Bio-Energy Drink',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'REBELIVE | Wake. Fuel. Rebel.',
+    description: 'Engineered Bio-Energy. Zero Sugar. Clean Functional Nootropics.',
+    images: ['/brand/APEX.webp'],
+    creator: '@rebelive',
+  },
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    ],
+    apple: [{ url: '/apple-touch-icon.png', sizes: '180x180', type: 'image/png' }],
+  },
+  manifest: '/site.webmanifest',
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  category: 'beverage',
 };
 
 export const viewport: Viewport = {
@@ -31,6 +101,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
+  themeColor: "#000000",
 };
 
 export default function RootLayout({
@@ -46,6 +117,42 @@ export default function RootLayout({
         <link rel="preload" href="/brand/podup.webp" as="image" type="image/webp" />
         <link rel="preload" href="/brand/poddown.webp" as="image" type="image/webp" />
         <link rel="preload" href="/products/apex.webp" as="image" type="image/webp" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@graph": [
+                {
+                  "@type": "Organization",
+                  "@id": "https://rebelive.com/#organization",
+                  "name": "REBELIVE",
+                  "legalName": "Oxytrium Dynamics Private Limited",
+                  "url": "https://rebelive.com",
+                  "logo": "https://rebelive.com/brand/REBELIVE%20Logo%20Black.webp",
+                  "description": "Next-generation clean bio-energy beverage brand engineered without compromise.",
+                  "sameAs": [
+                    "https://www.instagram.com/rebelive.official",
+                    "https://www.linkedin.com/company/rebelive/",
+                    "https://www.facebook.com/share/1cjZ7Lqgbe/"
+                  ]
+                },
+                {
+                  "@type": "WebSite",
+                  "@id": "https://rebelive.com/#website",
+                  "url": "https://rebelive.com",
+                  "name": "REBELIVE",
+                  "publisher": { "@id": "https://rebelive.com/#organization" },
+                  "potentialAction": {
+                    "@type": "SearchAction",
+                    "target": "https://rebelive.com/shop?q={search_term_string}",
+                    "query-input": "required name=search_term_string"
+                  }
+                }
+              ]
+            }),
+          }}
+        />
       </head>
       <body className="min-h-full flex flex-col antialiased bg-black text-white" suppressHydrationWarning>
         <StoreProvider>
@@ -61,7 +168,7 @@ export default function RootLayout({
                 {children}
               </AppShell>
               <CartDrawer />
-              <WebVitalsReporter />
+       
             </SmoothScroll>
           </AuthProvider>
         </StoreProvider>

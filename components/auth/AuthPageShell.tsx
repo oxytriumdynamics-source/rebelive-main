@@ -27,6 +27,8 @@ import {
   loginUser,
   sendOtp,
   verifyOtp,
+  forgotPasswordRequest,
+  forgotPasswordVerify,
   googleLogin,
   clearError,
   claimPersona,
@@ -38,7 +40,7 @@ const DISPLAY = "Anton, Arial Narrow, sans-serif";
 const SANS = "Inter, -apple-system, sans-serif";
 
 // ── Stage types ──────────────────────────────────────────
-type Mode = "signup" | "login";
+type Mode = "signup" | "login" | "forgot";
 type Stage = "form" | "otp" | "done";
 
 // ── Glow rings canvas ────────────────────────────────────
@@ -246,6 +248,8 @@ export default function AuthPageShell() {
           phone: phone.trim(),
         })
       );
+    } else if (mode === "forgot") {
+      dispatch(forgotPasswordRequest(email.trim()));
     } else {
       dispatch(loginUser({ email: email.trim(), password }));
     }
@@ -254,15 +258,29 @@ export default function AuthPageShell() {
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault();
     if (otp.length !== 6) return;
-    dispatch(verifyOtp({ email: email.trim(), otp }));
+    if (mode === "forgot") {
+      dispatch(
+        forgotPasswordVerify({
+          email: email.trim(),
+          otp,
+          newPassword: password,
+        })
+      );
+    } else {
+      dispatch(verifyOtp({ email: email.trim(), otp }));
+    }
   }
 
   const handleResend = useCallback(() => {
     if (resendCooldown > 0) return;
-    dispatch(sendOtp(email.trim()));
+    if (mode === "forgot") {
+      dispatch(forgotPasswordRequest(email.trim()));
+    } else {
+      dispatch(sendOtp(email.trim()));
+    }
     setResendCooldown(60);
     setOtp("");
-  }, [dispatch, email, resendCooldown]);
+  }, [dispatch, email, mode, resendCooldown]);
 
   function switchMode(m: Mode) {
     setMode(m);
@@ -273,6 +291,7 @@ export default function AuthPageShell() {
     setEmail("");
     setPhone("");
     setPassword("");
+    dispatch(clearError());
   }
 
   // ── Right panel ─────────────────────────────────────────
@@ -379,18 +398,20 @@ export default function AuthPageShell() {
     <div className="w-full max-w-[420px]">
       <div className="mb-6">
         <div className="flex items-center gap-2 mb-3">
-          <ShieldCheck className="h-5 w-5 text-amber-600" />
+          <ShieldCheck className="h-5 w-5 text-ink" />
           <h1
             className="font-display leading-none text-ink text-3xl sm:text-4xl"
             style={{ fontFamily: DISPLAY }}
           >
-            Verify Your Email
+            {mode === "forgot" ? "Reset Password OTP" : "Verify Your Email"}
           </h1>
         </div>
         <p className="font-mono text-[9px] uppercase tracking-[0.22em] text-ash" style={{ fontFamily: MONO }}>
-          Enter the 6-digit code sent to
+          {mode === "forgot"
+            ? "Enter the 6-digit code sent to authorize your new password:"
+            : "Enter the 6-digit code sent to"}
         </p>
-        <p className="font-mono text-[11px] text-ink mt-1" style={{ fontFamily: MONO }}>
+        <p className="font-mono text-[11px] text-ink mt-1 font-bold" style={{ fontFamily: MONO }}>
           {email || "your email"}
         </p>
       </div>
@@ -413,7 +434,7 @@ export default function AuthPageShell() {
           type="submit"
           disabled={otp.length !== 6 || otpVerifying}
           id="verify-otp-btn"
-          className="group flex items-center justify-center gap-2 bg-ink py-3 sm:py-3.5 font-mono text-[10.5px] uppercase tracking-[0.2em] text-paper transition-all duration-200 hover:bg-ink/85 active:scale-[0.98] disabled:opacity-50 shadow-md"
+          className="group flex items-center justify-center gap-2 bg-ink py-3 sm:py-3.5 font-mono text-[10.5px] uppercase tracking-[0.2em] text-paper transition-all duration-200 hover:bg-ink/85 active:scale-[0.98] disabled:opacity-50 shadow-md cursor-pointer"
           style={{ fontFamily: MONO }}
         >
           {otpVerifying ? (
@@ -421,7 +442,7 @@ export default function AuthPageShell() {
           ) : (
             <>
               <CheckCircle2 className="h-3.5 w-3.5" />
-              VERIFY & CONTINUE
+              {mode === "forgot" ? "VERIFY & RESET PASSWORD" : "VERIFY & CONTINUE"}
             </>
           )}
         </button>
@@ -467,11 +488,15 @@ export default function AuthPageShell() {
             className="font-display leading-none text-ink text-2xl sm:text-3xl"
             style={{ fontFamily: DISPLAY }}
           >
-            {mode === "signup" ? "Create Account" : "Sign In"}
+            {mode === "signup" ? "Create Account" : mode === "forgot" ? "Reset Password" : "Sign In"}
           </motion.h1>
         </AnimatePresence>
         <p className="font-mono mt-1 text-[8.5px] uppercase tracking-[0.22em] text-ash" style={{ fontFamily: MONO }}>
-          {mode === "signup" ? "Join the rebel pack." : "Welcome back, rebel."}
+          {mode === "signup"
+            ? "Join the rebel pack."
+            : mode === "forgot"
+            ? "Enter your email & new password to receive verification OTP."
+            : "Welcome back, rebel."}
         </p>
       </div>
 
@@ -566,7 +591,7 @@ export default function AuthPageShell() {
             type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            placeholder="Password (min 8 chars)"
+            placeholder={mode === "forgot" ? "New password (min 8 chars)" : "Password (min 8 chars)"}
             aria-label="Password"
             className="w-full border border-black/15 bg-white/60 py-2 sm:py-2.5 pl-9 pr-10 text-[12px] text-ink placeholder:text-ash/50 outline-none transition-all focus:border-ink focus:bg-white"
             style={{ fontFamily: SANS }}
@@ -576,7 +601,7 @@ export default function AuthPageShell() {
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-1/2 -translate-y-1/2 text-ash hover:text-ink transition-colors"
+            className="absolute right-3 top-1/2 -translate-y-1/2 text-ash hover:text-ink transition-colors cursor-pointer"
             aria-label="Toggle password visibility"
           >
             {showPassword ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -601,7 +626,12 @@ export default function AuthPageShell() {
                 Remember me
               </span>
             </label>
-            <button type="button" className="font-mono text-[9px] uppercase tracking-[0.15em] text-ash hover:text-ink transition-colors" style={{ fontFamily: MONO }}>
+            <button
+              type="button"
+              onClick={() => switchMode("forgot")}
+              className="font-mono text-[9px] uppercase tracking-[0.15em] text-ash hover:text-ink transition-colors cursor-pointer"
+              style={{ fontFamily: MONO }}
+            >
               Forgot password?
             </button>
           </div>
@@ -624,13 +654,15 @@ export default function AuthPageShell() {
           type="submit"
           id="auth-submit-btn"
           disabled={loading}
-          className="group mt-0.5 flex items-center justify-center gap-2 bg-ink py-2.5 font-mono text-[10.5px] uppercase tracking-[0.2em] text-paper transition-all duration-200 hover:bg-ink/85 active:scale-[0.98] disabled:opacity-60 shadow-md"
+          className="group mt-0.5 flex items-center justify-center gap-2 bg-ink py-2.5 font-mono text-[10.5px] uppercase tracking-[0.2em] text-paper transition-all duration-200 hover:bg-ink/85 active:scale-[0.98] disabled:opacity-60 shadow-md cursor-pointer"
           style={{ fontFamily: MONO }}
         >
           {loading
             ? "PROCESSING…"
             : mode === "signup"
               ? "CREATE MY REBEL ID"
+              : mode === "forgot"
+              ? "SEND VERIFICATION CODE"
               : "SIGN IN"}
           {!loading && <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />}
         </button>
@@ -638,45 +670,68 @@ export default function AuthPageShell() {
 
       {/* Mode toggle */}
       <div className="mt-2.5 text-center">
-        <span className="font-mono text-[10px] text-ash" style={{ fontFamily: MONO }}>
-          {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
-        </span>
-        <button
-          onClick={() => switchMode(mode === "signup" ? "login" : "signup")}
-          className="font-mono text-[10px] text-ink underline underline-offset-2 hover:opacity-70 transition-opacity"
-          style={{ fontFamily: MONO }}
-        >
-          {mode === "signup" ? "Sign in" : "Sign up"}
-        </button>
+        {mode === "forgot" ? (
+          <div>
+            <span className="font-mono text-[10px] text-ash" style={{ fontFamily: MONO }}>
+              Remember your password?{" "}
+            </span>
+            <button
+              type="button"
+              onClick={() => switchMode("login")}
+              className="font-mono text-[10px] text-ink underline underline-offset-2 hover:opacity-70 transition-opacity cursor-pointer font-bold"
+              style={{ fontFamily: MONO }}
+            >
+              Back to sign in
+            </button>
+          </div>
+        ) : (
+          <div>
+            <span className="font-mono text-[10px] text-ash" style={{ fontFamily: MONO }}>
+              {mode === "signup" ? "Already have an account? " : "Don't have an account? "}
+            </span>
+            <button
+              type="button"
+              onClick={() => switchMode(mode === "signup" ? "login" : "signup")}
+              className="font-mono text-[10px] text-ink underline underline-offset-2 hover:opacity-70 transition-opacity cursor-pointer"
+              style={{ fontFamily: MONO }}
+            >
+              {mode === "signup" ? "Sign in" : "Sign up"}
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Divider */}
-      <div className="relative flex items-center gap-3 mt-2">
-        <div className="h-px flex-1 bg-black/10" />
-        <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-ash" style={{ fontFamily: MONO }}>
-          or
-        </span>
-        <div className="h-px flex-1 bg-black/10" />
-      </div>
+      {mode !== "forgot" && (
+        <>
+          {/* Divider */}
+          <div className="relative flex items-center gap-3 mt-2">
+            <div className="h-px flex-1 bg-black/10" />
+            <span className="font-mono text-[8px] uppercase tracking-[0.2em] text-ash" style={{ fontFamily: MONO }}>
+              or
+            </span>
+            <div className="h-px flex-1 bg-black/10" />
+          </div>
 
-      {/* Google OAuth */}
-      <div className="mt-2">
-        <button
-          type="button"
-          id="google-login-btn"
-          onClick={googleLogin}
-          className="flex w-full items-center justify-center gap-2.5 border border-black/15 bg-white/70 py-2 px-4 font-mono text-[10px] uppercase tracking-[0.16em] text-ink transition-all hover:bg-white hover:border-black/30 shadow-xs"
-          style={{ fontFamily: MONO }}
-        >
-          <svg className="h-4 w-4" viewBox="0 0 24 24">
-            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
-            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-            <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
-            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-          </svg>
-          <span>Continue with Google</span>
-        </button>
-      </div>
+          {/* Google OAuth */}
+          <div className="mt-2">
+            <button
+              type="button"
+              id="google-login-btn"
+              onClick={googleLogin}
+              className="flex w-full items-center justify-center gap-2.5 border border-black/15 bg-white/70 py-2 px-4 font-mono text-[10px] uppercase tracking-[0.16em] text-ink transition-all hover:bg-white hover:border-black/30 shadow-xs cursor-pointer"
+              style={{ fontFamily: MONO }}
+            >
+              <svg className="h-4 w-4" viewBox="0 0 24 24">
+                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+              </svg>
+              <span>Continue with Google</span>
+            </button>
+          </div>
+        </>
+      )}
     </div>
   );
 

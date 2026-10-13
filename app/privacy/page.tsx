@@ -2,9 +2,18 @@ import type { Metadata } from 'next';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy - REBELIVE',
+  title: 'Privacy Policy | Data Protection & Security',
   description:
-    'Privacy Policy for rebelive.com, operated by Oxytrium Dynamics Private Limited. Learn how we collect, use, and protect your personal information.',
+    'Privacy Policy for rebelive.com, operated by Oxytrium Dynamics Private Limited. Learn how we collect, store, and protect your personal information.',
+  alternates: {
+    canonical: '/privacy',
+  },
+  openGraph: {
+    title: 'Privacy Policy | REBELIVE',
+    description: 'Privacy Policy for rebelive.com by Oxytrium Dynamics Private Limited.',
+    url: 'https://rebelive.com/privacy',
+    siteName: 'REBELIVE',
+  },
 };
 
 const MONO = "'Poppins', sans-serif";

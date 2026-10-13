@@ -12,7 +12,6 @@ import {
 import MemberCard from "./MemberCard";
 import { PERSONAS, PersonaProfile } from "@/data/personas";
 import { AuthUser } from "@/store/slices/authslice";
-import { soundEngine } from "@/lib/audio";
 
 interface ProfileOverviewTabProps {
   user: AuthUser;
@@ -48,7 +47,7 @@ export default function ProfileOverviewTab({
               <p className="font-mono text-[9px] uppercase tracking-[0.3em] text-white/40 mb-2">
                 Holographic Rebel Pass
               </p>
-              <MemberCard persona={persona} memberName={memberName} />
+              <MemberCard persona={persona} memberName={memberName} rebelId={user.rebelId || user.id} />
             </>
           ) : (
             <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center w-full min-h-[360px]">

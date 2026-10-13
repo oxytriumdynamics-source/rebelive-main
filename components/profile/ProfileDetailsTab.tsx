@@ -12,7 +12,7 @@ import { AuthUser } from "@/store/slices/authslice";
 import { updateProfileDetails, changePassword } from "@/lib/profileApi";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser } from "@/store/slices/authslice";
-import { soundEngine } from "@/lib/audio";
+import { formatRebelId } from "@/lib/auth";
 
 interface ProfileDetailsTabProps {
   user: AuthUser;
@@ -46,7 +46,6 @@ export default function ProfileDetailsTab({
 
   async function handleSaveDetails(e: React.FormEvent) {
     e.preventDefault();
-    soundEngine.playClick();
     setDetailsError(null);
 
     if (!firstName.trim()) {
@@ -75,7 +74,6 @@ export default function ProfileDetailsTab({
 
   async function handleChangePassword(e: React.FormEvent) {
     e.preventDefault();
-    soundEngine.playClick();
     setPasswordError(null);
     setPasswordSuccess(false);
 
@@ -138,7 +136,7 @@ export default function ProfileDetailsTab({
                 {firstName} {lastName}
               </p>
               <p className="font-mono text-[10px] text-white/60 uppercase tracking-wider mt-0.5">
-                {user.id ? user.id.replace("REBEL-", "OPERATOR #") : "VERIFIED REBEL"}
+                OPERATOR {formatRebelId(user.rebelId || user.id)}
               </p>
             </div>
           </div>
@@ -212,6 +210,25 @@ export default function ProfileDetailsTab({
 
                 <div>
                   <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
+                    Rebel ID Designation
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      disabled
+                      value={formatRebelId(user.rebelId || user.id)}
+                      className="w-full rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5 font-mono text-xs text-white/80 tracking-wider cursor-not-allowed font-bold"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 font-mono text-[8px] uppercase tracking-wider text-white bg-white/15 px-1.5 py-0.5 rounded">
+                      UNIQUE
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
                     Phone 
                   </label>
                   <input
@@ -221,6 +238,18 @@ export default function ProfileDetailsTab({
                     placeholder="+91 98765 43210"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 font-sans text-xs text-white placeholder-white/30 focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40"
                   />
+                </div>
+
+                <div>
+                  <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
+                    Security Clearance
+                  </label>
+                  <div className="flex items-center gap-2 rounded-xl border border-white/5 bg-white/[0.02] px-3.5 py-2.5">
+                    <div className="w-2 h-2 rounded-full bg-white animate-pulse" />
+                    <span className="font-mono text-xs text-white/80 uppercase tracking-wider">
+                      VERIFIED REBEL
+                    </span>
+                  </div>
                 </div>
               </div>
 
