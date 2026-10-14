@@ -512,6 +512,7 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
               <Link
                 href={`/shop`}
                 target="_blank"
+                rel="noopener noreferrer"
                 className="px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono border border-white/10 transition-colors flex items-center gap-1.5"
                 title="View in Storefront"
               >

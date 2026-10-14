@@ -24,15 +24,25 @@ adminClient.interceptors.request.use((config) => {
 adminClient.interceptors.response.use(
   (res) => res,
   async (error) => {
-    // If 401 Unauthorized occurs on protected routes, reject cleanly
-    if (error.response?.status === 401 && typeof window !== 'undefined') {
+    // If 401 Unauthorized or 403 Forbidden occurs on protected routes, purge session and broadcast
+    const status = error.response?.status;
+    if ((status === 401 || status === 403) && typeof window !== 'undefined') {
       if (!error.config?.url?.includes('/login')) {
         clearAdminSession();
+        window.dispatchEvent(new CustomEvent('admin-session-expired', { detail: { status } }));
       }
     }
     return Promise.reject(error);
   }
 );
+
+export function isAuthError(err: unknown): boolean {
+  if (err && typeof err === 'object' && 'response' in err) {
+    const res = (err as { response?: { status?: number } }).response;
+    return res?.status === 401 || res?.status === 403;
+  }
+  return false;
+}
 
 export interface AdminUser {
   id: string;
@@ -203,6 +213,34 @@ export function clearAdminSession(): void {
   localStorage.removeItem(ADMIN_USER_KEY);
 }
 
+/**
+ * Actively verifies stored admin session with backend.
+ * Clears session and returns null if token is missing, expired, or invalid.
+ */
+export async function verifyAdminSession(): Promise<AdminUser | null> {
+  const token = getStoredAdminToken();
+  const user = getStoredAdminUser();
+  if (!token || !user) {
+    clearAdminSession();
+    return null;
+  }
+
+  try {
+    const res = await adminClient.get('/dashboard');
+    if (res.data?.status === 'success') {
+      return user;
+    }
+    return user;
+  } catch (err: any) {
+    if (isAuthError(err)) {
+      clearAdminSession();
+      return null;
+    }
+    // If backend is unreachable network-wise, keep existing session if valid structure
+    return user;
+  }
+}
+
 // ─── ADMIN 2-STEP AUTHENTICATION ───────────────────────
 
 /**
@@ -280,7 +318,10 @@ export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
     if (res.data?.status === 'success' && res.data?.data) {
       return res.data.data;
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (isAuthError(err)) {
+      throw err;
+    }
     console.warn('Backend /admin/dashboard unreachable, using fallback metrics:', err);
   }
 
@@ -325,7 +366,10 @@ export async function fetchAdminOrders(params?: {
         totalPages: res.data.totalPages || 1,
       };
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (isAuthError(err)) {
+      throw err;
+    }
     console.warn('Backend /admin/orders unreachable, loading simulated admin orders:', err);
   }
 
@@ -516,7 +560,10 @@ export async function fetchAdminProducts(search?: string): Promise<AdminProduct[
     if (res.data?.status === 'success' && Array.isArray(res.data?.data)) {
       return res.data.data;
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (isAuthError(err)) {
+      throw err;
+    }
     console.warn('Backend /admin/products unreachable, returning fallback catalog:', err);
   }
 

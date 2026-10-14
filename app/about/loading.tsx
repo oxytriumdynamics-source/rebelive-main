@@ -1,5 +1,5 @@
-import { AboutSkeleton } from '@/components/ui/Skeleton';
+import RebeliveLoader from '@/components/ui/RebeliveLoader';
 
 export default function AboutLoading() {
-  return <AboutSkeleton />;
+  return <RebeliveLoader />;
 }

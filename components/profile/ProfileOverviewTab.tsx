@@ -1,6 +1,5 @@
-"use client";
-
 import React from "react";
+import Link from "next/link";
 import {
   Shield,
   Package,
@@ -8,6 +7,10 @@ import {
   ExternalLink,
   Zap,
   CheckCircle2,
+  Lock,
+  Sparkles,
+  Compass,
+  ArrowRight,
 } from "lucide-react";
 import MemberCard from "./MemberCard";
 import { PERSONAS, PersonaProfile } from "@/data/personas";
@@ -16,7 +19,7 @@ import { AuthUser } from "@/store/slices/authslice";
 interface ProfileOverviewTabProps {
   user: AuthUser;
   persona: PersonaProfile | null;
-  personaSlug: string;
+  personaSlug?: string | null;
   accentColor?: string;
   onSelectTab: (tab: "overview" | "details" | "addresses" | "orders") => void;
   orderCount?: number;
@@ -40,7 +43,7 @@ export default function ProfileOverviewTab({
 
       {/* Main 2-Column Section: Card on Left, Dossier Details on Right */}
       <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 lg:gap-12">
-        {/* Left: Holographic 3D Member Card */}
+        {/* Left: Holographic 3D Member Card or Uncalibrated Invitation */}
         <div className="flex flex-col items-center shrink-0 w-full max-w-[320px]">
           {persona ? (
             <>
@@ -48,18 +51,39 @@ export default function ProfileOverviewTab({
                 Holographic Rebel Pass
               </p>
               <MemberCard persona={persona} memberName={memberName} rebelId={user.rebelId || user.id} />
+              
+              {/* Permanent Allocation Badge */}
+              <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-[9px] uppercase tracking-wider">
+                <Lock className="w-2.5 h-2.5 text-emerald-400" />
+                <span>ARCHETYPE LOCKED · PERMANENT ALLOCATION</span>
+              </div>
             </>
           ) : (
-            <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-white/10 bg-white/[0.03] p-8 text-center w-full min-h-[360px]">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/[0.06]">
-                <Shield className="h-6 w-6 text-white/60" />
+            <div className="flex flex-col items-center justify-between gap-5 rounded-3xl border border-dashed border-white/20 bg-white/[0.02] hover:border-white/35 p-7 text-center w-full min-h-[380px] transition-all">
+              <div className="flex items-center gap-1.5 px-3 py-1 rounded-full border border-amber-500/30 bg-amber-500/10 text-amber-300 font-mono text-[9px] uppercase tracking-wider">
+                <Sparkles className="w-2.5 h-2.5 text-amber-400" />
+                <span>1 CALIBRATION REMAINING</span>
               </div>
-              <div>
-                <p className="font-display text-base uppercase text-white font-bold">Rebel Pass Active</p>
-                <p className="mt-1.5 font-mono text-[10px] text-white/50">
-                  Verified operator credentials assigned.
-                </p>
+              
+              <div className="flex flex-col items-center gap-3 my-auto">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.06] border border-white/10 shadow-inner">
+                  <Compass className="h-8 w-8 text-white/80 animate-pulse" />
+                </div>
+                <div>
+                  <p className="font-display text-lg uppercase text-white font-bold tracking-tight">Archetype Uncalibrated</p>
+                  <p className="mt-1 font-mono text-[10.5px] text-white/50 leading-relaxed max-w-[240px]">
+                    Discover whether your operator persona aligns with Apex, Capella, or Aviva.
+                  </p>
+                </div>
               </div>
+
+              <Link
+                href="/persona"
+                className="w-full py-3 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-mono text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.2)] hover:scale-[1.02]"
+              >
+                <span>Calibrate Persona</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           )}
         </div>
@@ -67,7 +91,7 @@ export default function ProfileOverviewTab({
         {/* Right: Dossier Details & Calibrated Attributes */}
         <div className="flex-1 w-full space-y-5">
           {/* Persona Synopsis & Traits */}
-          {persona && (
+          {persona ? (
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 space-y-5">
               <div>
                 <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40 mb-1">
@@ -102,6 +126,37 @@ export default function ProfileOverviewTab({
                   ))}
                 </div>
               </div>
+            </div>
+          ) : (
+            <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40">
+                  Designation Status
+                </p>
+                <span className="font-mono text-[9px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-300 border border-amber-500/20">
+                  Pending Calibration
+                </span>
+              </div>
+              <h3 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-white">
+                Unlock Your Rebel Identity
+              </h3>
+              <p className="font-sans text-xs sm:text-sm text-white/70 leading-relaxed">
+                Complete the 5-question calibration quiz to unlock your official Holographic Rebel ID Pass and persona designation (Apex, Capella, or Aviva).
+              </p>
+              <div className="p-3.5 rounded-xl border border-white/10 bg-black/40 text-[10.5px] font-mono text-white/60 space-y-1">
+                <p className="text-white font-semibold flex items-center gap-1.5">
+                  <Lock className="w-3 h-3 text-amber-400" />
+                  <span>Protocol Policy:</span>
+                </p>
+                <p>Persona allocation is restricted to <strong className="text-white">one-time only</strong>. Once your archetype is calibrated, it is locked to your account permanently.</p>
+              </div>
+              <Link
+                href="/persona"
+                className="inline-flex items-center gap-2 font-mono text-xs text-white uppercase tracking-wider hover:underline pt-1"
+              >
+                <span>Take Archetype Quiz</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </Link>
             </div>
           )}
 

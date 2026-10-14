@@ -177,24 +177,22 @@ export default function ShopPage() {
               return (
                 <div
                   key={p.id}
-                  className="group relative bg-[#0e0e0e] rounded-2xl border border-white/10 hover:border-white/30 p-4 sm:p-5 flex flex-col justify-between transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 overflow-hidden"
+                  className="group relative bg-[#0e0e0e] rounded-2xl border border-white/10 hover:border-white/30 flex flex-col justify-between transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 overflow-hidden"
                 >
                   {/* Subtle top edge highlight in pure silver/white */}
-                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none" />
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none z-20" />
 
-                  {/* ── Upper Section: Header Tag & Can Graphic ── */}
+                  {/* ── Upper Section: Full Image Showcase with bottom fade ── */}
                   <div>
-
-
                     {/* Can Showcase (Clickable to details) */}
                     <Link
                       href={`/shop/${p.id}`}
-                      className="relative h-44 sm:h-48 w-full flex items-center justify-center my-2 cursor-pointer block"
+                      className="relative w-full aspect-square overflow-hidden block cursor-pointer bg-neutral-950"
                       title={`View ${p.name} Details`}
                     >
                       {/* Monochrome Silver/White Ambient Glow */}
                       <div
-                        className="absolute inset-0 rounded-2xl opacity-15 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none"
+                        className="absolute inset-0 opacity-15 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-10"
                         style={{
                           background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
                         }}
@@ -205,21 +203,23 @@ export default function ShopPage() {
                         const productImg = p.image || p.canImage;
                         if (productImg) {
                           return (
-                            <div className="relative w-36 sm:w-40 h-40 sm:h-44 transition-transform duration-500 group-hover:scale-105 group-hover:-translate-y-1">
+                            <div className="relative w-full h-full">
                               <Image
                                 src={productImg}
                                 alt={p.name}
                                 fill
-                                sizes="180px"
-                                className="object-contain drop-shadow-[0_12px_24px_rgba(0,0,0,0.85)]"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
                                 priority={p.id === 'apex'}
                                 unoptimized={productImg.startsWith('http')}
                               />
+                              {/* Little black gradient faded from the bottom of image */}
+                              <div className="absolute inset-x-0 bottom-0 h-24 sm:h-28 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/60 to-transparent pointer-events-none z-10" />
                             </div>
                           );
                         }
                         return (
-                          <div className="w-full h-44 flex flex-col items-center justify-center text-center p-3">
+                          <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center text-center p-3">
                             <div className="w-20 h-32 rounded-2xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-inner group-hover:border-white/30 transition-colors">
                               <div className="w-6 h-1 rounded-full bg-white/20 mb-2" />
                               <span className="font-bold text-[9px] text-white/70 tracking-widest uppercase font-mono px-1 truncate max-w-full">
@@ -239,7 +239,7 @@ export default function ShopPage() {
                     </Link>
 
                     {/* Title & Descriptor */}
-                    <div className="mt-1">
+                    <div className="px-4 sm:px-5 pt-3">
                       <div className="flex items-baseline justify-between gap-2">
                         <Link
                           href={`/shop/${p.id}`}
@@ -250,7 +250,6 @@ export default function ShopPage() {
                             <ArrowRight className="w-3.5 h-3.5 opacity-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all text-white" />
                           </h2>
                         </Link>
-                    
                       </div>
 
                       <p className="text-[11px] text-white/55 mt-0.5 truncate font-light">
@@ -274,7 +273,7 @@ export default function ShopPage() {
                   </div>
 
                   {/* ── Lower Area: Starting Price + ADD TO CART Button ── */}
-                  <div className="mt-3.5">
+                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3.5 mt-auto">
                     <div className="flex items-baseline justify-between mb-3">
                       <div>
                         <span className="text-[9.5px] text-white/40 uppercase font-mono block">

@@ -108,9 +108,9 @@ export default function ProfileStage({
 
   if (!user) return null;
 
-  // Resolve Persona
-  const personaSlug = user.preferences?.personalityType?.slug?.toLowerCase() || "apex";
-  const personaKey = personaSlug ? SLUG_TO_PERSONA[personaSlug] || "APEX" : null;
+  // Resolve Persona - do NOT fallback to "apex" if unallocated
+  const personaSlug = user.preferences?.personalityType?.slug?.toLowerCase() || null;
+  const personaKey = personaSlug ? SLUG_TO_PERSONA[personaSlug] || null : null;
   const persona = personaKey ? PERSONAS[personaKey] : null;
 
   const patternStroke = "#ffffff";
@@ -149,8 +149,14 @@ export default function ProfileStage({
           </h1>
 
           <div className="flex items-center gap-2 mt-1">
-            <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest">
-              REBEL ID: <span className="text-white font-bold tracking-wider">{formatRebelId(user.rebelId || user.id)}</span> · {persona?.name || "APEX"} ARCHETYPE
+            <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest flex items-center gap-1.5 flex-wrap">
+              <span>REBEL ID: <strong className="text-white font-bold tracking-wider">{formatRebelId(user.rebelId || user.id)}</strong></span>
+              <span>·</span>
+              {persona ? (
+                <span className="text-emerald-400 font-semibold">{persona.name} ARCHETYPE (LOCKED)</span>
+              ) : (
+                <span className="text-amber-400 font-semibold">ARCHETYPE UNASSIGNED</span>
+              )}
             </p>
             <button
               type="button"

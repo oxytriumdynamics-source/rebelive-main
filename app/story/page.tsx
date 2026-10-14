@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
+import Link from 'next/link';
 import { ArrowRight, ChevronDown, Sparkles, Zap, Shield, Heart, X, ArrowUp } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', 'Poppins', monospace";
@@ -214,6 +215,7 @@ const SECTION_5_PARAGRAPHS = [
 
 export default function StoryPage() {
   const [activeSection, setActiveSection] = useState(0);
+  const activeSectionRef = useRef(0);
   const [shopOpen, setShopOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
 
@@ -226,9 +228,12 @@ export default function StoryPage() {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Transition locking refs
+  // Transition locking & trackpad inertia absorber refs
   const isAnimatingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
+  const lastWheelTimeRef = useRef(0);
+  const hasTriggeredInGestureRef = useRef(false);
+  const wheelQuietTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
 
@@ -246,31 +251,32 @@ export default function StoryPage() {
 
     if (isAnimatingRef.current) return;
     const clamped = Math.max(0, Math.min(targetIdx, SECTIONS.length - 1));
-    if (clamped === activeSection) return;
+    if (clamped === activeSectionRef.current) return;
 
     isAnimatingRef.current = true;
     lastScrollTimeRef.current = Date.now();
+    activeSectionRef.current = clamped;
     setActiveSection(clamped);
 
-    // Duration of transition: 1100ms + 100ms buffer to absorb fast wheel/trackpad inertia
+    // Discrete 850ms lock to ensure smooth slide completion without input bleed
     setTimeout(() => {
       isAnimatingRef.current = false;
-    }, 1200);
-  }, [activeSection, isMobile]);
+    }, 850);
+  }, [isMobile]);
 
   const goToNext = useCallback(() => {
-    if (activeSection < SECTIONS.length - 1) {
-      goToSection(activeSection + 1);
+    if (activeSectionRef.current < SECTIONS.length - 1) {
+      goToSection(activeSectionRef.current + 1);
     }
-  }, [activeSection, goToSection]);
+  }, [goToSection]);
 
   const goToPrev = useCallback(() => {
-    if (activeSection > 0) {
-      goToSection(activeSection - 1);
+    if (activeSectionRef.current > 0) {
+      goToSection(activeSectionRef.current - 1);
     }
-  }, [activeSection, goToSection]);
+  }, [goToSection]);
 
-  // ── Wheel Event Listener (Desktop Only) ──
+  // ── Trackpad Inertia & Fast Scroll Absorber (Strict 1-Section Snapping) ──
   useEffect(() => {
     if (isMobile) return;
 
@@ -279,38 +285,91 @@ export default function StoryPage() {
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
 
       const delta = e.deltaY;
-      if (Math.abs(delta) < 18) return;
+      if (Math.abs(delta) < 14) return;
 
-      // ── IF USER IS SCROLLED INTO THE FOOTER ZONE (window.scrollY > 15) ──
-      // Let the browser and Lenis scroll freely! Do NOT preventDefault!
-      if (window.scrollY > 15) {
-        if (delta < 0 && window.scrollY <= 30) {
-          // Re-engaging top story section
+      // Ignore horizontal swipes
+      if (Math.abs(e.deltaX) > Math.abs(delta) * 1.5) return;
+
+      const now = Date.now();
+      lastWheelTimeRef.current = now;
+
+      // ── Reset gesture lock when trackpad wheel stream goes completely quiet ──
+      if (wheelQuietTimerRef.current) {
+        clearTimeout(wheelQuietTimerRef.current);
+      }
+      wheelQuietTimerRef.current = setTimeout(() => {
+        hasTriggeredInGestureRef.current = false;
+      }, 220);
+
+      // ALWAYS prevent default during animation to stop trackpad momentum bleed
+      if (isAnimatingRef.current) {
+        e.preventDefault();
+        e.stopPropagation();
+        return;
+      }
+
+      // Check if user is scrolled down into footer
+      if (window.scrollY > 20) {
+        if (delta < 0) {
+          // Re-engaging top story section from footer:
+          e.preventDefault();
+          e.stopPropagation();
+          if (hasTriggeredInGestureRef.current) return;
+          if (now - lastScrollTimeRef.current < 750) return;
+
+          hasTriggeredInGestureRef.current = true;
+          lastScrollTimeRef.current = now;
+          isAnimatingRef.current = true;
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          activeSectionRef.current = SECTIONS.length - 1;
           setActiveSection(SECTIONS.length - 1);
+
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, 850);
+          return;
         }
         return;
       }
 
-      // ── AT LAST SECTION (MANIFESTO): SCROLLING DOWN TO FOOTER ──
-      if (activeSection === SECTIONS.length - 1 && delta > 0) {
+      // If at last section (Manifesto) and scrolling down:
+      if (activeSectionRef.current === SECTIONS.length - 1 && delta > 0) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
           e.preventDefault();
+          e.stopPropagation();
+          if (hasTriggeredInGestureRef.current) return;
+          if (now - lastScrollTimeRef.current < 750) return;
+
+          hasTriggeredInGestureRef.current = true;
+          lastScrollTimeRef.current = now;
+          isAnimatingRef.current = true;
+
           footerEl.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, 850);
         }
         return;
       }
 
-      // ── WITHIN STORY SECTIONS (0 to 6): STRICT 1-SECTION SNAP ──
+      // ── WITHIN STORY SECTIONS (0 to 6): STRICT 1-SECTION SNAP PER GESTURE ──
       e.preventDefault();
       e.stopPropagation();
 
-      // If active section transition is running: absorb and discard wheel inertia
-      if (isAnimatingRef.current) return;
+      // If already triggered in current gesture: absorb and discard all trailing inertia
+      if (hasTriggeredInGestureRef.current) {
+        return;
+      }
 
-      // Enforce minimum cooldown between discrete triggers
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < 1100) return;
+      // Enforce minimum gap
+      if (now - lastScrollTimeRef.current < 750) {
+        return;
+      }
+
+      hasTriggeredInGestureRef.current = true;
+      lastScrollTimeRef.current = now;
 
       if (delta > 0) {
         goToNext();
@@ -322,8 +381,11 @@ export default function StoryPage() {
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
+      if (wheelQuietTimerRef.current) {
+        clearTimeout(wheelQuietTimerRef.current);
+      }
     };
-  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev]);
+  }, [isMobile, shopOpen, goToNext, goToPrev]);
 
   // ── Touch Swipe Gestures (Desktop/Tablet Touch Only - Mobile uses natural scroll) ──
   useEffect(() => {
@@ -352,7 +414,7 @@ export default function StoryPage() {
       }
 
       // At Manifesto slide: swiping down scrolls to footer
-      if (activeSection === SECTIONS.length - 1 && deltaY > 30) {
+      if (activeSectionRef.current === SECTIONS.length - 1 && deltaY > 30) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
           footerEl.scrollIntoView({ behavior: 'smooth' });
@@ -366,7 +428,7 @@ export default function StoryPage() {
 
       if (isAnimatingRef.current) return;
       const now = Date.now();
-      if (now - lastScrollTimeRef.current < 1100) return;
+      if (now - lastScrollTimeRef.current < 850) return;
 
       if (deltaY > 0) {
         goToNext();
@@ -382,7 +444,7 @@ export default function StoryPage() {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
     };
-  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev]);
+  }, [isMobile, shopOpen, goToNext, goToPrev]);
 
   // ── Keyboard Navigation (Arrow Keys / Page Keys / Space) ──
   useEffect(() => {
@@ -397,7 +459,7 @@ export default function StoryPage() {
       }
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
-        if (activeSection === SECTIONS.length - 1) {
+        if (activeSectionRef.current === SECTIONS.length - 1) {
           const footerEl = document.querySelector('footer');
           if (footerEl) {
             e.preventDefault();
@@ -420,7 +482,7 @@ export default function StoryPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMobile, shopOpen, activeSection, goToNext, goToPrev, goToSection]);
+  }, [isMobile, shopOpen, goToNext, goToPrev, goToSection]);
 
   return (
     <div
@@ -435,7 +497,7 @@ export default function StoryPage() {
 
       {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
       <div
-        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[1100ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] md:will-change-transform"
+        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[850ms] md:ease-[cubic-bezier(0.16,1,0.3,1)] md:will-change-transform"
         style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
      
@@ -473,15 +535,7 @@ export default function StoryPage() {
                 else who lives in the real world.
               </motion.p>
 
-              {/* Scroll Trigger CTA */}
-              <motion.button
-                variants={fadeUpItem}
-                onClick={() => goToSection(1)}
-                className="mt-6 sm:mt-8 px-6 py-3 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-white/40 text-white font-mono text-xs uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer flex items-center gap-2 shadow-sm"
-              >
-                <span>BEGIN THE CHRONICLE</span>
-                <ChevronDown className="w-3.5 h-3.5" />
-              </motion.button>
+        
             </div>
 
             {/* Right Column: 8137 Founders Image at Top */}
@@ -953,14 +1007,17 @@ export default function StoryPage() {
                   </span>
                 </h3>
 
+
                 <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                  <Link href='/shop'>
                   <button
-                    onClick={() => setShopOpen(true)}
+                   
                     className="px-6 sm:px-8 py-3.5 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-200 cursor-pointer shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 inline-flex items-center gap-2"
                   >
                     <span>EXPLORE THE FLAVORS</span>
                     <ArrowRight className="w-4 h-4" />
                   </button>
+                  </Link>
 
                   <button
                     onClick={() => {
@@ -981,8 +1038,7 @@ export default function StoryPage() {
         </section>
       </div>
 
-      {/* Product Flavor Drawer Modal */}
-      <FlavorDrawer isOpen={shopOpen} onClose={() => setShopOpen(false)} />
+   
     </div>
   );
 }

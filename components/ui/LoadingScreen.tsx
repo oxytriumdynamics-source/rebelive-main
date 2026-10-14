@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import { hasIntroLoaded, markIntroLoaded } from '@/lib/introState';
+import { RebeliveLoader } from './RebeliveLoader';
 
 interface LoadingScreenProps {
   onLoaded?: () => void;
@@ -72,51 +73,22 @@ export const LoadingScreen: React.FC<LoadingScreenProps> = ({ onLoaded }) => {
               transition: { duration: 0.9, ease: [0.16, 1, 0.3, 1] },
             }}
             onAnimationComplete={() => setIsRemoved(true)}
-            className="fixed inset-0 z-[99999] bg-[#030303] flex flex-col items-center justify-center select-none pointer-events-auto"
+            className="fixed inset-0 z-[99999] bg-[#000000] flex flex-col items-center justify-center select-none pointer-events-auto"
           >
             <motion.div
               exit={{
                 opacity: 0,
-                scale: 0.96,
-                y: -12,
-                transition: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+                scale: 0.98,
+                y: -8,
+                transition: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
               }}
-              className="w-full max-w-xs px-6 flex flex-col items-center"
+              className="w-full flex items-center justify-center"
             >
-              {/* Brand Logo */}
-              <div className="flex flex-col items-center gap-1 mb-6">
-                <div className="relative" style={{ width: 150, height: 48 }}>
-                  <Image
-                    src="/brand/REBELIVE Logo Black.webp"
-                    alt="REBELIVE"
-                    fill
-                    priority
-                    sizes="150px"
-                    className="object-contain"
-                    style={{ filter: 'invert(1) brightness(1.15) drop-shadow(0 0 16px rgba(255,255,255,0.4))' }}
-                  />
-                </div>
-                <span className="text-[9px] font-tech text-white/30 tracking-[0.3em] uppercase">ENERGY DRINKS</span>
-              </div>
-
-              {/* Progress Line */}
-              <div className="w-full h-[1px] bg-white/15 relative overflow-hidden mb-4">
-                <div
-                  className="h-full bg-white shadow-[0_0_12px_#ffffff] transition-all duration-260 ease-out"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-
-              {/* Technical Status & Percentage */}
-              <div className="w-full flex items-center justify-between text-[10px] font-tech text-white/50 tracking-widest uppercase">
-                <span className="truncate pr-2">{phase}</span>
-                <span className="font-mono text-white/80">{progress}%</span>
-              </div>
-
-              {/* Micro Specs */}
-              <div className="mt-8 text-[9px] font-tech text-white/20 tracking-[0.25em] uppercase text-center">
-                HIGH-VELOCITY BEVERAGE ARCHITECTURE
-              </div>
+              <RebeliveLoader
+                progress={progress}
+                phaseText={phase}
+                fullScreen={false}
+              />
             </motion.div>
           </motion.div>
         ) : null}

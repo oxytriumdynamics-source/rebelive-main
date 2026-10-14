@@ -29,9 +29,8 @@ import {
   SlidersHorizontal,
 } from 'lucide-react';
 import {
-  getStoredAdminToken,
-  getStoredAdminUser,
   clearAdminSession,
+  verifyAdminSession,
   changeAdminPassword,
   AdminUser,
 } from '@/lib/adminApi';
@@ -79,13 +78,27 @@ export function AdminLayoutShell({
 
   // Check stored admin session on mount
   useEffect(() => {
-    const token = getStoredAdminToken();
-    const user = getStoredAdminUser();
+    let isMounted = true;
 
-    if (token && user) {
-      setAdminUser(user);
-    }
-    setIsInitializing(false);
+    const checkSession = async () => {
+      const verifiedUser = await verifyAdminSession();
+      if (!isMounted) return;
+      setAdminUser(verifiedUser);
+      setIsInitializing(false);
+    };
+
+    const handleSessionExpired = () => {
+      setAdminUser(null);
+      showAdminToast('Session expired or unauthorized. Please re-authenticate.', 'error', 'Session Expired');
+    };
+
+    window.addEventListener('admin-session-expired', handleSessionExpired);
+    checkSession();
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('admin-session-expired', handleSessionExpired);
+    };
   }, []);
 
   const handleAuthenticated = (user: AdminUser) => {
@@ -298,6 +311,7 @@ export function AdminLayoutShell({
             <Link
               href="/"
               target="_blank"
+              rel="noopener noreferrer"
               className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/50 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-3"
               title="Open Public Storefront"
             >

@@ -615,6 +615,90 @@ html.lenis body {
   pointer-events: none;
 }
 
+/* ─── Rebelive Minimal Horizontal Gradient Loader ─── */
+@keyframes horizontal-beam-indeterminate {
+  0% {
+    left: -40%;
+    width: 35%;
+  }
+  50% {
+    left: 25%;
+    width: 55%;
+  }
+  100% {
+    left: 100%;
+    width: 35%;
+  }
+}
+
+@keyframes horizontal-shimmer-pass {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(200%);
+  }
+}
+
+@keyframes logo-specular-sweep {
+  0% {
+    transform: translateX(-120%);
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateX(140%);
+    opacity: 0;
+  }
+}
+
+.animate-horizontal-beam {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  animation: horizontal-beam-indeterminate 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.animate-horizontal-shimmer {
+  animation: horizontal-shimmer-pass 2s linear infinite;
+}
+
+.animate-logo-specular {
+  animation: logo-specular-sweep 2.4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+/* ─── Dark & Light Chrome Horizontal Loading Animation ─── */
+@keyframes chrome-gradient-horizontal {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.animate-chrome-horizontal {
+  background: linear-gradient(
+    90deg,
+    #2a2a30 0%,
+    #4e4e58 16%,
+    #9292a0 30%,
+    #eaeaf0 44%,
+    #ffffff 50%,
+    #eaeaf0 56%,
+    #9292a0 70%,
+    #4e4e58 84%,
+    #2a2a30 100%
+  );
+  background-size: 200% 100%;
+  animation: chrome-gradient-horizontal 2.4s linear infinite;
+}
+
 /* Accessibility: Respect prefers-reduced-motion */
 @media (prefers-reduced-motion: reduce) {
 

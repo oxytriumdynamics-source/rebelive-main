@@ -1,5 +1,5 @@
-import { StorySkeleton } from '@/components/ui/Skeleton';
+import RebeliveLoader from '@/components/ui/RebeliveLoader';
 
 export default function StoryLoading() {
-  return <StorySkeleton />;
+  return <RebeliveLoader />;
 }

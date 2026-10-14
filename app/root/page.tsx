@@ -19,11 +19,10 @@ import {
   Quote,
 } from 'lucide-react';
 import {
-  getStoredAdminToken,
-  getStoredAdminUser,
-  setAdminSession,
   clearAdminSession,
   fetchAdminDashboard,
+  verifyAdminSession,
+  isAuthError,
   AdminUser,
   AdminDashboardData,
 } from '@/lib/adminApi';
@@ -64,45 +63,82 @@ export default function AdminRootPage() {
 
   // Check stored admin session on mount
   useEffect(() => {
-    const token = getStoredAdminToken();
-    const user = getStoredAdminUser();
+    let isMounted = true;
 
-    if (token && user) {
-      setAdminUser(user);
-      loadDashboardData();
-    }
+    const checkSession = async () => {
+      const verifiedUser = await verifyAdminSession();
+      if (!isMounted) return;
 
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get('tab') as any;
-      if (
-        tab &&
-        [
-          'overview',
-          'orders',
-          'products',
-          'testimonials',
-          'contact-queries',
-          'corporate-queries',
-          'users',
-          'shiprocket',
-          'settings',
-        ].includes(tab)
-      ) {
-        if (tab !== 'settings' || user?.role === 'SUPERADMIN') {
-          setActiveTab(tab);
+      if (verifiedUser) {
+        setAdminUser(verifiedUser);
+        try {
+          const data = await fetchAdminDashboard();
+          if (isMounted) setDashboardData(data);
+        } catch (err: any) {
+          if (isAuthError(err)) {
+            clearAdminSession();
+            if (isMounted) {
+              setAdminUser(null);
+              setDashboardData(null);
+            }
+          }
+        }
+      } else {
+        setAdminUser(null);
+        setDashboardData(null);
+      }
+
+      if (typeof window !== 'undefined') {
+        const params = new URLSearchParams(window.location.search);
+        const tab = params.get('tab') as any;
+        if (
+          tab &&
+          [
+            'overview',
+            'orders',
+            'products',
+            'testimonials',
+            'contact-queries',
+            'corporate-queries',
+            'users',
+            'shiprocket',
+            'settings',
+          ].includes(tab)
+        ) {
+          if (tab !== 'settings' || verifiedUser?.role === 'SUPERADMIN') {
+            setActiveTab(tab);
+          }
         }
       }
-    }
 
-    setIsInitializing(false);
+      if (isMounted) setIsInitializing(false);
+    };
+
+    const handleSessionExpired = () => {
+      setAdminUser(null);
+      setDashboardData(null);
+      showAdminToast('Session expired or unauthorized. Please re-authenticate.', 'error', 'Session Expired');
+    };
+
+    window.addEventListener('admin-session-expired', handleSessionExpired);
+    checkSession();
+
+    return () => {
+      isMounted = false;
+      window.removeEventListener('admin-session-expired', handleSessionExpired);
+    };
   }, []);
 
   const loadDashboardData = async () => {
     try {
       const data = await fetchAdminDashboard();
       setDashboardData(data);
-    } catch (err) {
+    } catch (err: any) {
+      if (isAuthError(err)) {
+        clearAdminSession();
+        setAdminUser(null);
+        setDashboardData(null);
+      }
       console.error('Error fetching dashboard stats:', err);
     }
   };
@@ -240,6 +276,7 @@ export default function AdminRootPage() {
           <Link
             href="/"
             target="_blank"
+            rel="noopener noreferrer"
             className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/50 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-3"
             title="Open Public Storefront"
           >

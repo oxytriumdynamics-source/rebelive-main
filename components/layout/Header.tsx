@@ -175,7 +175,7 @@ export const Header: React.FC<HeaderProps> = ({
   const userAvatar = user?.avatarUrl || '/brand/panther_white_icon-transparent.webp';
   const displayName = user?.firstName || 'Operator';
   const rebelId = formatRebelId(user?.rebelId || user?.id);
-  const personaSlug = user?.preferences?.personalityType?.slug || 'apex';
+  const personaSlug = user?.preferences?.personalityType?.slug || null;
 
   return (
     <motion.header

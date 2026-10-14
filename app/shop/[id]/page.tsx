@@ -152,18 +152,13 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     id: 'monk-fruit',
     icons: ['/benifits/monk-fruit-badge.png'],
     title: (
-      <>
-        <div>
-          <span className="font-black text-white">NATURALLY</span> Sweetened
-        </div>
-        <div className="mt-0.5">
-          with <span className="font-black text-white">Monk Fruit</span>
-        </div>
-      </>
+      <span className="block font-black text-white tracking-tight">
+        Monkfruit
+      </span>
     ),
     desc: (
       <>
-        Pure plant-based sweetness from antioxidant-rich monk fruit extract, giving delicious flavor with zero sugar spikes.
+        Naturally sweetened with monk fruit, delivering intense sweetness with zero calories, zero carbs, and a glycemic index of zero.
       </>
     ),
   },
@@ -171,18 +166,13 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     id: 'zero-sugar',
     icons: ['/benifits/zero-sugar-badge.png'],
     title: (
-      <>
-        <div>
-          <span className="font-black text-white">ZERO</span> added Sugar
-        </div>
-        <div className="mt-0.5">
-          <span className="font-black text-white">NO</span> artificial colors
-        </div>
-      </>
+      <span className="block font-black text-white tracking-tight">
+        Zero Added Sugar
+      </span>
     ),
     desc: (
       <>
-        Clean functional formula without added sugars or artificial dyes, crafted for sustained everyday energy and focus.
+        No added sugar or artificial colours, keeping every can clean, simple, and refreshingly guilt-free
       </>
     ),
   },
@@ -543,13 +533,13 @@ export default function ProductDetailPage() {
             {/* ── Left Column: Showcase & Photo Options (6 cols on tablet/desktop) ── */}
             <div className="md:col-span-6 flex flex-col items-center md:sticky md:top-24 md:z-20 self-start w-full">
               {/* Main Can Showcase Card */}
-              <div className="relative w-full aspect-square sm:aspect-[4/4.2] md:aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 p-4 sm:p-6 md:p-8 flex flex-col items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
+              <div className="relative w-full aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
                 {/* Edge Highlights */}
-                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none" />
+                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
 
                 {/* Backlight Halo in Monochrome Silver */}
                 <div
-                  className="absolute inset-4 sm:inset-8 rounded-full blur-3xl opacity-20 group-hover:opacity-35 transition-opacity duration-700 pointer-events-none"
+                  className="absolute inset-4 sm:inset-8 rounded-full blur-3xl opacity-20 group-hover:opacity-35 transition-opacity duration-700 pointer-events-none z-10"
                   style={{
                     background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
                   }}
@@ -558,7 +548,7 @@ export default function ProductDetailPage() {
                 {/* Top Info Bar: Angle Badge + Fullscreen Lightbox Button */}
                 <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-5 sm:right-5 flex items-center justify-between z-20 pointer-events-auto">
                   <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-white/50 bg-white/5 px-2 py-0.5 rounded-full border border-white/10">
+                    <span className="text-[10px] font-mono text-white/50 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md">
                       {selectedPhotoIndex + 1} / {galleryList.length}
                     </span>
                   </div>
@@ -566,7 +556,7 @@ export default function ProductDetailPage() {
                   <button
                     type="button"
                     onClick={() => setIsLightboxOpen(true)}
-                    className="p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition-all backdrop-blur-md flex items-center gap-1 text-[10px] sm:text-[11px] font-mono cursor-pointer"
+                    className="p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition-all backdrop-blur-md flex items-center gap-1 text-[10px] sm:text-[11px] font-mono cursor-pointer shadow-lg"
                     title="Inspect High-Res Photo"
                   >
                     <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
@@ -602,9 +592,9 @@ export default function ProductDetailPage() {
                   </>
                 )}
 
-                {/* Interactive Center Stage Render / Photo */}
+                {/* Interactive Center Stage Render / Photo (Full display) */}
                 <div
-                  className={`relative w-full h-[220px] xs:h-[260px] sm:h-[300px] md:h-[320px] lg:h-[340px] flex items-center justify-center z-10 ${
+                  className={`relative w-full h-full flex items-center justify-center z-10 ${
                     activePhoto?.src ? 'cursor-zoom-in' : ''
                   }`}
                   onClick={() => {
@@ -612,16 +602,16 @@ export default function ProductDetailPage() {
                   }}
                 >
                   {activePhoto?.src ? (
-                    /* Selected Photo View from DB / Cloudinary */
-                    <div className="relative w-36 xs:w-44 sm:w-56 md:w-56 lg:w-60 h-52 xs:h-60 sm:h-72 md:h-72 lg:h-76 transition-all duration-300 group-hover:scale-[1.03]">
+                    /* Selected Photo View from DB / Cloudinary - Full Edge to Edge */
+                    <div className="relative w-full h-full transition-transform duration-500 group-hover:scale-[1.02]">
                       <Image
                         key={activePhoto.src}
                         src={activePhoto.src}
                         alt={`${product.name} - ${activePhoto.label}`}
                         fill
-                        sizes="(max-width: 640px) 220px, (max-width: 1024px) 300px, 400px"
+                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 650px"
                         priority
-                        className="object-contain drop-shadow-[0_20px_40px_rgba(0,0,0,0.9)] transition-all duration-300"
+                        className="object-cover transition-all duration-300"
                         unoptimized={activePhoto.src.startsWith('http')}
                       />
                     </div>
@@ -644,9 +634,6 @@ export default function ProductDetailPage() {
                     </div>
                   )}
                 </div>
-
-                {/* Bottom Core Specs Ticker (Monochrome) */}
-
               </div>
 
               {/* ── Photo Options Thumbnails Carousel ── */}
@@ -660,7 +647,7 @@ export default function ProductDetailPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setSelectedPhotoIndex(idx)}
-                          className={`group relative rounded-lg sm:rounded-xl aspect-square p-1 sm:p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden border cursor-pointer ${isSelected
+                          className={`group relative rounded-lg sm:rounded-xl aspect-square p-1 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden border cursor-pointer ${isSelected
                             ? 'bg-neutral-900 border-white scale-[1.02]'
                             : 'bg-neutral-950/70 border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
                             }`}
@@ -672,7 +659,7 @@ export default function ProductDetailPage() {
                               alt={item.label}
                               fill
                               sizes="70px"
-                              className="object-contain p-0.5 sm:p-1 group-hover:scale-105 transition-transform"
+                              className="object-cover rounded-md group-hover:scale-105 transition-transform"
                               unoptimized={item.src.startsWith('http')}
                             />
                           </div>
@@ -1343,7 +1330,7 @@ export default function ProductDetailPage() {
                   <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
                     <Image
                       src={BENEFIT_BOXES[4].icons[0]}
-                      alt="Naturally Sweetened with Monk Fruit"
+                      alt="Monkfruit"
                       fill
                       sizes="80px"
                       className="object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
@@ -1364,7 +1351,7 @@ export default function ProductDetailPage() {
                   <div className="w-14 h-14 sm:w-16 sm:h-16 md:w-20 md:h-20 relative flex items-center justify-center transition-transform duration-300 group-hover:scale-105">
                     <Image
                       src={BENEFIT_BOXES[5].icons[0]}
-                      alt="ZERO added Sugar"
+                      alt="Zero Added Sugar"
                       fill
                       sizes="80px"
                       className="object-contain drop-shadow-[0_4px_16px_rgba(0,0,0,0.8)]"
@@ -1616,51 +1603,53 @@ export default function ProductDetailPage() {
                 <Link
                   key={other.id}
                   href={`/shop/${other.id}`}
-                  className="p-4 sm:p-5 rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between"
+                  className="rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between overflow-hidden"
                 >
                   <div>
-                    <div className="relative w-full h-32 sm:h-36 my-2 sm:my-3 flex items-center justify-center">
+                    {/* Full Image Showcase with bottom fade */}
+                    <div className="relative w-full aspect-square overflow-hidden bg-neutral-950">
                       {(() => {
                         const otherImg = other.image || other.canImage;
                         if (otherImg) {
                           return (
-                            <div className="relative w-24 sm:w-28 h-28 sm:h-32 transition-transform duration-300 group-hover:scale-105">
+                            <div className="relative w-full h-full">
                               <Image
                                 src={otherImg}
                                 alt={other.name}
                                 fill
-                                sizes="140px"
-                                className="object-contain drop-shadow-[0_10px_20px_rgba(0,0,0,0.8)]"
+                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 350px"
+                                className="object-cover transition-transform duration-500 group-hover:scale-105"
                                 unoptimized={otherImg.startsWith('http')}
                               />
+                              {/* Little black gradient faded from bottom of image */}
+                              <div className="absolute inset-x-0 bottom-0 h-20 sm:h-24 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/60 to-transparent pointer-events-none z-10" />
                             </div>
                           );
                         }
                         return (
-                          <div className="w-20 h-28 rounded-xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-inner">
-                            <span className="font-bold text-[8.5px] text-white/60 font-mono uppercase truncate max-w-full px-1">
+                          <div className="w-full h-full min-h-[180px] flex flex-col items-center justify-center p-4">
+                            <span className="font-bold text-xs text-white/60 font-mono uppercase">
                               {other.name}
-                            </span>
-                            <span className="text-[7px] text-white/30 font-mono uppercase mt-0.5">
-                              Pending
                             </span>
                           </div>
                         );
                       })()}
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-bold uppercase text-white tracking-tight">
-                      {other.name}
-                    </h3>
-                    <p className="text-[11px] text-white/55 mt-0.5 line-clamp-1 font-light">
-                      {other.tagline}
-                    </p>
-                    <div className="text-[10px] text-white/40 font-mono mt-1">
-                      {other.volume}
+                    <div className="px-4 sm:px-5 pt-3">
+                      <h3 className="text-base sm:text-lg font-bold uppercase text-white tracking-tight">
+                        {other.name}
+                      </h3>
+                      <p className="text-[11px] text-white/55 mt-0.5 line-clamp-1 font-light">
+                        {other.tagline}
+                      </p>
+                      <div className="text-[10px] text-white/40 font-mono mt-1">
+                        {other.volume}
+                      </div>
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between">
+                  <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3 border-t border-white/10 flex items-center justify-between mt-3">
                     <div>
                       <span className="text-sm font-bold text-white font-mono">
                         ₹449

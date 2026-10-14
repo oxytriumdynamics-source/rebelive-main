@@ -198,11 +198,11 @@ export default function AuthPageShell() {
     }
   }, [dispatch, isAuthenticated]);
 
-  // Redirect on successful auth + auto-claim pending persona
+  // Redirect on successful auth + auto-claim pending persona (only if unallocated)
   useEffect(() => {
     if (isAuthenticated && user) {
-      // If they came from the quiz result page, claim their pending persona
-      if (typeof window !== "undefined") {
+      const alreadyHasPersona = Boolean(user.preferences?.personalityType);
+      if (!alreadyHasPersona && typeof window !== "undefined") {
         const pending =
           sessionStorage.getItem("pendingPersona") ||
           localStorage.getItem("pendingPersona");
@@ -211,6 +211,9 @@ export default function AuthPageShell() {
           localStorage.removeItem("pendingPersona");
           dispatch(claimPersona(pending.toLowerCase()));
         }
+      } else if (typeof window !== "undefined") {
+        sessionStorage.removeItem("pendingPersona");
+        localStorage.removeItem("pendingPersona");
       }
       router.replace("/profile");
     }

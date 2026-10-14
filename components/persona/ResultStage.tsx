@@ -30,7 +30,12 @@ export default function ResultStage({
 
   async function handleClaim() {
     if (isAuthenticated) {
-      // Already logged in - claim immediately
+      if (user?.preferences?.personalityType) {
+        // Already allocated - cannot change!
+        router.push('/profile');
+        return;
+      }
+      // Already logged in & unallocated - claim once immediately
       await dispatch(claimPersona(result.winner.toLowerCase()));
       router.push('/profile');
     } else {
@@ -110,7 +115,7 @@ export default function ResultStage({
                 className="group flex items-center gap-2.5 px-6 py-3 font-mono text-[11px] uppercase tracking-[0.2em] font-bold bg-white text-black hover:bg-neutral-200 transition-all duration-200 active:scale-[0.98] cursor-pointer shadow-[0_0_25px_rgba(255,255,255,0.25)] hover:scale-[1.02]"
                 style={{ fontFamily: MONO }}
               >
-                {isAuthenticated ? 'SAVE TO PROFILE' : 'LOCK IN REBEL ID'}
+                {user?.preferences?.personalityType ? 'VIEW YOUR PROFILE' : isAuthenticated ? 'SAVE TO PROFILE' : 'LOCK IN REBEL ID'}
                 <ArrowRight className="h-3.5 w-3.5 transition-transform duration-200 group-hover:translate-x-1" />
               </button>
             </motion.div>

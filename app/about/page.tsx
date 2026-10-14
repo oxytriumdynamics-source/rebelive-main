@@ -1,29 +1,14 @@
 'use client';
 
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { motion, AnimatePresence } from 'framer-motion';
-import {
-  Sparkles,
-  ArrowRight,
-  ChevronDown,
-  ArrowUp,
-  Compass,
-  Zap,
-  Shield,
-  Layers,
-} from 'lucide-react';
+import { motion } from 'framer-motion';
+import { ArrowRight } from 'lucide-react';
 
-const MONO = "'JetBrains Mono', 'Poppins', monospace";
 const SANS = "'Poppins', sans-serif";
 
-const ABOUT_SECTIONS = [
-  { id: 'founders', label: '01 // FOUNDERS', title: 'OUR FOUNDERS' },
-  { id: 'rebelive', label: '02 // REBELIVE', title: 'PHILOSOPHY' },
-  { id: 'oxytrium', label: '03 // OXYTRIUM', title: 'INNOVATION LAB' },
-  { id: 'pathways', label: '04 // PATHWAYS', title: 'JOIN THE REVOLUTION' },
-];
+
 
 const LUX_EASE = [0.22, 1, 0.36, 1] as const;
 
@@ -33,7 +18,7 @@ const containerVariants = {
     opacity: 1,
     transition: {
       staggerChildren: 0.1,
-      delayChildren: 0.15,
+      delayChildren: 0.1,
     },
   },
 };
@@ -65,205 +50,15 @@ const scaleInItem = {
 
 export default function AboutPage() {
   const [activeSection, setActiveSection] = useState(0);
-  const [isMobile, setIsMobile] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-    checkMobile();
-    window.addEventListener('resize', checkMobile, { passive: true });
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
+  
 
-  // Transition locking & inertial cooldown refs
-  const isAnimatingRef = useRef(false);
-  const lastScrollTimeRef = useRef(0);
-  const touchStartYRef = useRef(0);
-  const touchStartXRef = useRef(0);
-
-  // Discrete section jump (desktop) or smooth document scroll (mobile)
-  const goToSection = useCallback((targetIdx: number) => {
-    if (isMobile) {
-      const targetSec = ABOUT_SECTIONS[targetIdx];
-      if (targetSec) {
-        const el = document.getElementById(targetSec.id);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-      return;
-    }
-
-    if (isAnimatingRef.current) return;
-    const clamped = Math.max(0, Math.min(targetIdx, ABOUT_SECTIONS.length - 1));
-    if (clamped === activeSection) return;
-
-    isAnimatingRef.current = true;
-    lastScrollTimeRef.current = Date.now();
-    setActiveSection(clamped);
-
-    // 1000ms transition duration + 150ms buffer to absorb fast wheel / trackpad momentum
-    setTimeout(() => {
-      isAnimatingRef.current = false;
-    }, 1150);
-  }, [activeSection, isMobile]);
-
-  const goToNext = useCallback(() => {
-    if (activeSection < ABOUT_SECTIONS.length - 1) {
-      goToSection(activeSection + 1);
-    }
-  }, [activeSection, goToSection]);
-
-  const goToPrev = useCallback(() => {
-    if (activeSection > 0) {
-      goToSection(activeSection - 1);
-    }
-  }, [activeSection, goToSection]);
-
-  // ── Wheel Event Listener (Desktop Only) ──
-  useEffect(() => {
-    if (isMobile) return;
-
-    const handleWheel = (e: WheelEvent) => {
-      if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
-
-      const delta = e.deltaY;
-      if (Math.abs(delta) < 18) return;
-
-      // ── IF USER IS SCROLLED INTO THE FOOTER ZONE (window.scrollY > 15) ──
-      // Let the browser scroll normally in the footer.
-      if (window.scrollY > 15) {
-        if (delta < 0 && window.scrollY <= 35) {
-          // Re-engaging last section of the deck
-          setActiveSection(ABOUT_SECTIONS.length - 1);
-        }
-        return;
-      }
-
-      // ── AT LAST SECTION: SCROLLING DOWN REVEALS FOOTER ──
-      if (activeSection === ABOUT_SECTIONS.length - 1 && delta > 0) {
-        const footerEl = document.querySelector('footer');
-        if (footerEl) {
-          e.preventDefault();
-          footerEl.scrollIntoView({ behavior: 'smooth' });
-        }
-        return;
-      }
-
-      // ── WITHIN ABOUT SECTIONS (0 to 3): STRICT 1-SECTION SNAP ──
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (isAnimatingRef.current) return;
-
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < 1050) return;
-
-      if (delta > 0) {
-        goToNext();
-      } else {
-        goToPrev();
-      }
-    };
-
-    window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
-    return () => {
-      window.removeEventListener('wheel', handleWheel, { capture: true });
-    };
-  }, [isMobile, activeSection, goToNext, goToPrev]);
-
-  // ── Touch Swipe Gestures (Desktop/Tablet Touch Only - Mobile uses natural scroll) ──
-  useEffect(() => {
-    if (isMobile) return;
-
-    const handleTouchStart = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      touchStartYRef.current = e.touches[0].clientY;
-      touchStartXRef.current = e.touches[0].clientX;
-    };
-
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches.length !== 1) return;
-      if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
-
-      const deltaY = touchStartYRef.current - e.touches[0].clientY;
-      const deltaX = touchStartXRef.current - e.touches[0].clientX;
-
-      // Ignore horizontal gestures
-      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) return;
-      if (Math.abs(deltaY) < 30) return;
-
-      if (window.scrollY > 15) return;
-
-      if (activeSection === ABOUT_SECTIONS.length - 1 && deltaY > 0) {
-        const footerEl = document.querySelector('footer');
-        if (footerEl) {
-          footerEl.scrollIntoView({ behavior: 'smooth' });
-        }
-        return;
-      }
-
-      e.preventDefault();
-      if (isAnimatingRef.current) return;
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < 950) return;
-
-      if (deltaY > 0) {
-        goToNext();
-      } else {
-        goToPrev();
-      }
-    };
-
-    window.addEventListener('touchstart', handleTouchStart, { passive: true });
-    window.addEventListener('touchmove', handleTouchMove, { passive: false });
-    return () => {
-      window.removeEventListener('touchstart', handleTouchStart);
-      window.removeEventListener('touchmove', handleTouchMove);
-    };
-  }, [isMobile, activeSection, goToNext, goToPrev]);
-
-  // ── Keyboard Navigation (Arrow Keys / Page Keys / Space) ──
-  useEffect(() => {
-    if (isMobile) return;
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (['input', 'textarea', 'select'].includes((e.target as HTMLElement)?.tagName?.toLowerCase() || '')) return;
-
-      if (window.scrollY > 15) return;
-
-      if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
-        if (activeSection === ABOUT_SECTIONS.length - 1) {
-          const footerEl = document.querySelector('footer');
-          if (footerEl) {
-            e.preventDefault();
-            footerEl.scrollIntoView({ behavior: 'smooth' });
-          }
-          return;
-        }
-        e.preventDefault();
-        goToNext();
-      } else if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey)) {
-        e.preventDefault();
-        goToPrev();
-      } else if (e.key === 'Home') {
-        e.preventDefault();
-        goToSection(0);
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isMobile, activeSection, goToNext, goToPrev, goToSection]);
 
   return (
     <div
-      id="about-deck"
+      id="about-page"
       style={{ fontFamily: SANS }}
-      className="relative w-full min-h-screen text-white bg-black select-none md:w-screen md:h-screen md:overflow-hidden"
+      className="relative w-full min-h-screen text-white bg-black selection:bg-white selection:text-black overflow-x-hidden"
     >
       {/* Ambient background glow aura */}
       <div
@@ -278,30 +73,26 @@ export default function AboutPage() {
         REBELIVE
       </div>
 
-      {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
-      <div
-        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[1100ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] md:will-change-transform"
-        style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
-      >
+   
+
+      {/* ── Continuous, Butter-Smooth Natural Scrolling Flow with Even Spacing ── */}
+      <div className="w-full flex flex-col gap-14 sm:gap-20 lg:gap-24 pt-20 sm:pt-24 pb-16 sm:pb-24">
         {/* ══════════════════════════════════════════════════════════════
-            SLIDE 0: FOUNDERS SECTION
+            SECTION 0: FOUNDERS SECTION
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="founders"
-          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 0 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-end"
           >
             {/* Left Content */}
             <div className="lg:col-span-7 space-y-5 sm:space-y-7">
-             
-
               <motion.h1
                 variants={fadeUpItem}
                 className="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-black uppercase tracking-tight text-white leading-[0.92]"
@@ -315,20 +106,18 @@ export default function AboutPage() {
               <motion.div variants={fadeUpItem} className="space-y-4 max-w-2xl">
                 <div className="p-5 sm:p-7 rounded-3xl bg-white/[0.03] border border-white/10 backdrop-blur-xl relative shadow-2xl space-y-4">
                   <p className="text-base sm:text-xl lg:text-2xl text-white/90 font-light leading-relaxed">
-                    “We’re on a mission to make better-for-you choices fun, simple and for everyone. It has led us to innovative, clutter-breaking formats and flavours, presented with a lightness that fits into anyone’s lifestyle. Let's Wake Up and Rebel!”
+                    “We’re on a mission to make better-for-you choices fun, simple and for everyone. It has led us to innovative, clutter-breaking formats and flavours, presented with a lightness that fits into anyone’s lifestyle. Let&apos;s Wake Up and Rebel!”
                   </p>
 
                   <div className="pt-3 border-t border-white/10 flex items-center justify-between">
-                   <div>
+                    <div>
                       <p className="text-white font-bold text-sm sm:text-base tracking-wide">
                         Krishna &amp; Sai Vaishno
                       </p>
                       <p className="text-xs font-mono text-white/50 uppercase tracking-widest mt-0.5">
                         Co-Founders
                       </p>
-                   </div>
-
-                  
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -349,51 +138,49 @@ export default function AboutPage() {
                   priority
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/10 to-transparent pointer-events-none" />
-                
               </div>
             </motion.div>
           </motion.div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
-            SLIDE 1: REBELIVE PHILOSOPHY & EMBLEM
+            MARQUEE DIVIDER: WAKE . FUEL . REBEL
+           ══════════════════════════════════════════════════════════════ */}
+        <div className="w-full border-y border-white/15 bg-white/[0.02] py-3.5 sm:py-5 overflow-hidden select-none">
+          <div className="flex w-max animate-marquee space-x-8 sm:space-x-12 whitespace-nowrap">
+            {[...Array(8)].map((_, i) => (
+              <div
+                key={i}
+                className="flex items-center space-x-8 sm:space-x-12 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-tall uppercase tracking-wider text-white/90"
+              >
+                <span className="hover:text-white transition-colors">WAKE . FUEL . REBEL</span>
+                <span className="text-white/30">•</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-neutral-400">
+                  WAKE . FUEL . REBEL
+                </span>
+                <span className="text-white/30">•</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ══════════════════════════════════════════════════════════════
+            SECTION 1: REBELIVE PHILOSOPHY & EMBLEM
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="rebelive"
-          className="w-full min-h-screen py-16 sm:py-20 flex flex-col justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
         >
-          {/* Full-bleed edge-to-edge Marquee Bar across entire screen width */}
-          <div className="w-full border-y border-white/15 bg-white/[0.02] py-3 sm:py-4.5 overflow-hidden select-none mb-6 sm:mb-10">
-            <div className="flex w-max animate-marquee space-x-8 sm:space-x-12 whitespace-nowrap">
-              {[...Array(8)].map((_, i) => (
-                <div
-                  key={i}
-                  className="flex items-center space-x-8 sm:space-x-12 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-tall uppercase tracking-wider text-white/90"
-                >
-                  <span className="hover:text-white transition-colors">WAKE . FUEL . REBEL</span>
-                  <span className="text-white/30">•</span>
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-100 to-neutral-400">
-                    WAKE . FUEL . REBEL
-                  </span>
-                  <span className="text-white/30">•</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 1 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-7xl mx-auto px-4 sm:px-8 lg:px-16"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="w-full max-w-7xl mx-auto"
           >
             {/* Split Content: Narrative Left, Panther Emblem Right */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
               <div className="lg:col-span-7 space-y-5">
-            
-
                 <motion.h2
                   variants={fadeUpItem}
                   className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white leading-[0.95]"
@@ -415,8 +202,6 @@ export default function AboutPage() {
                     At our core is a simple philosophy: <span className="text-white underline decoration-white/30 underline-offset-4">Wake. Fuel. Rebel.</span> Wake up to your potential, fuel what drives you, and rebel against the ordinary.
                   </p>
                 </motion.div>
-
-               
               </div>
 
               {/* Right: Panther Emblem Artwork */}
@@ -443,18 +228,17 @@ export default function AboutPage() {
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
-            SLIDE 2: OXYTRIUM DYNAMICS (INCUBATOR LAB)
+            SECTION 2: OXYTRIUM DYNAMICS (INCUBATOR LAB)
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="oxytrium"
-          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
           >
             {/* Left: Oxytrium Dynamics Official Logo Emblem */}
@@ -481,8 +265,6 @@ export default function AboutPage() {
 
             {/* Right: Oxytrium Narrative */}
             <div className="lg:col-span-7 order-1 lg:order-2 space-y-5">
-            
-
               <motion.h2
                 variants={fadeUpItem}
                 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white leading-[0.95]"
@@ -507,30 +289,25 @@ export default function AboutPage() {
                   Our mission is to build bold, consumer-first brands, challenge conventional categories, and create products that shape how the world eats and drinks tomorrow.
                 </p>
               </motion.div>
-
-           
             </div>
           </motion.div>
         </section>
 
         {/* ══════════════════════════════════════════════════════════════
-            SLIDE 3: EXPLORATION PATHWAYS & CLOSING MANIFESTO
+            SECTION 3: EXPLORATION PATHWAYS & CLOSING MANIFESTO
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="pathways"
-          className="w-full min-h-screen py-16 sm:py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-7xl mx-auto space-y-6 sm:space-y-8"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.2 }}
+            className="w-full max-w-7xl mx-auto space-y-8 sm:space-y-12"
           >
             <div className="text-center max-w-3xl mx-auto space-y-3">
-             
-
               <motion.h2
                 variants={fadeUpItem}
                 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white leading-tight"
@@ -540,8 +317,6 @@ export default function AboutPage() {
                   NEXT MOVE.
                 </span>
               </motion.h2>
-
-           
             </div>
 
             {/* 3 Pathway Action Cards */}
@@ -603,8 +378,6 @@ export default function AboutPage() {
                 </div>
               </Link>
             </motion.div>
-
-       
           </motion.div>
         </section>
       </div>

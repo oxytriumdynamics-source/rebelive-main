@@ -214,6 +214,9 @@ export default function App() {
   const activeSectionRef = useRef(0);
   const isAnimatingRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
+  const lastWheelTimeRef = useRef(0);
+  const hasTriggeredInGestureRef = useRef(false);
+  const wheelQuietTimerRef = useRef<NodeJS.Timeout | null>(null);
   const activeTweenRef = useRef<gsap.core.Tween | null>(null);
   const lastRenderedProgressRef = useRef<number>(0);
   const progressLineRef = useRef<HTMLDivElement>(null);
@@ -274,7 +277,9 @@ export default function App() {
       scrollToLenis(targetScrollY, { duration: 0.80 });
     } else if (clamped <= 6) {
       // Target: 3D stage (Hero, Details, Statement)
-      scrollToLenis(0, { duration: isSubFooterTransition ? 0.85 : 0.65 });
+      if (typeof window !== 'undefined' && window.scrollY > 5) {
+        scrollToLenis(0, { duration: isSubFooterTransition ? 0.85 : 0.65 });
+      }
     }
 
     if (activeTweenRef.current) {
@@ -328,7 +333,7 @@ export default function App() {
         }
 
         if (clamped <= 6) {
-          if (typeof window !== 'undefined' && window.scrollY > 20) {
+          if (typeof window !== 'undefined' && window.scrollY > 5) {
             window.scrollTo({ top: 0, behavior: 'instant' as any });
           }
         } else if (clamped === 7) {
@@ -339,7 +344,7 @@ export default function App() {
         }
         setTimeout(() => {
           isAnimatingRef.current = false;
-        }, 80);
+        }, 60);
       },
     });
   }, []);
@@ -360,6 +365,9 @@ export default function App() {
   useEffect(() => {
     const handleScrollSync = () => {
       if (isAnimatingRef.current) return;
+      // CRITICAL: When activeSection is within 3D stage (0 to 6), never let scrollSync overwrite activeSection or progress!
+      if (activeSectionRef.current <= 6) return;
+
       const subfooterEl = document.getElementById('home-subfooter');
       const footerEl = document.getElementById('main-footer') || document.querySelector('footer');
       if (!subfooterEl) return;
@@ -367,25 +375,6 @@ export default function App() {
       const subfooterTop = subfooterEl.offsetTop;
       const footerTop = footerEl ? footerEl.offsetTop : subfooterTop + subfooterEl.offsetHeight;
       const scrollY = window.scrollY;
-
-      // Scrolling between 3D stage (0) and SubFooter (subfooterTop)
-      if (scrollY > 0 && scrollY < subfooterTop - 40) {
-        const subfooterProgress = Math.min(1, Math.max(0, scrollY / subfooterTop));
-        const p = 0.76 + subfooterProgress * (0.88 - 0.76);
-
-        scrollProgressRef.current = p;
-        updateScrollProgress(p);
-        if (progressLineRef.current) {
-          progressLineRef.current.style.transform = `scaleX(${Math.min(1, p)})`;
-        }
-        setScrollProgress(p);
-
-        if (activeSectionRef.current !== 7 && !isAnimatingRef.current && subfooterProgress > 0.4) {
-          activeSectionRef.current = 7;
-          setActiveSection(7);
-        }
-        return;
-      }
 
       // In or past the SubFooter zone
       if (scrollY >= subfooterTop - 40) {
@@ -437,7 +426,7 @@ export default function App() {
     };
   }, []);
 
-  // ── Wheel Event Listener (Smooth Footer & Section Snapping) ───────────
+  // ── Wheel Event Listener (Trackpad Inertia & Fast Scroll Absorber: Strict 1-Section Snapping) ──
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (isSpecsOpen || isMenuOpen || isContactOpen || isOrderOpen) return;
@@ -449,44 +438,77 @@ export default function App() {
       const delta = e.deltaY;
       if (Math.abs(delta) < 14) return;
 
-      const subfooterEl = document.getElementById('home-subfooter');
-      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
-      const isPastStatementScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
-      const isInSubFooterZone = (activeSectionRef.current >= 7 && isPastStatementScroll) || (typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40);
+      const now = Date.now();
+      lastWheelTimeRef.current = now;
 
-      // In the SubFooter and Footer zone: allow natural, buttery-smooth Lenis scrolling without blocking
-      if (isInSubFooterZone) {
-        if (delta > 0) {
-          // Scrolling down: let Lenis smoothly scroll through subfooter and footer without interruption
-          return;
-        } else {
-          // Scrolling up:
-          if (typeof window !== 'undefined' && window.scrollY > subfooterTop + 20) {
-            return;
-          }
-          // If user reached the very top of SubFooter and scrolls up further,
-          // smoothly transition back to 3D stage Section 6 (Statement)
-          e.preventDefault();
-          e.stopPropagation();
-          const now = Date.now();
-          if (now - lastScrollTimeRef.current < 450) return;
-          goToSection(6);
-          return;
-        }
+      // ── Reset gesture lock when trackpad wheel stream goes completely quiet ──
+      if (wheelQuietTimerRef.current) {
+        clearTimeout(wheelQuietTimerRef.current);
       }
+      wheelQuietTimerRef.current = setTimeout(() => {
+        hasTriggeredInGestureRef.current = false;
+      }, 220);
 
-      // CRITICAL: Block wheel inputs while transition is running inside 3D stage
+      // ALWAYS prevent default during animation to stop trackpad momentum bleed
       if (isAnimatingRef.current) {
         e.preventDefault();
         e.stopPropagation();
         return;
       }
 
+      // ── IN SUBFOOTER & FOOTER ZONE (Sections 7 and 8) ──
+      if (activeSectionRef.current >= 7) {
+        // If at Section 8 (Footer) and scrolling down: let it rest at bottom
+        if (activeSectionRef.current === 8 && delta > 0) {
+          return;
+        }
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        if (hasTriggeredInGestureRef.current) return;
+        if (now - lastScrollTimeRef.current < 750) return;
+
+        if (delta > 0) {
+          // Section 7 ➔ Section 8
+          if (activeSectionRef.current === 7) {
+            hasTriggeredInGestureRef.current = true;
+            lastScrollTimeRef.current = now;
+            goToSection(8);
+          }
+        } else {
+          // Scrolling UP:
+          if (activeSectionRef.current === 8) {
+            // Section 8 ➔ Section 7
+            hasTriggeredInGestureRef.current = true;
+            lastScrollTimeRef.current = now;
+            goToSection(7);
+          } else if (activeSectionRef.current === 7) {
+            // Section 7 ➔ Section 6 (Statement 2)
+            hasTriggeredInGestureRef.current = true;
+            lastScrollTimeRef.current = now;
+            goToSection(6);
+          }
+        }
+        return;
+      }
+
+      // ── WITHIN 3D STAGE (Sections 0 to 6): STRICT 1-SECTION SNAP PER GESTURE ──
       e.preventDefault();
       e.stopPropagation();
 
-      const now = Date.now();
-      if (now - lastScrollTimeRef.current < 550) return;
+      // If already triggered in current gesture: absorb and discard all trailing inertia
+      if (hasTriggeredInGestureRef.current) {
+        return;
+      }
+
+      // Enforce minimum gap
+      if (now - lastScrollTimeRef.current < 750) {
+        return;
+      }
+
+      hasTriggeredInGestureRef.current = true;
+      lastScrollTimeRef.current = now;
 
       if (delta > 0) {
         goToNext();
@@ -498,6 +520,9 @@ export default function App() {
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
+      if (wheelQuietTimerRef.current) {
+        clearTimeout(wheelQuietTimerRef.current);
+      }
     };
   }, [isSpecsOpen, isMenuOpen, isContactOpen, isOrderOpen, goToNext, goToPrev, goToSection]);
 

@@ -76,50 +76,31 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     clearError();
     try {
-      // Check if backend API is configured & reachable
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-      try {
-        const res = await fetch(`${apiBase}/auth/login`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(creds),
-        });
-        if (res.ok) {
-          const data = await res.json();
-          const token = data.data?.accessToken || data.token || "rebel-session-live";
-          const loggedUser = data.data?.user || data.user;
-          saveToken(token);
-          saveStoredUser(loggedUser);
-          setAccessToken(token);
-          setUser(loggedUser);
-          setLoading(false);
-          return true;
-        }
-      } catch {
-        // Backend not reachable, proceed with local authenticated session
+      const res = await fetch(`${apiBase}/auth/login`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(creds),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errorMsg =
+          data.message ||
+          (Array.isArray(data.errors) && data.errors[0]?.message) ||
+          "Invalid email or password.";
+        throw new Error(errorMsg);
       }
 
-      // Local interactive mock login
-      const nameParts = creds.email.split("@")[0].split(".");
-      const first = nameParts[0] ? nameParts[0].charAt(0).toUpperCase() + nameParts[0].slice(1) : "Rebel";
-      const last = nameParts[1] ? nameParts[1].charAt(0).toUpperCase() + nameParts[1].slice(1) : "Operator";
+      const token = data.data?.accessToken || data.token;
+      const loggedUser = data.data?.user || data.user;
+      if (!token || !loggedUser) {
+        throw new Error("Invalid authentication response from server.");
+      }
 
-      const randomNum = Math.floor(1000 + Math.random() * 9000);
-      const newUser: AuthUser = {
-        ...DEMO_USER,
-        id: `REBEL-${randomNum}`,
-        rebelId: `#RBL-${randomNum}`,
-        email: creds.email,
-        firstName: first,
-        lastName: last,
-        createdAt: new Date().toISOString(),
-      };
-
-      const token = `token-${Date.now()}`;
       saveToken(token);
-      saveStoredUser(newUser);
+      saveStoredUser(loggedUser);
       setAccessToken(token);
-      setUser(newUser);
+      setUser(loggedUser);
       setLoading(false);
       return true;
     } catch (err: unknown) {
@@ -140,36 +121,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setLoading(true);
     clearError();
     try {
-      // Try backend if running
       const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
-      try {
-        const res = await fetch(`${apiBase}/auth/register`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data),
-        });
-        if (res.ok) {
-          setOtpSent(true);
-          setLoading(false);
-          return true;
-        }
-      } catch {
-        // Backend offline
+      const res = await fetch(`${apiBase}/auth/register`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errorMsg =
+          resData.message ||
+          (Array.isArray(resData.errors) && resData.errors[0]?.message) ||
+          "Registration failed.";
+        throw new Error(errorMsg);
       }
 
-      const randomNum = Math.floor(1000 + Math.random() * 9000);
-      const pendingUser: AuthUser = {
-        ...DEMO_USER,
-        id: `REBEL-${randomNum}`,
-        rebelId: `#RBL-${randomNum}`,
-        firstName: data.firstName || "Rebel",
-        lastName: data.lastName || "Operator",
-        email: data.email,
-        phone: data.phone || null,
-        emailVerified: false,
-      };
-      saveStoredUser(pendingUser);
-      setUser(pendingUser);
       setOtpSent(true);
       setLoading(false);
       return true;
@@ -183,35 +149,60 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const sendOtp = async (email: string) => {
     clearError();
-    setOtpSent(true);
-    return true;
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${apiBase}/auth/send-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setOtpError(resData.message || "Failed to send verification code.");
+        return false;
+      }
+      setOtpSent(true);
+      return true;
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to send code";
+      setOtpError(msg);
+      return false;
+    }
   };
 
   const verifyOtp = async (data: { email: string; otp: string }) => {
     setOtpVerifying(true);
     setOtpError(null);
     try {
-      // Simulate quick verification latency
-      await new Promise((r) => setTimeout(r, 600));
-
-      if (data.otp.length !== 6) {
+      if (!data.otp || data.otp.trim().length !== 6) {
         setOtpError("Please enter a valid 6-digit verification code");
         setOtpVerifying(false);
         return false;
       }
 
-      const activeUser = user || readStoredUser() || DEMO_USER;
-      const verifiedUser: AuthUser = {
-        ...activeUser,
-        email: data.email || activeUser.email,
-        emailVerified: true,
-      };
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      const res = await fetch(`${apiBase}/auth/verify-otp`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: data.email, otp: data.otp.trim() }),
+      });
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        const errorMsg =
+          resData.message ||
+          (Array.isArray(resData.errors) && resData.errors[0]?.message) ||
+          "Verification failed. Invalid or expired code.";
+        throw new Error(errorMsg);
+      }
 
-      const token = `token-${Date.now()}`;
-      saveToken(token);
-      saveStoredUser(verifiedUser);
-      setAccessToken(token);
-      setUser(verifiedUser);
+      const token = resData.data?.accessToken;
+      const verifiedUser = resData.data?.user;
+      if (token && verifiedUser) {
+        saveToken(token);
+        saveStoredUser(verifiedUser);
+        setAccessToken(token);
+        setUser(verifiedUser);
+      }
       setOtpVerifying(false);
       return true;
     } catch (err: unknown) {
@@ -279,13 +270,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const logoutUser = async () => {
-    clearToken();
-    clearStoredUser();
-    setUser(null);
-    setAccessToken(null);
-    setOtpSent(false);
-    if (typeof window !== "undefined") {
-      window.location.reload();
+    try {
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api/v1";
+      await fetch(`${apiBase}/auth/logout`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
+        credentials: "include",
+      }).catch(() => {});
+    } finally {
+      clearToken();
+      clearStoredUser();
+      setUser(null);
+      setAccessToken(null);
+      setOtpSent(false);
+      if (typeof window !== "undefined") {
+        window.location.reload();
+      }
     }
   };
 
@@ -318,14 +321,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     };
 
+    const base = user || readStoredUser();
+    if (base?.preferences?.personalityType) {
+      console.warn("Persona already allocated and locked.");
+      return;
+    }
     const target = personaMap[s] || personaMap.apex;
-    const base = user || readStoredUser() || DEMO_USER;
+    const userToUpdate = base || DEMO_USER;
 
     const updatedUser: AuthUser = {
-      ...base,
+      ...userToUpdate,
       preferences: {
         id: `pref-${s}`,
-        userId: base.id,
+        userId: userToUpdate.id,
         personalityTypeId: target.id,
         personalityType: {
           id: target.id,

@@ -169,20 +169,7 @@ function generateFallbackUser(email: string, firstName?: string, lastName?: stri
     emailVerified: true,
     authProvider: 'local',
     createdAt: new Date().toISOString(),
-    preferences: {
-      id: 'pref-apex',
-      userId: 'user-1',
-      personalityType: {
-        id: 'pt-apex',
-        name: 'APEX',
-        slug: 'apex',
-        cardImage: '/brand/APEX.webp',
-        colorHex: '#d8ac52',
-        description: 'You are Built to climb. Driven to go further.',
-        tagline: 'The Summit Chaser',
-        traits: ['RELENTLESS', 'CALCULATED', 'VISIONARY', 'UNSTOPPABLE'],
-      },
-    },
+    preferences: null,
   };
 }
 

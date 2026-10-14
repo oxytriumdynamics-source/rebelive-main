@@ -68,21 +68,7 @@ export const DEMO_USER: AuthUser = {
   avatarUrl: "/brand/panther_white_icon-transparent.webp",
   authProvider: "local",
   createdAt: "2025-11-14T09:20:00.000Z",
-  preferences: {
-    id: "pref-apex",
-    userId: "REBEL-8848",
-    personalityTypeId: "APEX",
-    personalityType: {
-      id: "APEX",
-      name: "APEX",
-      slug: "apex",
-      cardImage: "/brand/APEX.webp",
-      colorHex: "#d8ac52",
-      description: "You are Built to climb. Driven to go further. The peak isn't the end. It's proof you can go higher.",
-      tagline: "Ascend Without Limits",
-      traits: ["Relentless", "Summit Seeker", "High-Altitude Focus", "Zero Sugar"],
-    },
-  },
+  preferences: null,
 };
 
 const TOKEN_KEY = "accessToken";

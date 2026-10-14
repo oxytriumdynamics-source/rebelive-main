@@ -1,5 +1,5 @@
-import { ShopSkeleton } from '@/components/ui/Skeleton';
+import RebeliveLoader from '@/components/ui/RebeliveLoader';
 
 export default function ShopLoading() {
-  return <ShopSkeleton />;
+  return <RebeliveLoader />;
 }

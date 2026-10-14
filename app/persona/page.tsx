@@ -51,15 +51,27 @@ function PersonaContent() {
     }
   }, [dispatch, isAuthenticated]);
 
-  // Handle retake query param
+  // Prevent retake if already allocated
   useEffect(() => {
+    if (user?.preferences?.personalityType) {
+      const isRetake = searchParams.get("retake");
+      if (isRetake === "true" || stage === "quiz") {
+        router.replace("/profile");
+      }
+      return;
+    }
+
     const isRetake = searchParams.get("retake");
     if (isRetake === "true") {
       startTest();
     }
-  }, [searchParams]);
+  }, [searchParams, user, router, stage]);
 
   function startTest() {
+    if (user?.preferences?.personalityType) {
+      router.replace("/profile");
+      return;
+    }
     setSession(pickSession());
     setAnswers([]);
     setQIndex(0);

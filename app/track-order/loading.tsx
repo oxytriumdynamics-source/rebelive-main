@@ -1,5 +1,5 @@
-import { TrackOrderSkeleton } from '@/components/ui/Skeleton';
+import RebeliveLoader from '@/components/ui/RebeliveLoader';
 
 export default function TrackOrderLoading() {
-  return <TrackOrderSkeleton />;
+  return <RebeliveLoader />;
 }

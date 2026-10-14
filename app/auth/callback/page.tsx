@@ -54,6 +54,11 @@ function AuthCallbackInner() {
 
     const token = searchParams.get("token");
 
+    // Immediately scrub token from address bar and browser history to prevent referrer/log leakage
+    if (typeof window !== "undefined") {
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+
     if (!token) {
       router.replace("/auth?error=oauth_failed");
       return;
@@ -69,8 +74,9 @@ function AuthCallbackInner() {
         // is still here when we land on /auth/callback.
         if (typeof window !== "undefined") {
           const pending = sessionStorage.getItem("pendingPersona");
-          if (pending) {
-            sessionStorage.removeItem("pendingPersona");
+          const alreadyHas = Boolean(action.payload?.preferences?.personalityType);
+          sessionStorage.removeItem("pendingPersona");
+          if (pending && !alreadyHas) {
             await dispatch(claimPersona(pending.toLowerCase()));
           }
         }

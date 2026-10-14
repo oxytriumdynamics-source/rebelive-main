@@ -1,5 +1,5 @@
-import { ContactSkeleton } from '@/components/ui/Skeleton';
+import RebeliveLoader from '@/components/ui/RebeliveLoader';
 
 export default function ContactLoading() {
-  return <ContactSkeleton />;
+  return <RebeliveLoader />;
 }
