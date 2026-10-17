@@ -599,13 +599,13 @@ export default function ProductDetailPage() {
 
           {/* ── Product Hero: Two Column Grid (side-by-side on tablet/desktop, stacked on mobile) ── */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mt-4 sm:mt-8 md:mt-10 items-start">
-            {/* ── Left Column: Showcase & Photo Options (7 cols on desktop with side thumbnails) ── */}
-            <div className="md:col-span-6 lg:col-span-7 flex flex-col md:sticky md:top-24 md:z-20 self-start w-full">
+            {/* ── Left Column: Showcase & Photo Options (Compact & Balanced) ── */}
+            <div className="md:col-span-5 lg:col-span-5 flex flex-col md:sticky md:top-24 md:z-20 self-start w-full">
               {/* Flex wrapper holding Thumbnails on the left-top side and Main Showcase on the right */}
-              <div className="flex flex-row gap-3 sm:gap-4 lg:gap-5 items-start w-full">
+              <div className="flex flex-row gap-2.5 sm:gap-3.5 lg:gap-4 items-start w-full justify-center md:justify-start">
                 {/* ── Photo Options Thumbnails (Left Top Side of Main Image) ── */}
                 {galleryList.length > 1 && (
-                  <div className="flex flex-col gap-2.5 sm:gap-3 shrink-0 py-0.5 max-h-[580px] sm:max-h-[640px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="flex flex-col gap-2 sm:gap-2.5 shrink-0 py-0.5 max-h-[360px] xs:max-h-[380px] sm:max-h-[420px] md:max-h-[430px] lg:max-h-[450px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {galleryList.map((item, idx) => {
                       const isSelected = selectedPhotoIndex === idx;
                       return (
@@ -613,8 +613,8 @@ export default function ProductDetailPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setSelectedPhotoIndex(idx)}
-                          className={`group relative rounded-xl sm:rounded-2xl w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 shrink-0 p-1 sm:p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${isSelected
-                            ? 'bg-neutral-900 border-2 border-white scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white/50'
+                          className={`group relative rounded-lg sm:rounded-xl w-12 h-12 sm:w-13 sm:h-13 md:w-14 md:h-14 lg:w-15 lg:h-15 shrink-0 p-1 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${isSelected
+                            ? 'bg-neutral-900 border-2 border-white scale-[1.02] shadow-[0_0_15px_rgba(255,255,255,0.25)] ring-1 ring-white/50'
                             : 'bg-[#0e0e0e] border border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
                             }`}
                           title={item.label}
@@ -624,8 +624,8 @@ export default function ProductDetailPage() {
                               src={item.src}
                               alt={item.label}
                               fill
-                              sizes="(max-width: 640px) 60px, 80px"
-                              className="object-cover rounded-lg group-hover:scale-105 transition-transform"
+                              sizes="(max-width: 640px) 50px, 60px"
+                              className="object-cover rounded-md group-hover:scale-105 transition-transform"
                               unoptimized={item.src.startsWith('http')}
                             />
                           </div>
@@ -645,8 +645,8 @@ export default function ProductDetailPage() {
                   </div>
                 )}
 
-                {/* Main Can Showcase Card (Expanded flex-1) */}
-                <div className="relative flex-1 min-w-0 w-full aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
+                {/* Main Can Showcase Card (Compact & Proportionate) */}
+                <div className="relative flex-1 min-w-0 w-full max-w-[360px] xs:max-w-[390px] sm:max-w-[420px] md:max-w-[430px] lg:max-w-[450px] aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
                   {/* Edge Highlights */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
 
@@ -751,8 +751,8 @@ export default function ProductDetailPage() {
               </div>
             </div>
 
-            {/* ── Right Column: Specs, Pricing, Pack Selector & CTAs (5 cols on desktop) ── */}
-            <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-between mt-4 md:mt-0 w-full">
+            {/* ── Right Column: Specs, Pricing, Pack Selector & CTAs (7 cols on desktop) ── */}
+            <div className="md:col-span-7 lg:col-span-7 flex flex-col justify-between mt-4 md:mt-0 w-full">
               <div>
                 {/* Big Title & Flavor / Category Tag */}
                 <div className="mt-1 sm:mt-3">
