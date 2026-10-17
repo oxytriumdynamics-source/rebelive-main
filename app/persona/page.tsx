@@ -20,7 +20,6 @@ import { pickSession, scoreSession, Answer, ShuffledQuestion, ScoreResult } from
 import { Persona } from "@/data/questions";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { getMe } from "@/store/slices/authslice";
-import { PRODUCTS } from "@/data/products";
 
 type Stage = "landing" | "quiz" | "result" | "profile";
 

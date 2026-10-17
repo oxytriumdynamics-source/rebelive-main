@@ -21,7 +21,7 @@ import { PRICES, PackSize, Product } from '@/data/products';
 import { fetchProducts } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
+import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ShopSkeleton } from '@/components/ui/Skeleton';
 import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
@@ -99,6 +99,19 @@ export default function ShopPage() {
 
   const handleConfirmAddToCart = () => {
     if (!quickAddProduct) return;
+    const variantMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
+      ? quickAddProduct.variants.find((v) => {
+          const pack = Number(modalPack);
+          return (
+            v.sizeMl === pack * 250 ||
+            v.sizeMl === pack ||
+            v.sku.toUpperCase().includes(`PACK-${pack}`) ||
+            new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+          );
+        })
+      : null;
+    const finalPrice = variantMatch ? variantMatch.price : (PRICES[modalPack]?.price ?? 449);
+
     dispatch(
       addToCart({
         id: quickAddProduct.id,
@@ -107,7 +120,7 @@ export default function ShopPage() {
         image: quickAddProduct.image || quickAddProduct.canImage,
         packSize: modalPack,
         quantity: modalQty,
-        pricePerUnit: PRICES[modalPack].price,
+        pricePerUnit: finalPrice,
       })
     );
     setQuickAddProduct(null);
@@ -241,25 +254,46 @@ export default function ShopPage() {
 
                   {/* ── Lower Area: Starting Price + ADD TO CART Button ── */}
                   <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3.5 mt-auto">
-                    <div className="flex items-baseline justify-between mb-3">
-                      <div>
-                        <span className="text-[9.5px] text-white/40 uppercase font-mono block">
-                          STARTING AT
-                        </span>
-                        <div className="flex items-baseline gap-1.5">
-                          <span className="text-lg font-bold text-white tracking-tight font-mono">
-                            ₹449
-                          </span>
-                          <span className="text-[11px] text-white/35 line-through font-mono">
-                            ₹499
+                    {(() => {
+                      const startingVariant = (p.variants && p.variants.length > 0)
+                        ? p.variants.reduce((min, v) => (v.price < min.price ? v : min), p.variants[0])
+                        : null;
+                      const startingPrice = startingVariant?.price ?? p.startingPrice ?? 0;
+                      const startingMrp = startingVariant?.compareAtPrice ?? p.compareAtPrice ?? null;
+
+                      const packNumbers = (p.variants && p.variants.length > 0)
+                        ? p.variants.map((v) => {
+                            const match = v.name.match(/\b(3|6|9|12)\b/) || v.sku.match(/(?:PACK|PK)[-_]?(\d+)/i) || (v.sizeMl ? [null, Math.round(v.sizeMl / 250)] : null);
+                            return match ? Number(match[1]) : null;
+                          }).filter(Boolean) as number[]
+                        : [3, 6, 9, 12];
+                      const uniquePacks = [...new Set(packNumbers)].sort((a, b) => a - b);
+                      const packBadgeLabel = uniquePacks.length > 0 ? `PACK OF ${uniquePacks.join(', ')}` : 'PACK OF 3, 6, 9, 12';
+
+                      return (
+                        <div className="flex items-baseline justify-between mb-3">
+                          <div>
+                            <span className="text-[9.5px] text-white/40 uppercase font-mono block">
+                              STARTING AT
+                            </span>
+                            <div className="flex items-baseline gap-1.5">
+                              <span className="text-lg font-bold text-white tracking-tight font-mono">
+                                ₹{startingPrice.toLocaleString('en-IN')}
+                              </span>
+                              {startingMrp && startingMrp > startingPrice && (
+                                <span className="text-[11px] text-white/35 line-through font-mono">
+                                  ₹{startingMrp.toLocaleString('en-IN')}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+
+                          <span className="text-[9.5px] text-white/70 font-mono font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10">
+                            {packBadgeLabel}
                           </span>
                         </div>
-                      </div>
-
-                      <span className="text-[9.5px] text-white/70 font-mono font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10">
-                        PACK OF 3, 6, 9, 12
-                      </span>
-                    </div>
+                      );
+                    })()}
 
                     {/* Action Button: Click to Open Quick-Add Popup */}
                     <button
@@ -331,7 +365,20 @@ export default function ShopPage() {
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
                     {([3, 6, 9, 12] as PackSize[]).map((size) => {
                       const isSelected = modalPack === size;
-                      const info = PRICES[size];
+                      const varMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
+                        ? quickAddProduct.variants.find((v) => {
+                            const pack = Number(size);
+                            return (
+                              v.sizeMl === pack * 250 ||
+                              v.sizeMl === pack ||
+                              v.sku.toUpperCase().includes(`PACK-${pack}`) ||
+                              new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+                            );
+                          })
+                        : null;
+                      const displayPrice = varMatch?.price ?? PRICES[size]?.price ?? 449;
+                      const displayMrp = varMatch?.compareAtPrice ?? PRICES[size]?.mrp ?? 499;
+
                       return (
                         <button
                           key={size}
@@ -350,11 +397,13 @@ export default function ShopPage() {
                           </div>
                           <div className="my-1.5">
                             <span className="font-mono text-base font-black">
-                              ₹{info.price}
+                              ₹{displayPrice}
                             </span>
-                            <span className={`text-[10px] line-through ml-1 font-mono ${isSelected ? 'text-black/50' : 'text-white/40'}`}>
-                              ₹{info.mrp}
-                            </span>
+                            {displayMrp && displayMrp > displayPrice && (
+                              <span className={`text-[10px] line-through ml-1 font-mono ${isSelected ? 'text-black/50' : 'text-white/40'}`}>
+                                ₹{displayMrp}
+                              </span>
+                            )}
                           </div>
                         </button>
                       );
@@ -379,14 +428,29 @@ export default function ShopPage() {
                       if (!quickAddProduct) return;
                       try {
                         setIsInstantBuying(true);
+                        const varMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
+                          ? quickAddProduct.variants.find((v) => {
+                              const pack = Number(modalPack);
+                              return (
+                                v.sizeMl === pack * 250 ||
+                                v.sizeMl === pack ||
+                                v.sku.toUpperCase().includes(`PACK-${pack}`) ||
+                                new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+                              );
+                            })
+                          : null;
+                        const finalPrice = varMatch ? varMatch.price : (PRICES[modalPack]?.price ?? 449);
+                        const finalVarId = varMatch ? String(varMatch.id) : String(getVariantId(quickAddProduct.id, modalPack));
+
                         const itemToBuy = {
                           productId: quickAddProduct.id,
                           slug: quickAddProduct.id,
+                          variantId: finalVarId,
                           name: quickAddProduct.name,
                           flavor: quickAddProduct.flavor,
                           packSize: modalPack,
                           quantity: 1,
-                          unitPrice: PRICES[modalPack].price,
+                          unitPrice: finalPrice,
                           image: quickAddProduct.image || quickAddProduct.canImage,
                         };
                         setQuickAddProduct(null);

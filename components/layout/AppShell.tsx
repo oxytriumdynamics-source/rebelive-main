@@ -1,12 +1,10 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, Suspense } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
-import { PRODUCTS } from '@/data/products';
 import { soundEngine } from '@/lib/audio';
 import GlobalPhoneLinkManager from '@/components/auth/GlobalPhoneLinkManager';
 
@@ -74,7 +72,6 @@ export function AppShell({ children }: AppShellProps) {
       <MenuDrawer
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
-        products={PRODUCTS}
         selectedIndex={0}
         onSelectFlavor={() => {}}
         onOpenSpecs={() => {}}

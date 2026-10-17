@@ -23,7 +23,7 @@ import { AppShell } from "@/components/layout/AppShell";
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://rebelive.com'),
   title: {
-    default: 'REBELIVE | Wake. Fuel. Rebel. - Next-Gen Clean Energy Drink',
+    default: 'REBELIVE | Wake. Fuel. Rebel.',
     template: '%s | REBELIVE',
   },
   description:

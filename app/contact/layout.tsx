@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Headquarters, Inquiries & Support',
+  title: 'Contact Us | Inquiries & Support',
   description:
     'Reach out to REBELIVE headquarters. Inquiries for distribution, wholesale orders, retail stocking, athlete sponsorships, or customer support.',
   alternates: {

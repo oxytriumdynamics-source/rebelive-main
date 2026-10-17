@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
-import { PRODUCTS } from '@/data/products';
+import { fetchProducts } from '@/lib/productsApi';
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rebelive.com';
   const now = new Date();
 
@@ -93,8 +93,20 @@ export default function sitemap(): MetadataRoute.Sitemap {
     },
   ];
 
-  // Dynamic product routes
-  const productRoutes: MetadataRoute.Sitemap = PRODUCTS.map((product) => ({
+  // Dynamic product routes from live API
+  let productsList: { id: string }[] = [];
+  try {
+    const liveProducts = await fetchProducts();
+    if (liveProducts && liveProducts.length > 0) {
+      productsList = liveProducts;
+    } else {
+      productsList = [{ id: 'apex' }, { id: 'aviva' }, { id: 'capella' }, { id: 'variety' }];
+    }
+  } catch {
+    productsList = [{ id: 'apex' }, { id: 'aviva' }, { id: 'capella' }, { id: 'variety' }];
+  }
+
+  const productRoutes: MetadataRoute.Sitemap = productsList.map((product) => ({
     url: `${baseUrl}/shop/${product.id}`,
     lastModified: now,
     changeFrequency: 'weekly',

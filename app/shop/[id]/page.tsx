@@ -45,7 +45,7 @@ import {
 import { fetchProducts, fetchProductBySlug } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
+import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ProductDetailSkeleton } from '@/components/ui/Skeleton';
 import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
@@ -452,7 +452,36 @@ export default function ProductDetailPage() {
     };
   }, [isLightboxOpen, galleryList.length]);
 
-  const pricing = PRICES[packSize];
+  // Derive live variant matching the selected pack size from API
+  const activeVariant = useMemo(() => {
+    if (!product || !product.variants || product.variants.length === 0) return null;
+    const pack = Number(packSize);
+    return (
+      product.variants.find((v) => {
+        return (
+          v.sizeMl === pack * 250 ||
+          v.sizeMl === pack ||
+          (v.sku && (v.sku.toUpperCase().includes(`PACK-${pack}`) || v.sku.toUpperCase().includes(`${pack}PACK`))) ||
+          new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+        );
+      }) || product.variants[0]
+    );
+  }, [product, packSize]);
+
+  const activePrice = activeVariant?.price ?? PRICES[packSize]?.price ?? 449;
+  const activeMrp = activeVariant?.compareAtPrice ?? PRICES[packSize]?.mrp ?? activePrice;
+  const activeDiscount =
+    activeMrp > activePrice
+      ? `${Math.round(((activeMrp - activePrice) / activeMrp) * 100)}% OFF`
+      : (PRICES[packSize]?.discount || '');
+  const perCan = Math.round(activePrice / packSize);
+
+  const pricing = {
+    price: activePrice,
+    mrp: activeMrp,
+    perCan,
+    discount: activeDiscount,
+  };
   const totalPrice = pricing.price * quantity;
   const isVariety = product?.id === 'variety';
 
@@ -488,6 +517,7 @@ export default function ProductDetailPage() {
         {
           productId: product.id,
           slug: product.id,
+          variantId: activeVariant ? String(activeVariant.id) : getVariantId(product.id, packSize),
           name: product.name,
           flavor: product.flavor,
           packSize,
@@ -720,14 +750,10 @@ export default function ProductDetailPage() {
                     {product.name}
                   </h1>
                   <p className="text-xs sm:text-sm md:text-base font-semibold text-white/70 mt-1 uppercase tracking-wider font-mono">
-                    {['apex', 'capella', 'aviva'].includes(product.id.toLowerCase())
-                      ? 'FUNCTIONAL BEVERAGE'
-                      : product.flavor}
+                    {product.tagline || product.flavor || 'FUNCTIONAL BEVERAGE'}
                   </p>
                   <p className="text-xs sm:text-sm text-white/75 mt-2 font-light leading-relaxed max-w-xl">
-                    {['apex', 'capella', 'aviva'].includes(product.id.toLowerCase())
-                      ? 'Rebelive functional beverage is a zero-added-sugar functional beverage crafted to support sustained energy, focus, stress management, hydration, and gut health. Powered by natural caffeine, L-theanine, Ashwagandha, magnesium, electrolytes, vitamins, prebiotics, and probiotics, it’s designed to help you stay energized, balanced, and ready for whatever comes next.'
-                      : product.description}
+                    {product.description}
                   </p>
                 </div>
 
@@ -739,12 +765,16 @@ export default function ProductDetailPage() {
                         <span className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight font-mono">
                           ₹{pricing.price.toLocaleString('en-IN')}
                         </span>
-                        <span className="text-xs sm:text-sm text-white/40 line-through font-mono">
-                          ₹{pricing.mrp.toLocaleString('en-IN')}
-                        </span>
-                        <span className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-bold tracking-wider uppercase border border-white/15 font-mono">
-                          {pricing.discount}
-                        </span>
+                        {pricing.mrp > pricing.price && (
+                          <span className="text-xs sm:text-sm text-white/40 line-through font-mono">
+                            ₹{pricing.mrp.toLocaleString('en-IN')}
+                          </span>
+                        )}
+                        {pricing.discount ? (
+                          <span className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-bold tracking-wider uppercase border border-white/15 font-mono">
+                            {pricing.discount}
+                          </span>
+                        ) : null}
                       </div>
                       <p className="text-[10px] sm:text-[11px] text-white/50 mt-0.5 font-mono">
                         Includes all taxes
@@ -760,7 +790,16 @@ export default function ProductDetailPage() {
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-2.5">
                       {([3, 6, 9, 12] as PackSize[]).map((size) => {
                         const isSelected = packSize === size;
-                        const info = PRICES[size];
+                        const vMatch = product.variants?.find((v) => {
+                          return (
+                            v.sizeMl === size * 250 ||
+                            v.sizeMl === size ||
+                            (v.sku && (v.sku.toUpperCase().includes(`PACK-${size}`) || v.sku.toUpperCase().includes(`${size}PACK`))) ||
+                            new RegExp(`\\b${size}\\b`, 'i').test(v.name)
+                          );
+                        });
+                        const sizePrice = vMatch ? vMatch.price : (PRICES[size]?.price ?? 449);
+                        const sizePerCan = Math.round(sizePrice / size);
                         return (
                           <button
                             key={size}
@@ -777,10 +816,10 @@ export default function ProductDetailPage() {
                               Pack of {size}
                             </div>
                             <div className="text-[11px] mt-1 font-semibold opacity-90 font-mono">
-                              ₹{info.price.toLocaleString('en-IN')}
+                              ₹{sizePrice.toLocaleString('en-IN')}
                             </div>
                             <div className="text-[9px] font-mono opacity-70 mt-0.5">
-                              ₹{info.perCan}/can
+                              ₹{sizePerCan}/can
                             </div>
                           </button>
                         );

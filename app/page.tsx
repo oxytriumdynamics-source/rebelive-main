@@ -3,7 +3,8 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
-import { PRODUCTS } from '@/data/products';
+import { Product } from '@/data/products';
+import { fetchProducts } from '@/lib/productsApi';
 import { ProductScene } from '@/components/product/ProductScene';
 import { FlavorCarouselOverlay } from '@/components/hero/FlavorCarouselOverlay';
 import { PodiumOverlays } from '@/components/hero/PodiumOverlays';
@@ -88,6 +89,7 @@ export default function App() {
   const router = useRouter();
 
   // ── Core State ───────────────────────────────────────────────────────
+  const [productsList, setProductsList] = useState<Product[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [targetOffset, setTargetOffset] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -96,6 +98,16 @@ export default function App() {
   const [isMobile, setIsMobile] = useState(false);
   const [isTablet, setIsTablet] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
+
+  // Fetch live products from backend MongoDB API
+  useEffect(() => {
+    fetchProducts().then((data) => {
+      if (data && data.length > 0) {
+        const flagships = data.filter((p) => p.id !== 'variety');
+        setProductsList(flagships.length > 0 ? flagships : data);
+      }
+    });
+  }, []);
 
   // Sync sound status with SoundEngine singleton
   useEffect(() => {
@@ -737,30 +749,35 @@ export default function App() {
     soundEngine.playClick();
   }, []);
 
+  const activeProducts = productsList;
+  const numProducts = activeProducts.length;
+
   const handleNextFlavor = useCallback(() => {
-    const next = (selectedIndex + 1) % PRODUCTS.length;
+    if (numProducts === 0) return;
+    const next = (selectedIndex + 1) % numProducts;
     setSelectedIndex(next);
     setTargetOffset((p) => p + 1);
     setRotationVelocity(1.8);
     setTimeout(() => setRotationVelocity(0), 350);
     soundEngine.playClick();
-  }, [selectedIndex]);
+  }, [selectedIndex, numProducts]);
 
   const handlePrevFlavor = useCallback(() => {
-    const prev = (selectedIndex - 1 + PRODUCTS.length) % PRODUCTS.length;
+    if (numProducts === 0) return;
+    const prev = (selectedIndex - 1 + numProducts) % numProducts;
     setSelectedIndex(prev);
     setTargetOffset((p) => p - 1);
     setRotationVelocity(-1.8);
     setTimeout(() => setRotationVelocity(0), 350);
     soundEngine.playClick();
-  }, [selectedIndex]);
+  }, [selectedIndex, numProducts]);
 
   // Keep refs current so the wheel handler (empty-dep effect) can call the latest version
   useEffect(() => { handleNextFlavorRef.current = handleNextFlavor; }, [handleNextFlavor]);
   useEffect(() => { handlePrevFlavorRef.current = handlePrevFlavor; }, [handlePrevFlavor]);
 
   // ── Derived state ────────────────────────────────────────────────────
-  const currentProduct = PRODUCTS[selectedIndex];
+  const currentProduct = numProducts > 0 ? activeProducts[selectedIndex % numProducts] : null;
 
   // Panel opacities (all clamped 0–1)
   const heroOpacity = 1 - lerpClamp(scrollProgress, PHASES.HERO_FADE_START, PHASES.HERO_FADE_END);
@@ -830,7 +847,7 @@ export default function App() {
         className="fixed inset-0 z-0 pointer-events-none"
       >
         <AtmosphericBackground
-          currentProduct={currentProduct}
+          currentProduct={currentProduct || undefined}
           isMobile={isMobile}
         />
       </motion.div>
@@ -840,7 +857,7 @@ export default function App() {
         opacity={statementOpacity}
         scrollProgress={scrollProgress}
         mousePosition={mousePosition}
-        product={currentProduct}
+        product={currentProduct || undefined}
         isMobile={isMobile}
         isTablet={isTablet}
       />
@@ -875,18 +892,20 @@ export default function App() {
       </div>
 
       {/* ── 3D Product Scene (z-10, can sits in front of ZERO BULLSHIT text) ── */}
-      <ProductScene
-        products={PRODUCTS}
-        selectedIndex={selectedIndex}
-        carouselOffset={targetOffset}
-        scrollProgress={scrollProgress}
-        rotationVelocity={rotationVelocity}
-        mousePosition={mousePosition}
-        isMobile={isMobile}
-        isTablet={isTablet}
-        isPageReady={isPageReady}
-        onSelectFlavor={handleSelectFlavor}
-      />
+      {numProducts > 0 && (
+        <ProductScene
+          products={activeProducts}
+          selectedIndex={selectedIndex}
+          carouselOffset={targetOffset}
+          scrollProgress={scrollProgress}
+          rotationVelocity={rotationVelocity}
+          mousePosition={mousePosition}
+          isMobile={isMobile}
+          isTablet={isTablet}
+          isPageReady={isPageReady}
+          onSelectFlavor={handleSelectFlavor}
+        />
+      )}
 
       {/* ── Fixed Panel: HERO (z-30) ──────────────────────────────── */}
       <div
@@ -897,18 +916,20 @@ export default function App() {
           visibility: heroOpacity > 0.005 ? 'visible' : 'hidden',
         }}
       >
-        <FlavorCarouselOverlay
-          products={PRODUCTS}
-          selectedIndex={selectedIndex}
-          scrollProgress={scrollProgress}
-          isPageReady={isPageReady}
-          soundEnabled={soundEnabled}
-          onToggleSound={handleToggleSound}
-          onPrevFlavor={handlePrevFlavor}
-          onNextFlavor={handleNextFlavor}
-          onSelectFlavor={handleSelectFlavor}
-          onOrderNow={handleOrderNow}
-        />
+        {numProducts > 0 && (
+          <FlavorCarouselOverlay
+            products={activeProducts}
+            selectedIndex={selectedIndex}
+            scrollProgress={scrollProgress}
+            isPageReady={isPageReady}
+            soundEnabled={soundEnabled}
+            onToggleSound={handleToggleSound}
+            onPrevFlavor={handlePrevFlavor}
+            onNextFlavor={handleNextFlavor}
+            onSelectFlavor={handleSelectFlavor}
+            onOrderNow={handleOrderNow}
+          />
+        )}
       </div>
 
       {/* ── Fixed Panel: PRODUCT DETAILS (z-25) ───────────────────── */}
@@ -920,18 +941,20 @@ export default function App() {
           visibility: detailsOpacity > 0.005 ? 'visible' : 'hidden',
         }}
       >
-        <ProductDetails
-          product={currentProduct}
-          products={PRODUCTS}
-          selectedIndex={selectedIndex}
-          activeFeatureIndex={activeFeatureIndex}
-          onPrevFlavor={handlePrevFlavor}
-          onNextFlavor={handleNextFlavor}
-          onSelectFlavor={handleSelectFlavor}
-          onOrderNow={handleOrderNow}
-          onOpenSpecs={() => setIsSpecsOpen(true)}
-          onSelectFeature={(idx) => goToSection(idx + 1)}
-        />
+        {currentProduct && (
+          <ProductDetails
+            product={currentProduct}
+            products={activeProducts}
+            selectedIndex={selectedIndex}
+            activeFeatureIndex={activeFeatureIndex}
+            onPrevFlavor={handlePrevFlavor}
+            onNextFlavor={handleNextFlavor}
+            onSelectFlavor={handleSelectFlavor}
+            onOrderNow={handleOrderNow}
+            onOpenSpecs={() => setIsSpecsOpen(true)}
+            onSelectFeature={(idx) => goToSection(idx + 1)}
+          />
+        )}
       </div>
 
       {/* ── Fixed Panel: STATEMENT (z-25) ─────────────────────────── */}
@@ -942,15 +965,17 @@ export default function App() {
           visibility: statementOpacity > 0.005 ? 'visible' : 'hidden',
         }}
       >
-        <StatementSection
-          product={currentProduct}
-          onOrderNow={handleOrderNow}
-        />
+        {currentProduct && (
+          <StatementSection
+            product={currentProduct}
+            onOrderNow={handleOrderNow}
+          />
+        )}
       </div>
 
       {/* ── Fixed Floating Quick Bar (Flavor Dots + Order CTA) across Details & Statement phases (z-30) ── */}
       <AnimatePresence>
-        {scrollProgress >= 0.12 && scrollProgress <= 0.77 && activeSection <= 6 && (
+        {scrollProgress >= 0.12 && scrollProgress <= 0.77 && activeSection <= 6 && numProducts > 0 && (
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: 1, y: 0 }}
@@ -960,7 +985,7 @@ export default function App() {
           >
             {/* Flavor Selector Dots with Translucent Glass */}
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-white/15 bg-neutral-950/70 backdrop-blur-xl shadow-[0_12px_40px_rgba(0,0,0,0.6),inset_0_1px_0_rgba(255,255,255,0.12)]">
-              {PRODUCTS.map((p, idx) => (
+              {activeProducts.map((p, idx) => (
                 <button
                   key={p.id}
                   onClick={() => handleSelectFlavor(idx)}
@@ -973,12 +998,14 @@ export default function App() {
                   aria-label={p.name}
                 />
               ))}
-              <span
-                className="text-[10px] text-white/80 tracking-wider font-semibold ml-1.5 uppercase"
-                style={{ fontFamily: "'Poppins', sans-serif" }}
-              >
-                {currentProduct.name}
-              </span>
+              {currentProduct && (
+                <span
+                  className="text-[10px] text-white/80 tracking-wider font-semibold ml-1.5 uppercase"
+                  style={{ fontFamily: "'Poppins', sans-serif" }}
+                >
+                  {currentProduct.name}
+                </span>
+              )}
             </div>
 
             {/* Order button (Poppins) */}
@@ -1012,11 +1039,13 @@ export default function App() {
         <SubFooter />
       </div>
 
-      <SpecsModal
-        isOpen={isSpecsOpen}
-        onClose={() => setIsSpecsOpen(false)}
-        product={currentProduct}
-      />
+      {currentProduct && (
+        <SpecsModal
+          isOpen={isSpecsOpen}
+          onClose={() => setIsSpecsOpen(false)}
+          product={currentProduct}
+        />
+      )}
 
 
     </div>

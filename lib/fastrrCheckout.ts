@@ -88,6 +88,29 @@ export interface FastrrCheckoutItem {
   image?: string;
 }
 
+export const PRODUCT_VARIANT_MAP: Record<string, Record<number, number>> = {
+  apex: { 3: 101, 6: 102, 9: 103, 12: 104 },
+  aviva: { 3: 105, 6: 106, 9: 107, 12: 108 },
+  capella: { 3: 109, 6: 110, 9: 111, 12: 112 },
+  variety: { 3: 113, 6: 114, 9: 115, 12: 116 },
+};
+
+export const PACK_PRICES: Record<number, number> = {
+  3: 449,
+  6: 799,
+  9: 1149,
+  12: 1499,
+};
+
+export function getVariantId(productIdOrSlug?: string, packSize: number = 6): number {
+  if (!productIdOrSlug) return 102;
+  const key = productIdOrSlug.toLowerCase().trim();
+  if (key.includes('trio') || key.includes('variety')) {
+    return PRODUCT_VARIANT_MAP.variety[packSize] || 114;
+  }
+  return PRODUCT_VARIANT_MAP[key]?.[packSize] || PRODUCT_VARIANT_MAP.apex[packSize] || 102;
+}
+
 /**
  * Generates token from backend and triggers the native Shiprocket Fastrr Instant Checkout UI directly.
  */
@@ -112,6 +135,13 @@ export async function launchFastrrCheckout(
   document.body.style.overflow = '';
 
   const fallbackUrl = `${window.location.origin}/order-confirmation`;
+
+  // Sync active checkout items into cookie so Shopify headless cart endpoints (/cart.js, /cart.json) stay 100% synchronized
+  try {
+    document.cookie = `rebelive_fastrr_items=${encodeURIComponent(
+      JSON.stringify(items)
+    )}; path=/; max-age=3600; SameSite=Lax`;
+  } catch {}
 
   // 1. Ensure assets are loaded
   await ensureFastrrAssetsLoaded();
@@ -145,15 +175,26 @@ export async function launchFastrrCheckout(
         ...(authBearerToken ? { Authorization: `Bearer ${authBearerToken}` } : {}),
       },
       body: JSON.stringify({
-        items: items.map((i) => ({
-          name: i.name,
-          flavor: i.flavor,
-          quantity: i.quantity || 1,
-          unitPrice: i.unitPrice || 499,
-          variantId: String(i.variantId || i.productId || '101'),
-          packSize: i.packSize || 6,
-          image: i.image,
-        })),
+        items: items.map((i) => {
+          const resolvedSlug = i.slug || (typeof i.productId === 'string' ? i.productId : undefined);
+          const resolvedPack = i.packSize || 6;
+          const resolvedPrice = i.unitPrice && i.unitPrice > 0 ? i.unitPrice : (PACK_PRICES[resolvedPack] || 799);
+          const resolvedVariantId = i.variantId && /^\d+$/.test(String(i.variantId))
+            ? String(i.variantId)
+            : String(getVariantId(resolvedSlug, resolvedPack));
+
+          return {
+            productId: i.productId,
+            slug: resolvedSlug,
+            name: i.name,
+            flavor: i.flavor,
+            quantity: i.quantity || 1,
+            unitPrice: resolvedPrice,
+            variantId: resolvedVariantId,
+            packSize: resolvedPack,
+            image: i.image,
+          };
+        }),
         couponCode,
         customer: customerPrefill,
         redirectUrl: fallbackUrl,

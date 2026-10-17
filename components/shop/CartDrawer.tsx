@@ -11,7 +11,7 @@ import {
   removeFromCart,
   clearCart,
 } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
+import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
 
 export function CartDrawer() {
   const dispatch = useAppDispatch();
@@ -27,7 +27,8 @@ export function CartDrawer() {
         e,
         items.map((i) => ({
           productId: i.id,
-          variantId: i.id,
+          slug: i.id,
+          variantId: getVariantId(i.id, i.packSize),
           name: i.name,
           flavor: i.flavor,
           packSize: i.packSize,

@@ -1,14 +1,14 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Shop Clean Bio-Energy Drinks | APEX, CAPELLA, AVIVA',
+  title: 'Shop | APEX, CAPELLA, AVIVA',
   description:
-    'Order authentic REBELIVE bio-energy crates online. Zero sugar, clean caffeine, functional nootropics. Choose 3, 6, 9, or 12 packs in Peach Crisp, Berry Citrus, Sakura Blossom, or The Rebel Trio.',
+    'Order authentic REBELIVE crates online. Zero sugar, clean caffeine, functional nootropics. Choose 3, 6, 9, or 12 packs.',
   alternates: {
     canonical: '/shop',
   },
   openGraph: {
-    title: 'Shop REBELIVE Bio-Energy Crates',
+    title: 'Shop REBELIVE ',
     description:
       'Zero sugar, clean functional nootropics, and unrelenting focus. Order 3, 6, 9, or 12-pack crates online.',
     url: 'https://rebelive.com/shop',

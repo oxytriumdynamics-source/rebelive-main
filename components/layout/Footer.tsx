@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
 import { ArrowRight } from 'lucide-react';
-import { Product, PRODUCTS } from '../../data/products';
+import { Product } from '../../data/products';
 
 
 
@@ -42,7 +42,7 @@ const FacebookIcon: React.FC<{ className?: string }> = ({ className = 'w-4 h-4' 
 );
 
 export const Footer: React.FC<FooterProps> = ({
-  products = PRODUCTS,
+  products = [],
   onSelectFlavor,
   onOpenSpecs,
   onOpenContact,

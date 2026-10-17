@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-import { PRODUCTS, PRICES } from '@/data/products';
+import { fetchProductBySlug } from '@/lib/productsApi';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -12,9 +12,7 @@ export async function generateMetadata({
   params: Promise<{ id: string }>;
 }): Promise<Metadata> {
   const { id } = await params;
-  const product = PRODUCTS.find(
-    (p) => p.id.toLowerCase() === id.toLowerCase() || p.flavor.toLowerCase().includes(id.toLowerCase())
-  );
+  const product = await fetchProductBySlug(id);
 
   if (!product) {
     return {
@@ -24,9 +22,9 @@ export async function generateMetadata({
     };
   }
 
-  const title = `${product.displayTitle} (${product.flavor}) | Bio-Energy Drink`;
+  const title = `${product.displayTitle || product.name} (${product.flavor || 'Functional'})`;
   const description = `${product.description} Zero Sugar, ${product.caffeine} clean caffeine, functional nootropics. Engineered without compromise.`;
-  const imgUrl = product.renderImage || product.image || '/brand/APEX.webp';
+  const imgUrl = product.renderImage || product.image || product.canImage || '/brand/APEX.webp';
 
   return {
     title,
@@ -35,7 +33,7 @@ export async function generateMetadata({
       canonical: `/shop/${product.id}`,
     },
     openGraph: {
-      title: `${product.displayTitle} - ${product.tagline} | REBELIVE`,
+      title: `${product.displayTitle || product.name} - ${product.tagline || 'Functional Beverage'} | REBELIVE`,
       description,
       url: `https://rebelive.com/shop/${product.id}`,
       siteName: 'REBELIVE',
@@ -52,7 +50,7 @@ export async function generateMetadata({
     },
     twitter: {
       card: 'summary_large_image',
-      title: `${product.displayTitle} - ${product.tagline} | REBELIVE`,
+      title: `${product.displayTitle || product.name} - ${product.tagline || 'Functional Beverage'} | REBELIVE`,
       description,
       images: [imgUrl],
     },
@@ -64,16 +62,14 @@ export default async function ProductLayout({
   params,
 }: Props) {
   const { id } = await params;
-  const product = PRODUCTS.find(
-    (p) => p.id.toLowerCase() === id.toLowerCase() || p.flavor.toLowerCase().includes(id.toLowerCase())
-  );
+  const product = await fetchProductBySlug(id);
 
   const jsonLd = product
     ? {
         '@context': 'https://schema.org',
         '@type': 'Product',
         name: product.name,
-        image: `https://rebelive.com${product.renderImage || product.image || '/brand/APEX.webp'}`,
+        image: `https://rebelive.com${product.renderImage || product.image || product.canImage || '/brand/APEX.webp'}`,
         description: product.description,
         brand: {
           '@type': 'Brand',
@@ -83,7 +79,7 @@ export default async function ProductLayout({
           '@type': 'Offer',
           url: `https://rebelive.com/shop/${product.id}`,
           priceCurrency: 'INR',
-          price: PRICES[12].price,
+          price: product.startingPrice || 449,
           availability: 'https://schema.org/InStock',
           seller: {
             '@type': 'Organization',

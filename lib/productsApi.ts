@@ -317,20 +317,56 @@ function formatServerProduct(raw: any): Product {
     nutrition: Array.isArray(raw.nutrition) ? raw.nutrition : [],
     gallery:
       Array.isArray(raw.gallery) && raw.gallery.length > 0
-        ? raw.gallery
-        : Array.isArray(raw.images)
+        ? raw.gallery.map((g: any, idx: number) => ({
+            id: String(g.id || `gallery-${idx}`),
+            label: g.label || `Angle ${idx + 1}`,
+            src: typeof g === 'string' ? g : (g.src || g.url || ''),
+            type: (g.type || 'render') as ('render' | 'wrap' | 'logo' | 'mood'),
+          }))
+        : Array.isArray(raw.images) && raw.images.length > 0
         ? raw.images.map((img: any, idx: number) => ({
             id: String(img.id || idx),
             label: img.label || `Angle ${idx + 1}`,
-            src: img.url || img,
-            type: 'render' as const,
+            src: img.url || img.src || img,
+            type: 'render' as ('render' | 'wrap' | 'logo' | 'mood'),
           }))
-        : [],
+        : [
+            raw.canImage ? { id: 'hero', label: 'Can Hero', src: raw.canImage, type: 'render' as const } : null,
+            raw.image ? { id: 'secondary', label: 'Secondary View', src: raw.image, type: 'render' as const } : null,
+            raw.renderImage ? { id: 'wrap', label: '360° Wrap', src: raw.renderImage, type: 'wrap' as const } : null,
+          ].filter(Boolean),
     specs: raw.specs || {},
     netQuantity: raw.netQuantity || '250 ml',
     isVegetarian: raw.isVegetarian !== undefined ? raw.isVegetarian : true,
     ingredients: raw.ingredients || '',
     nutritionInfo: raw.nutritionInfo || null,
     additionalInfo: raw.additionalInfo || null,
+    variants: Array.isArray(raw.variants)
+      ? raw.variants.map((v: any) => ({
+          id: String(v.id),
+          productId: String(v.productId || ''),
+          sku: v.sku || '',
+          name: v.name || '',
+          sizeMl: typeof v.sizeMl === 'number' ? v.sizeMl : null,
+          price: Number(v.price) || 0,
+          compareAtPrice: v.compareAtPrice ? Number(v.compareAtPrice) : null,
+          stockQty: typeof v.stockQty === 'number' ? v.stockQty : 0,
+          isDefault: Boolean(v.isDefault),
+          isActive: v.isActive !== undefined ? Boolean(v.isActive) : true,
+        }))
+      : [],
+    startingPrice:
+      Array.isArray(raw.variants) && raw.variants.length > 0
+        ? Math.min(...raw.variants.map((v: any) => Number(v.price) || 9999))
+        : (Number(raw.price) || 0),
+    compareAtPrice:
+      Array.isArray(raw.variants) && raw.variants.length > 0
+        ? (() => {
+            const sorted = [...raw.variants].sort(
+              (a: any, b: any) => (Number(a.price) || 0) - (Number(b.price) || 0)
+            );
+            return sorted[0]?.compareAtPrice ? Number(sorted[0].compareAtPrice) : null;
+          })()
+        : (raw.compareAtPrice ? Number(raw.compareAtPrice) : null),
   };
 }
