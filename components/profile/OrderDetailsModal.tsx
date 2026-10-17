@@ -302,20 +302,33 @@ export default function OrderDetailsModal({
               {order.shippingAddress ? (
                 <div className="font-sans text-xs text-white/80 space-y-0.5">
                   <p className="font-mono text-[10px] text-white font-semibold uppercase">
-                    {(order.shippingAddress as any).billing_customer_name || (order.shippingAddress as any).name || (order.shippingAddress as any).label || "Delivery Destination"}
+                    {(order.shippingAddress as any).fullName || (order.shippingAddress as any).shipping_customer_name || (order.shippingAddress as any).billing_customer_name || "Delivery Destination"}
                   </p>
-                  <p>{(order.shippingAddress as any).billing_address || (order.shippingAddress as any).line1}</p>
-                  {((order.shippingAddress as any).billing_address_2 || (order.shippingAddress as any).line2) && (
-                    <p>{(order.shippingAddress as any).billing_address_2 || (order.shippingAddress as any).line2}</p>
+                  <p>{(order.shippingAddress as any).line1 || (order.shippingAddress as any).shipping_address || (order.shippingAddress as any).billing_address}</p>
+                  {((order.shippingAddress as any).line2 || (order.shippingAddress as any).shipping_address_2 || (order.shippingAddress as any).billing_address_2) && (
+                    <p>{(order.shippingAddress as any).line2 || (order.shippingAddress as any).shipping_address_2 || (order.shippingAddress as any).billing_address_2}</p>
                   )}
                   <p>
-                    {(order.shippingAddress as any).billing_city || (order.shippingAddress as any).city},{" "}
-                    {(order.shippingAddress as any).billing_state || (order.shippingAddress as any).state} -{" "}
-                    {(order.shippingAddress as any).billing_pincode || (order.shippingAddress as any).postalCode}
+                    {(order.shippingAddress as any).city || (order.shippingAddress as any).shipping_city || (order.shippingAddress as any).billing_city},{" "}
+                    {(order.shippingAddress as any).state || (order.shippingAddress as any).shipping_state || (order.shippingAddress as any).billing_state} -{" "}
+                    {(order.shippingAddress as any).pincode || (order.shippingAddress as any).postalCode || (order.shippingAddress as any).shipping_pincode || (order.shippingAddress as any).billing_pincode}
                   </p>
                   <p className="font-mono text-[9px] text-white/50 uppercase">
-                    {(order.shippingAddress as any).billing_country || (order.shippingAddress as any).country || "India"}
+                    {(order.shippingAddress as any).country || (order.shippingAddress as any).shipping_country || (order.shippingAddress as any).billing_country || "India"}
                   </p>
+                  {(order.shippingAddress as any).billing_address &&
+                   (order.shippingAddress as any).billing_address !== (order.shippingAddress as any).line1 &&
+                   (order.shippingAddress as any).billing_address !== (order.shippingAddress as any).shipping_address && (
+                    <div className="pt-2 border-t border-white/5 mt-1.5 text-[11px] text-white/60">
+                      <span className="font-mono text-[9px] text-white/40 uppercase block">Billing Address:</span>
+                      <p>
+                        {(order.shippingAddress as any).billing_address}
+                        {(order.shippingAddress as any).billing_address_2 ? `, ${(order.shippingAddress as any).billing_address_2}` : ''}
+                        {(order.shippingAddress as any).billing_city ? `, ${(order.shippingAddress as any).billing_city}` : ''}
+                        {(order.shippingAddress as any).billing_pincode ? ` - ${(order.shippingAddress as any).billing_pincode}` : ''}
+                      </p>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <p className="font-mono text-xs text-white/50">

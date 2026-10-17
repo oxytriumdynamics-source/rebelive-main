@@ -408,18 +408,24 @@ export default function OrderDetailsPage() {
                   <div>
                     <span className="text-[10px] text-white/40 block uppercase">Full Name</span>
                     <span className="font-bold text-white block">
-                      {order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Guest Customer'}
+                      {order.shippingAddress?.fullName || order.shippingAddress?.billing_customer_name
+                        ? `${order.shippingAddress?.billing_customer_name || ''} ${order.shippingAddress?.billing_last_name || ''}`.trim() || order.shippingAddress?.fullName
+                        : order.user ? `${order.user.firstName} ${order.user.lastName}` : 'Guest Customer'}
                     </span>
                   </div>
 
                   <div>
                     <span className="text-[10px] text-white/40 block uppercase">Email Address</span>
-                    <span className="text-white/80 block">{order.user?.email || 'N/A'}</span>
+                    <span className="text-white/80 block">
+                      {order.shippingAddress?.email || order.shippingAddress?.billing_email || order.user?.email || 'N/A'}
+                    </span>
                   </div>
 
                   <div>
                     <span className="text-[10px] text-white/40 block uppercase">Phone Number</span>
-                    <span className="text-white/80 block">{order.user?.phone || 'No phone provided'}</span>
+                    <span className="text-white/80 block">
+                      {order.shippingAddress?.phone || order.shippingAddress?.billing_phone || order.user?.phone || 'No phone provided'}
+                    </span>
                   </div>
 
                   <div>
@@ -442,10 +448,14 @@ export default function OrderDetailsPage() {
                   {order.shippingAddress ? (
                     <>
                       <div>
-                        <span className="text-[10px] text-white/40 block uppercase">Street Address</span>
-                        <p className="text-white font-medium">{order.shippingAddress.line1}</p>
-                        {order.shippingAddress.line2 && (
-                          <p className="text-white/60">{order.shippingAddress.line2}</p>
+                        <span className="text-[10px] text-white/40 block uppercase">Delivery Street Address</span>
+                        <p className="text-white font-medium">
+                          {order.shippingAddress.line1 || order.shippingAddress.shipping_address || order.shippingAddress.billing_address}
+                        </p>
+                        {(order.shippingAddress.line2 || order.shippingAddress.shipping_address_2 || order.shippingAddress.billing_address_2) && (
+                          <p className="text-white/60">
+                            {order.shippingAddress.line2 || order.shippingAddress.shipping_address_2 || order.shippingAddress.billing_address_2}
+                          </p>
                         )}
                       </div>
 
@@ -453,19 +463,38 @@ export default function OrderDetailsPage() {
                         <div>
                           <span className="text-[10px] text-white/40 block uppercase">City & State</span>
                           <span className="text-white/80 block">
-                            {order.shippingAddress.city}, {order.shippingAddress.state}
+                            {order.shippingAddress.city || order.shippingAddress.shipping_city || order.shippingAddress.billing_city},{' '}
+                            {order.shippingAddress.state || order.shippingAddress.shipping_state || order.shippingAddress.billing_state}
                           </span>
                         </div>
                         <div>
                           <span className="text-[10px] text-white/40 block uppercase">Postal Code</span>
-                          <span className="font-bold text-white block">{order.shippingAddress.postalCode}</span>
+                          <span className="font-bold text-white block">
+                            {order.shippingAddress.pincode || order.shippingAddress.postalCode || order.shippingAddress.shipping_pincode || order.shippingAddress.billing_pincode}
+                          </span>
                         </div>
                       </div>
 
                       <div>
                         <span className="text-[10px] text-white/40 block uppercase">Country</span>
-                        <span className="text-white/80 block">{order.shippingAddress.country || 'India'}</span>
+                        <span className="text-white/80 block">
+                          {order.shippingAddress.country || order.shippingAddress.shipping_country || order.shippingAddress.billing_country || 'India'}
+                        </span>
                       </div>
+
+                      {order.shippingAddress.billing_address &&
+                       order.shippingAddress.billing_address !== order.shippingAddress.line1 &&
+                       order.shippingAddress.billing_address !== order.shippingAddress.shipping_address && (
+                        <div className="pt-2 border-t border-white/5 mt-2">
+                          <span className="text-[10px] text-white/40 block uppercase">Billing Address</span>
+                          <p className="text-white/70 text-xs mt-0.5">
+                            {order.shippingAddress.billing_address}
+                            {order.shippingAddress.billing_address_2 ? `, ${order.shippingAddress.billing_address_2}` : ''}
+                            {order.shippingAddress.billing_city ? `, ${order.shippingAddress.billing_city}` : ''}
+                            {order.shippingAddress.billing_pincode ? ` - ${order.shippingAddress.billing_pincode}` : ''}
+                          </p>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <p className="text-white/40">Standard Pan-India Express Delivery</p>

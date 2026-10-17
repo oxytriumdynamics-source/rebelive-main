@@ -487,10 +487,16 @@ export function RootOrdersTab() {
                   <User className="w-3 h-3 text-white/70" /> Customer Information
                 </span>
                 <p className="font-bold text-white">
-                  {selectedOrder.user ? `${selectedOrder.user.firstName} ${selectedOrder.user.lastName}` : 'Guest User'}
+                  {selectedOrder.shippingAddress?.fullName || selectedOrder.shippingAddress?.billing_customer_name
+                    ? `${selectedOrder.shippingAddress?.billing_customer_name || ''} ${selectedOrder.shippingAddress?.billing_last_name || ''}`.trim() || selectedOrder.shippingAddress?.fullName
+                    : selectedOrder.user ? `${selectedOrder.user.firstName} ${selectedOrder.user.lastName}` : 'Guest User'}
                 </p>
-                <p className="text-white/60 font-mono">{selectedOrder.user?.email || 'N/A'}</p>
-                <p className="text-white/60 font-mono">{selectedOrder.user?.phone || 'No phone provided'}</p>
+                <p className="text-white/60 font-mono">
+                  {selectedOrder.shippingAddress?.email || selectedOrder.shippingAddress?.billing_email || selectedOrder.user?.email || 'N/A'}
+                </p>
+                <p className="text-white/60 font-mono">
+                  {selectedOrder.shippingAddress?.phone || selectedOrder.shippingAddress?.billing_phone || selectedOrder.user?.phone || 'No phone provided'}
+                </p>
               </div>
 
               <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-1.5">
@@ -499,14 +505,32 @@ export function RootOrdersTab() {
                 </span>
                 {selectedOrder.shippingAddress ? (
                   <>
-                    <p className="text-white font-medium">{selectedOrder.shippingAddress.line1}</p>
-                    {selectedOrder.shippingAddress.line2 && (
-                      <p className="text-white/60">{selectedOrder.shippingAddress.line2}</p>
+                    <p className="text-white font-medium">
+                      {selectedOrder.shippingAddress.line1 || selectedOrder.shippingAddress.shipping_address || selectedOrder.shippingAddress.billing_address}
+                    </p>
+                    {(selectedOrder.shippingAddress.line2 || selectedOrder.shippingAddress.shipping_address_2 || selectedOrder.shippingAddress.billing_address_2) && (
+                      <p className="text-white/60">
+                        {selectedOrder.shippingAddress.line2 || selectedOrder.shippingAddress.shipping_address_2 || selectedOrder.shippingAddress.billing_address_2}
+                      </p>
                     )}
                     <p className="text-white/70 font-mono">
-                      {selectedOrder.shippingAddress.city}, {selectedOrder.shippingAddress.state} -{' '}
-                      {selectedOrder.shippingAddress.postalCode}
+                      {selectedOrder.shippingAddress.city || selectedOrder.shippingAddress.shipping_city || selectedOrder.shippingAddress.billing_city},{' '}
+                      {selectedOrder.shippingAddress.state || selectedOrder.shippingAddress.shipping_state || selectedOrder.shippingAddress.billing_state} -{' '}
+                      {selectedOrder.shippingAddress.pincode || selectedOrder.shippingAddress.postalCode || selectedOrder.shippingAddress.shipping_pincode || selectedOrder.shippingAddress.billing_pincode}
                     </p>
+                    {selectedOrder.shippingAddress.billing_address &&
+                     selectedOrder.shippingAddress.billing_address !== selectedOrder.shippingAddress.line1 &&
+                     selectedOrder.shippingAddress.billing_address !== selectedOrder.shippingAddress.shipping_address && (
+                      <div className="pt-2 border-t border-white/5 mt-2">
+                        <span className="text-[9px] text-white/40 uppercase tracking-wider block font-mono">Billing Address:</span>
+                        <p className="text-white/60 text-xs">
+                          {selectedOrder.shippingAddress.billing_address}
+                          {selectedOrder.shippingAddress.billing_address_2 ? `, ${selectedOrder.shippingAddress.billing_address_2}` : ''}
+                          {selectedOrder.shippingAddress.billing_city ? `, ${selectedOrder.shippingAddress.billing_city}` : ''}
+                          {selectedOrder.shippingAddress.billing_pincode ? ` - ${selectedOrder.shippingAddress.billing_pincode}` : ''}
+                        </p>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <p className="text-white/40">Standard Pan-India Express Address</p>

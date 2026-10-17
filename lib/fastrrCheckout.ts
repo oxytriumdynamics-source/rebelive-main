@@ -22,6 +22,132 @@ declare global {
 }
 
 /**
+ * Extracts address, customer, and orderId from any Fastrr event, callback, or message
+ * and persists to sessionStorage and localStorage so order confirmation can send authentic data.
+ */
+export function extractAndStoreFastrrData(data: any): { address: any; billingAddress: any; customer: any; orderId: any } {
+  if (!data) return { address: null, billingAddress: null, customer: null, orderId: null };
+  let payload = data;
+  if (typeof payload === 'string') {
+    try {
+      payload = JSON.parse(payload);
+    } catch {
+      if (payload.includes(',') && /\b\d{6}\b/.test(payload)) {
+        payload = { address: payload };
+      } else {
+        return { address: null, billingAddress: null, customer: null, orderId: null };
+      }
+    }
+  }
+
+  const orderId =
+    payload.order_id ||
+    payload.orderId ||
+    payload.id ||
+    payload.fastrr_order_id ||
+    payload.data?.order_id ||
+    payload.order?.order_id ||
+    payload.result?.data?.order_id ||
+    null;
+
+  let address =
+    payload.shipping_address ||
+    payload.delivery_address ||
+    payload.selected_address ||
+    payload.address ||
+    payload.data?.shipping_address ||
+    payload.data?.address ||
+    payload.order?.shipping_address ||
+    payload.result?.shipping_address ||
+    payload.billing_address ||
+    null;
+
+  let billingAddress =
+    payload.billing_address ||
+    payload.data?.billing_address ||
+    payload.order?.billing_address ||
+    payload.result?.billing_address ||
+    null;
+
+  if (
+    !address &&
+    (payload.pincode ||
+      payload.postal_code ||
+      payload.city ||
+      payload.address1 ||
+      payload.line1 ||
+      payload.street ||
+      payload.complete_address)
+  ) {
+    address = {
+      line1: payload.address1 || payload.line1 || payload.street || payload.address || payload.complete_address || '',
+      line2: payload.address2 || payload.line2 || payload.landmark || '',
+      city: payload.city || payload.district || '',
+      state: payload.state || payload.province || '',
+      postalCode: payload.pincode || payload.postal_code || payload.zip || payload.pin || '',
+      country: payload.country || 'India',
+    };
+  }
+
+  const customer =
+    payload.customer ||
+    payload.buyer ||
+    payload.user ||
+    payload.data?.customer ||
+    payload.order?.customer ||
+    payload.result?.customer ||
+    (payload.phone || payload.email || payload.name || payload.result?.phone || payload.result?.email
+      ? {
+          name:
+            payload.name ||
+            payload.result?.name ||
+            (payload.first_name || payload.result?.shipping_address?.first_name
+              ? `${payload.first_name || payload.result?.shipping_address?.first_name || ''} ${
+                  payload.last_name || payload.result?.shipping_address?.last_name || ''
+                }`.trim()
+              : undefined),
+          email: payload.email || payload.result?.email || undefined,
+          phone: payload.phone || payload.result?.phone || payload.mobile || payload.contact || undefined,
+        }
+      : null);
+
+  if (typeof window !== 'undefined') {
+    try {
+      if (address) {
+        sessionStorage.setItem('rebelive_fastrr_address', JSON.stringify(address));
+        localStorage.setItem('rebelive_fastrr_address', JSON.stringify(address));
+      }
+      if (billingAddress) {
+        sessionStorage.setItem('rebelive_fastrr_billing_address', JSON.stringify(billingAddress));
+        localStorage.setItem('rebelive_fastrr_billing_address', JSON.stringify(billingAddress));
+      }
+      if (customer) {
+        sessionStorage.setItem('rebelive_fastrr_customer', JSON.stringify(customer));
+        localStorage.setItem('rebelive_fastrr_customer', JSON.stringify(customer));
+      }
+      if (orderId) {
+        sessionStorage.setItem('rebelive_last_order_id', String(orderId));
+        localStorage.setItem('rebelive_last_order_id', String(orderId));
+      }
+    } catch {}
+  }
+
+  return { address, billingAddress, customer, orderId };
+}
+
+if (typeof window !== 'undefined') {
+  window.srCustomCheckoutCallBackFn = function (res: any) {
+    extractAndStoreFastrrData(res);
+  };
+
+  window.addEventListener('message', (e: MessageEvent) => {
+    if (e.data) {
+      extractAndStoreFastrrData(e.data);
+    }
+  });
+}
+
+/**
  * Loads the Shiprocket Fastrr script and stylesheet dynamically if not already in document.
  */
 export async function ensureFastrrAssetsLoaded(): Promise<boolean> {
@@ -226,6 +352,9 @@ export async function launchFastrrCheckout(
 
   // 3. Setup window postMessage listener for exit/close events from Fastrr
   const handleFastrrMessage = (e: MessageEvent) => {
+    if (e.data) {
+      extractAndStoreFastrrData(e.data);
+    }
     if (
       e.data?.trigger === 'close-checkout' ||
       e.data?.trigger === 'exit-checkout' ||
@@ -280,6 +409,9 @@ export async function launchFastrrCheckout(
         isInitiatedFromApp: true,
       },
       (callbackData: any) => {
+        if (callbackData) {
+          extractAndStoreFastrrData(callbackData);
+        }
         if (callbackData?.exitCheckout) {
           const main = document.getElementById('fastrr-main-container');
           if (main) main.remove();

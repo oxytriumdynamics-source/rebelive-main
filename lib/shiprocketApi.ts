@@ -275,14 +275,8 @@ export interface ConfirmFastrrOrderInput {
     email?: string;
     phone?: string;
   };
-  shippingAddress?: {
-    line1?: string;
-    line2?: string;
-    city?: string;
-    state?: string;
-    postalCode?: string;
-    country?: string;
-  };
+  shippingAddress?: any;
+  billingAddress?: any;
   payment?: {
     method?: string;
     transactionId?: string;

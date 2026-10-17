@@ -86,15 +86,47 @@ function OrderConfirmationContent() {
   const syncWithWebhooks = useCallback(async (targetOid: string, _isManual = false) => {
     const queryId = targetOid || 'RBL-CONFIRMED';
 
-    // Retrieve stored items from checkout
+    // Retrieve stored items, address, and customer from Fastrr checkout
     let storedItems: any[] = [];
+    let storedAddress: any = null;
+    let storedBillingAddress: any = null;
+    let storedCustomer: any = null;
+
     if (typeof window !== 'undefined') {
       try {
         const raw = sessionStorage.getItem('rebelive_fastrr_items') || localStorage.getItem('rebelive_fastrr_items');
-        if (raw) {
-          storedItems = JSON.parse(raw);
-        }
+        if (raw) storedItems = JSON.parse(raw);
       } catch {}
+
+      try {
+        const rawAddr = sessionStorage.getItem('rebelive_fastrr_address') || localStorage.getItem('rebelive_fastrr_address');
+        if (rawAddr) storedAddress = JSON.parse(rawAddr);
+      } catch {}
+
+      try {
+        const rawBill = sessionStorage.getItem('rebelive_fastrr_billing_address') || localStorage.getItem('rebelive_fastrr_billing_address');
+        if (rawBill) storedBillingAddress = JSON.parse(rawBill);
+      } catch {}
+
+      try {
+        const rawCust = sessionStorage.getItem('rebelive_fastrr_customer') || localStorage.getItem('rebelive_fastrr_customer');
+        if (rawCust) storedCustomer = JSON.parse(rawCust);
+      } catch {}
+    }
+
+    // Check searchParams in case Fastrr redirect included address parameters
+    const urlAddress = searchParams.get('address') || searchParams.get('line1') || searchParams.get('shipping_address') || searchParams.get('complete_address');
+    if (urlAddress) {
+      storedAddress = {
+        line1: urlAddress,
+        city: searchParams.get('city') || '',
+        state: searchParams.get('state') || '',
+        postalCode: searchParams.get('pincode') || searchParams.get('postal_code') || searchParams.get('zip') || '',
+        country: searchParams.get('country') || 'India',
+        phone: searchParams.get('phone') || searchParams.get('contact') || '',
+        email: searchParams.get('email') || '',
+        fullName: searchParams.get('name') || '',
+      };
     }
 
     try {
@@ -103,6 +135,9 @@ function OrderConfirmationContent() {
         await dispatch(confirmFastrrOrderThunk({
           orderId: queryId,
           items: storedItems.length > 0 ? storedItems : undefined,
+          shippingAddress: storedAddress || undefined,
+          billingAddress: storedBillingAddress || undefined,
+          customer: storedCustomer || undefined,
         })).unwrap();
       }
     } catch (confirmErr) {
@@ -116,7 +151,7 @@ function OrderConfirmationContent() {
     } finally {
       setLoading(false);
     }
-  }, [dispatch]);
+  }, [dispatch, searchParams]);
 
   // Initial fetch and automatic webhook polling loop
   useEffect(() => {
