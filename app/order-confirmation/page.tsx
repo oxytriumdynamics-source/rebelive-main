@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback, Suspense } from 'react';
+import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import {
@@ -67,6 +67,9 @@ function OrderConfirmationContent() {
   const [copied, setCopied] = useState(false);
   const [pollCount, setPollCount] = useState(0);
 
+  // Guard against duplicate confirmation calls across renders and polling ticks
+  const hasConfirmedRef = useRef<Record<string, boolean>>({});
+
   const tracking = reduxTracking;
   const webhookStatus: WebhookSyncState = (reduxWebhookStatus as any) || DEFAULT_WEBHOOK_STATUS;
 
@@ -130,8 +133,9 @@ function OrderConfirmationContent() {
     }
 
     try {
-      // Proactively confirm and register order in MongoDB if valid order ID is present
-      if (queryId && queryId !== 'RBL-CONFIRMED') {
+      // Proactively confirm and register order in MongoDB if valid order ID is present (ONLY ONCE per orderId)
+      if (queryId && queryId !== 'RBL-CONFIRMED' && !hasConfirmedRef.current[queryId]) {
+        hasConfirmedRef.current[queryId] = true;
         await dispatch(confirmFastrrOrderThunk({
           orderId: queryId,
           items: storedItems.length > 0 ? storedItems : undefined,
@@ -139,6 +143,14 @@ function OrderConfirmationContent() {
           billingAddress: storedBillingAddress || undefined,
           customer: storedCustomer || undefined,
         })).unwrap();
+
+        // Clear temporary items & addresses so they cannot be reused for a duplicate order
+        if (typeof window !== 'undefined') {
+          sessionStorage.removeItem('rebelive_fastrr_items');
+          sessionStorage.removeItem('rebelive_fastrr_address');
+          sessionStorage.removeItem('rebelive_fastrr_billing_address');
+          sessionStorage.removeItem('rebelive_fastrr_customer');
+        }
       }
     } catch (confirmErr) {
       console.warn('Fastrr confirmation endpoint attempt (non-fatal):', confirmErr);
@@ -155,7 +167,9 @@ function OrderConfirmationContent() {
 
   // Initial fetch and automatic webhook polling loop
   useEffect(() => {
-    syncWithWebhooks(oid);
+    if (oid) {
+      syncWithWebhooks(oid);
+    }
 
     // Poll every 3 seconds for up to 8 iterations to catch incoming courier & payment webhooks
     const interval = setInterval(() => {
@@ -164,13 +178,16 @@ function OrderConfirmationContent() {
           clearInterval(interval);
           return prev;
         }
-        syncWithWebhooks(oid);
+        // ONLY poll carrier/tracking status on intervals; NEVER re-confirm order
+        if (oid) {
+          dispatch(getOrderWebhookStatusThunk(oid));
+        }
         return prev + 1;
       });
     }, 3000);
 
     return () => clearInterval(interval);
-  }, [oid, syncWithWebhooks]);
+  }, [oid, syncWithWebhooks, dispatch]);
 
   const displayOrderNumber =
     tracking?.orderNumber || oid || (typeof window !== 'undefined' ? `RBL-${Date.now().toString().slice(-6)}` : 'RBL-CONFIRMED');
