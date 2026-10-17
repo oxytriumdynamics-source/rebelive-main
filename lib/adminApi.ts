@@ -370,102 +370,13 @@ export async function fetchAdminOrders(params?: {
     if (isAuthError(err)) {
       throw err;
     }
-    console.warn('Backend /admin/orders unreachable, loading simulated admin orders:', err);
+    console.warn('Backend /admin/orders error:', err);
+    throw new Error(err.response?.data?.message || 'Failed to fetch admin orders');
   }
 
-  // Fallback orders
-  const mockOrders: AdminOrder[] = [
-    {
-      id: 'ord-rbl-8921',
-      orderNumber: 'RBL-20261010-8921',
-      userId: 'usr-01',
-      status: 'SHIPPED',
-      subtotal: 1440,
-      discountAmount: 0,
-      taxAmount: 259,
-      shippingAmount: 0,
-      total: 1440,
-      trackingNumber: 'SR-AWB-89214710',
-      trackingUrl: '/track-order?id=RBL-20261010-8921',
-      shiprocketOrderId: 'SR-8921',
-      createdAt: new Date().toISOString(),
-      user: {
-        firstName: 'Aarav',
-        lastName: 'Sharma',
-        email: 'aarav@rebelive.co',
-        phone: '9876543210',
-      },
-      shippingAddress: {
-        line1: 'Flat 402, Summit Heights, Cyber City',
-        city: 'Gurugram',
-        state: 'Haryana',
-        postalCode: '122002',
-        country: 'India',
-      },
-      items: [
-        {
-          id: 'item-1',
-          productId: 'prod-apex',
-          productName: 'APEX Zero Sugar Clean Fuel',
-          variantName: '12-Pack Case',
-          sku: 'RBL-APEX-12PK',
-          quantity: 1,
-          unitPrice: 1440,
-          totalPrice: 1440,
-        },
-      ],
-      payments: [{ id: 'p-1', amount: 1440, method: 'UPI', status: 'COMPLETED', transactionId: 'TXN-UPI-8921' }],
-      statusHistory: [
-        { id: 'h-1', status: 'SHIPPED', note: 'Dispatched to Shiprocket Express. Thermal cold seal applied.', createdAt: new Date().toISOString() },
-        { id: 'h-2', status: 'CONFIRMED', note: 'Fastrr Instant Checkout completed.', createdAt: new Date(Date.now() - 3600000).toISOString() },
-      ],
-    },
-    {
-      id: 'ord-rbl-7412',
-      orderNumber: 'RBL-20261010-7412',
-      userId: 'usr-02',
-      status: 'PROCESSING',
-      subtotal: 2198,
-      discountAmount: 220,
-      taxAmount: 356,
-      shippingAmount: 0,
-      total: 1978,
-      createdAt: new Date(Date.now() - 7200000).toISOString(),
-      user: {
-        firstName: 'Meera',
-        lastName: 'Patel',
-        email: 'meera.patel@gmail.com',
-        phone: '9823456781',
-      },
-      shippingAddress: {
-        line1: 'B-14, Green Valley Estate, Bandra West',
-        city: 'Mumbai',
-        state: 'Maharashtra',
-        postalCode: '400050',
-        country: 'India',
-      },
-      items: [
-        {
-          id: 'item-2',
-          productId: 'prod-capella',
-          productName: 'CAPELLA Botanical Nootropic',
-          variantName: '6-Pack Case',
-          sku: 'RBL-CAPELLA-6PK',
-          quantity: 2,
-          unitPrice: 799,
-          totalPrice: 1598,
-        },
-      ],
-      payments: [{ id: 'p-2', amount: 1978, method: 'CREDIT_CARD', status: 'COMPLETED' }],
-      statusHistory: [
-        { id: 'h-3', status: 'PROCESSING', note: 'Crated in cold storage box, awaiting courier handover', createdAt: new Date(Date.now() - 7200000).toISOString() },
-      ],
-    },
-  ];
-
   return {
-    data: mockOrders,
-    total: mockOrders.length,
+    data: [],
+    total: 0,
     page: 1,
     totalPages: 1,
   };
@@ -498,33 +409,10 @@ export async function dispatchOrderToShiprocket(
     if (res.data?.status === 'success' && res.data?.data) {
       return res.data.data;
     }
+    throw new Error(res.data?.message || 'Failed to dispatch order to Shiprocket');
   } catch (err: any) {
-    if (err.response?.data?.message) {
-      throw new Error(err.response.data.message);
-    }
+    throw new Error(err.response?.data?.message || err.message || 'Failed to dispatch order to Shiprocket');
   }
-
-  // Fallback simulated dispatch
-  const awbCode = `SR-AWB-${Math.floor(Math.random() * 899999 + 100000)}`;
-  return {
-    order: {
-      id: orderId,
-      orderNumber: `RBL-${Date.now().toString().slice(-6)}`,
-      userId: 'usr-mock',
-      status: 'SHIPPED',
-      subtotal: 1440,
-      discountAmount: 0,
-      taxAmount: 259,
-      shippingAmount: 0,
-      total: 1440,
-      trackingNumber: awbCode,
-      trackingUrl: `/track-order?id=${awbCode}`,
-      createdAt: new Date().toISOString(),
-      items: [],
-    },
-    awbCode,
-    courierName: 'Shiprocket Express (Priority Cold Dispatch)',
-  };
 }
 
 /**

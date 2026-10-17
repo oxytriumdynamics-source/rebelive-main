@@ -110,170 +110,21 @@ export interface Order {
 const LOCAL_ADDR_KEY = 'rebelive_addresses_cache';
 const LOCAL_ORDERS_KEY = 'rebelive_orders_cache';
 
-const DEFAULT_SAMPLE_ADDRESSES: Address[] = [
-  {
-    id: 'addr-base-01',
-    label: 'Primary Headquarters',
-    line1: '402 High-Altitude Apex Tower, Floor 14',
-    line2: 'Cyber Heights Boulevard',
-    city: 'Bengaluru',
-    state: 'Karnataka',
-    postalCode: '560001',
-    country: 'IN',
-    isDefault: true,
-    createdAt: new Date(Date.now() - 30 * 86400000).toISOString(),
-  },
-  {
-    id: 'addr-base-02',
-    label: 'Forward Tactical Outpost',
-    line1: 'Bunker 9, Sector 42',
-    line2: 'Near Innovation Hub',
-    city: 'Mumbai',
-    state: 'Maharashtra',
-    postalCode: '400051',
-    country: 'IN',
-    isDefault: false,
-    createdAt: new Date(Date.now() - 15 * 86400000).toISOString(),
-  },
-];
+const DEFAULT_SAMPLE_ADDRESSES: Address[] = [];
 
-const DEFAULT_SAMPLE_ORDERS: Order[] = [
-  {
-    id: 'ord-apex-901',
-    orderNumber: 'REB-2026-9482',
-    userId: 'user-active',
-    status: 'DELIVERED',
-    subtotal: 1440,
-    discountAmount: 140,
-    taxAmount: 234,
-    shippingAmount: 0,
-    total: 1534,
-    trackingNumber: 'DELHIVERY-REB9482IN',
-    trackingUrl: 'https://www.delhivery.com',
-    createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-    items: [
-      {
-        id: 'item-1',
-        productId: 'prod-apex-12',
-        productName: 'APEX Zero Sugar Clean Fuel',
-        variantName: '12-Pack Case · 250ml',
-        sku: 'APEX-250-12PK',
-        quantity: 1,
-        unitPrice: 1440,
-        totalPrice: 1440,
-        product: {
-          name: 'APEX Zero Sugar Clean Fuel',
-          images: [{ url: '/products/apex.webp', isPrimary: true }],
-        },
-      },
-    ],
-    shippingAddress: {
-      id: 'addr-base-01',
-      label: 'Primary Headquarters',
-      line1: '402 High-Altitude Apex Tower, Floor 14',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      postalCode: '560001',
-      country: 'IN',
-      isDefault: true,
-    },
-    payments: [
-      {
-        id: 'pay-1',
-        amount: 1534,
-        method: 'UPI',
-        status: 'COMPLETED',
-        transactionId: 'UPI-TXN-90248201',
-        createdAt: new Date(Date.now() - 5 * 86400000).toISOString(),
-      },
-    ],
-    statusHistory: [
-      { id: 'h1', status: 'CONFIRMED', note: 'Order confirmed and verified', createdAt: new Date(Date.now() - 5 * 86400000).toISOString() },
-      { id: 'h2', status: 'SHIPPED', note: 'Dispatched from Bengaluru Logistics Hub', createdAt: new Date(Date.now() - 3 * 86400000).toISOString() },
-      { id: 'h3', status: 'DELIVERED', note: 'Delivered securely at front desk', createdAt: new Date(Date.now() - 1 * 86400000).toISOString() },
-    ],
-  },
-  {
-    id: 'ord-capella-902',
-    orderNumber: 'REB-2026-8104',
-    userId: 'user-active',
-    status: 'PROCESSING',
-    subtotal: 1800,
-    discountAmount: 0,
-    taxAmount: 324,
-    shippingAmount: 0,
-    total: 2124,
-    trackingNumber: 'BLUEDART-88219412',
-    trackingUrl: 'https://www.bluedart.com',
-    createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-    items: [
-      {
-        id: 'item-2',
-        productId: 'prod-capella-12',
-        productName: 'CAPELLA Botanical Nootropic',
-        variantName: '12-Pack Case · 250ml',
-        sku: 'CAP-250-12PK',
-        quantity: 1,
-        unitPrice: 1440,
-        totalPrice: 1440,
-        product: {
-          name: 'CAPELLA Botanical Nootropic',
-          images: [{ url: '/products/capella.webp', isPrimary: true }],
-        },
-      },
-      {
-        id: 'item-3',
-        productId: 'prod-aviva-pod',
-        productName: 'AVIVA Spark Pod Edition',
-        variantName: 'Single Unit · Limited Run',
-        sku: 'AVIVA-POD-01',
-        quantity: 1,
-        unitPrice: 360,
-        totalPrice: 360,
-        product: {
-          name: 'AVIVA Spark Pod Edition',
-          images: [{ url: '/products/aviva.webp', isPrimary: true }],
-        },
-      },
-    ],
-    shippingAddress: {
-      id: 'addr-base-01',
-      label: 'Primary Headquarters',
-      line1: '402 High-Altitude Apex Tower, Floor 14',
-      city: 'Bengaluru',
-      state: 'Karnataka',
-      postalCode: '560001',
-      country: 'IN',
-      isDefault: true,
-    },
-    payments: [
-      {
-        id: 'pay-2',
-        amount: 2124,
-        method: 'CREDIT_CARD',
-        status: 'COMPLETED',
-        transactionId: 'CC-TXN-8819034',
-        createdAt: new Date(Date.now() - 1 * 86400000).toISOString(),
-      },
-    ],
-    statusHistory: [
-      { id: 'h4', status: 'CONFIRMED', note: 'Order placed & paid', createdAt: new Date(Date.now() - 1 * 86400000).toISOString() },
-      { id: 'h5', status: 'PROCESSING', note: 'Batch packing in cleanroom facility', createdAt: new Date(Date.now() - 12 * 3600000).toISOString() },
-    ],
-  },
-];
+const DEFAULT_SAMPLE_ORDERS: Order[] = [];
 
 function readLocalAddresses(): Address[] {
-  if (typeof window === 'undefined') return DEFAULT_SAMPLE_ADDRESSES;
+  if (typeof window === 'undefined') return [];
   const raw = localStorage.getItem(LOCAL_ADDR_KEY);
-  if (!raw) {
-    localStorage.setItem(LOCAL_ADDR_KEY, JSON.stringify(DEFAULT_SAMPLE_ADDRESSES));
-    return DEFAULT_SAMPLE_ADDRESSES;
-  }
+  if (!raw) return [];
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Purge any legacy dummy sample addresses if previously cached
+    return parsed.filter((a: any) => a.id !== 'addr-base-01' && a.id !== 'addr-base-02');
   } catch {
-    return DEFAULT_SAMPLE_ADDRESSES;
+    return [];
   }
 }
 
@@ -284,16 +135,22 @@ function writeLocalAddresses(addrs: Address[]) {
 }
 
 function readLocalOrders(): Order[] {
-  if (typeof window === 'undefined') return DEFAULT_SAMPLE_ORDERS;
+  if (typeof window === 'undefined') return [];
   const raw = localStorage.getItem(LOCAL_ORDERS_KEY);
-  if (!raw) {
-    localStorage.setItem(LOCAL_ORDERS_KEY, JSON.stringify(DEFAULT_SAMPLE_ORDERS));
-    return DEFAULT_SAMPLE_ORDERS;
-  }
+  if (!raw) return [];
   try {
-    return JSON.parse(raw);
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Purge any legacy dummy sample orders if previously cached
+    return parsed.filter(
+      (o: any) =>
+        o.id !== 'ord-apex-901' &&
+        o.id !== 'ord-capella-902' &&
+        o.orderNumber !== 'REB-2026-9482' &&
+        o.orderNumber !== 'REB-2026-8104'
+    );
   } catch {
-    return DEFAULT_SAMPLE_ORDERS;
+    return [];
   }
 }
 
@@ -370,8 +227,7 @@ export async function changePassword(password: string): Promise<boolean> {
     if (axios.isAxiosError(err) && err.response?.data?.message) {
       throw new Error(err.response.data.message);
     }
-    // If backend offline, simulate success for demo
-    return true;
+    throw new Error('Failed to update password. Please check your network connection.');
   }
 }
 

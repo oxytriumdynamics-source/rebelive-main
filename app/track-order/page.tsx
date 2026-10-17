@@ -111,32 +111,6 @@ function TrackOrderContent() {
             {isLoading ? 'Locating...' : 'Track'}
           </button>
         </form>
-
-        {/* Quick Sample Tracking Chips */}
-        <div className="mt-4 flex flex-wrap items-center justify-center gap-2 text-[11px] text-white/40 font-mono">
-          <span>Quick Track:</span>
-          <button
-            type="button"
-            onClick={() => {
-              setOrderId('RBL-20261015-3867');
-              executeTrack('RBL-20261015-3867');
-            }}
-            className="px-2.5 py-1 rounded-lg bg-white/[0.05] hover:bg-white/10 text-white/80 border border-white/10 transition-colors cursor-pointer"
-          >
-            RBL-20261015-3867
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setOrderId('RBL-DELIVERED-TEST');
-              executeTrack('RBL-DELIVERED-TEST');
-            }}
-            className="px-2.5 py-1 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 transition-colors cursor-pointer inline-flex items-center gap-1"
-          >
-            <CheckCircle2 className="w-3 h-3" />
-            <span>Delivered Order Demo</span>
-          </button>
-        </div>
       </div>
 
       {/* Tracking Result View */}
@@ -162,15 +136,31 @@ function TrackOrderContent() {
               ))}
             </div>
           </div>
-        ) : hasSearched && trackingData ? (
+        ) : hasSearched && trackingData && trackingData.currentStatus !== 'NOT_FOUND' ? (
           (() => {
+            const rawStatus = (trackingData.currentStatus || '').toUpperCase();
             const isDelivered =
-              trackingData.currentStatus === 'DELIVERED' ||
+              rawStatus === 'DELIVERED' ||
               trackingData.statusText.toLowerCase().includes('deliv') ||
               trackingData.activities.some((a) => a.status.toLowerCase().includes('deliv'));
             const isOutForDelivery =
-              trackingData.currentStatus === 'OUT_FOR_DELIVERY' ||
+              rawStatus === 'OUT_FOR_DELIVERY' ||
               trackingData.statusText.toLowerCase().includes('out for delivery');
+            const isInTransit = isOutForDelivery || rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPED';
+            const isPacked = isInTransit || rawStatus === 'PROCESSING';
+            const isConfirmed = isPacked || rawStatus === 'CONFIRMED' || rawStatus === 'PENDING';
+
+            const progressWidth = isDelivered
+              ? '100%'
+              : isOutForDelivery
+              ? '85%'
+              : isInTransit
+              ? '65%'
+              : isPacked
+              ? '35%'
+              : isConfirmed
+              ? '10%'
+              : '0%';
 
             return (
               <div className="border border-white/10 rounded-3xl bg-white/[0.02] p-6 sm:p-8 space-y-8 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.8)]">
@@ -201,25 +191,35 @@ function TrackOrderContent() {
                 {/* 4-Stage Visual Progress Stepper */}
                 <div className="p-4 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
                   <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/60 uppercase tracking-wider">
-                    <span>1. Confirmed</span>
-                    <span>2. Cold Packed</span>
-                    <span>3. In Transit</span>
+                    <span className={isConfirmed ? 'text-emerald-400 font-bold' : ''}>1. Confirmed</span>
+                    <span className={isPacked ? 'text-emerald-400 font-bold' : ''}>2. Cold Packed</span>
+                    <span className={isInTransit ? 'text-emerald-400 font-bold' : ''}>3. In Transit</span>
                     <span className={isDelivered ? 'text-emerald-400 font-bold' : ''}>4. Delivered</span>
                   </div>
                   <div className="relative flex items-center justify-between">
                     <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 -z-0" />
                     <div
                       className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700 -z-0"
-                      style={{
-                        width: isDelivered ? '100%' : isOutForDelivery ? '85%' : '65%',
-                      }}
+                      style={{ width: progressWidth }}
                     />
                     {/* Step 1 */}
-                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold text-xs z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
+                        isConfirmed
+                          ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                          : 'bg-[#141414] border border-white/20 text-white/40'
+                      }`}
+                    >
                       <Check className="w-4 h-4" />
                     </div>
                     {/* Step 2 */}
-                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-black flex items-center justify-center font-bold text-xs z-10 shadow-[0_0_15px_rgba(16,185,129,0.5)]">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
+                        isPacked
+                          ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                          : 'bg-[#141414] border border-white/20 text-white/40'
+                      }`}
+                    >
                       <Package className="w-4 h-4" />
                     </div>
                     {/* Step 3 */}
@@ -227,7 +227,9 @@ function TrackOrderContent() {
                       className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
                         isDelivered || isOutForDelivery
                           ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
-                          : 'bg-emerald-500/20 text-emerald-400 border border-emerald-500 animate-pulse'
+                          : isInTransit
+                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500 animate-pulse'
+                          : 'bg-[#141414] border border-white/20 text-white/40'
                       }`}
                     >
                       <Truck className="w-4 h-4" />
@@ -288,11 +290,11 @@ function TrackOrderContent() {
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">Origin Terminal</span>
-                    <span className="font-semibold text-white/80 truncate block">{trackingData.origin}</span>
+                    <span className="font-semibold text-white/80 truncate block">{trackingData.origin || 'Amritsar Cold Hub'}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">Destination</span>
-                    <span className="font-semibold text-white/80 truncate block">{trackingData.destination}</span>
+                    <span className="font-semibold text-white/80 truncate block">{trackingData.destination || 'Delivery Address'}</span>
                   </div>
                 </div>
 
@@ -302,45 +304,53 @@ function TrackOrderContent() {
                     DISPATCH ACTIVITY LOG
                   </h4>
 
-                  <div className="space-y-6 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-white/10">
-                    {trackingData.activities.map((activity, idx) => {
-                      const actDelivered = activity.status.toLowerCase().includes('deliv');
-                      return (
-                        <div key={idx} className="flex items-start gap-4 relative">
-                          <div
-                            className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
-                              actDelivered
-                                ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.7)]'
-                                : idx === 0
-                                ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.5)]'
-                                : 'bg-[#141414] border border-white/20 text-white/70'
-                            }`}
-                          >
-                            {actDelivered ? (
-                              <ShieldCheck className="w-4 h-4" />
-                            ) : idx === 0 ? (
-                              <Truck className="w-4 h-4" />
-                            ) : (
-                              <CheckCircle2 className="w-4 h-4" />
-                            )}
-                          </div>
-                          <div className="flex-1 bg-white/[0.02] border border-white/5 p-3.5 rounded-xl space-y-1">
-                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
-                              <h5 className="text-xs font-bold text-white uppercase tracking-wider">
-                                {activity.status}
-                              </h5>
-                              <span className="text-[10px] font-mono text-white/50">{activity.date}</span>
+                  {trackingData.activities && trackingData.activities.length > 0 ? (
+                    <div className="space-y-6 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-white/10">
+                      {trackingData.activities.map((activity, idx) => {
+                        const actDelivered = activity.status.toLowerCase().includes('deliv');
+                        return (
+                          <div key={idx} className="flex items-start gap-4 relative">
+                            <div
+                              className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
+                                actDelivered
+                                  ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.7)]'
+                                  : idx === 0
+                                  ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.5)]'
+                                  : 'bg-[#141414] border border-white/20 text-white/70'
+                              }`}
+                            >
+                              {actDelivered ? (
+                                <ShieldCheck className="w-4 h-4" />
+                              ) : idx === 0 ? (
+                                <Truck className="w-4 h-4" />
+                              ) : (
+                                <CheckCircle2 className="w-4 h-4" />
+                              )}
                             </div>
-                            <p className="text-xs text-white/70">{activity.activity}</p>
-                            <div className="inline-flex items-center gap-1 text-[10px] text-white/40 font-mono pt-1">
-                              <MapPin className="w-3 h-3 text-emerald-400" />
-                              <span>{activity.location}</span>
+                            <div className="flex-1 bg-white/[0.02] border border-white/5 p-3.5 rounded-xl space-y-1">
+                              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                                <h5 className="text-xs font-bold text-white uppercase tracking-wider">
+                                  {activity.status}
+                                </h5>
+                                <span className="text-[10px] font-mono text-white/50">{activity.date}</span>
+                              </div>
+                              <p className="text-xs text-white/70">{activity.activity}</p>
+                              {activity.location && (
+                                <div className="inline-flex items-center gap-1 text-[10px] text-white/40 font-mono pt-1">
+                                  <MapPin className="w-3 h-3 text-emerald-400" />
+                                  <span>{activity.location}</span>
+                                </div>
+                              )}
                             </div>
                           </div>
-                        </div>
-                      );
-                    })}
-                  </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/10 text-center text-xs text-white/50 font-mono">
+                      Consignment registered. Live courier scans will populate once dispatched from our fulfillment hub.
+                    </div>
+                  )}
                 </div>
 
                 {/* Bottom Footer Info */}
@@ -366,11 +376,13 @@ function TrackOrderContent() {
           <div className="p-8 rounded-3xl border border-white/10 bg-white/[0.02] text-center space-y-4">
             <AlertCircle className="w-8 h-8 text-white/30 mx-auto" />
             <h3 className="text-base font-bold text-white uppercase tracking-wider">
-              {errorMessage ? 'Shipment Not Found' : 'Where do I find my Order ID?'}
+              {errorMessage || (hasSearched ? 'Consignment Not Found' : 'Where do I find my Order ID?')}
             </h3>
             <p className="text-xs text-white/60 max-w-md mx-auto leading-relaxed">
               {errorMessage ||
-                'Your Order ID was generated instantly via Shiprocket Fastrr checkout and sent to your email & SMS. It begins with "RBL-" followed by digits.'}
+                (hasSearched
+                  ? 'No tracking information was found for this identifier. Please verify your Order ID (starts with "RBL-") or Shiprocket AWB number.'
+                  : 'Your Order ID was generated instantly via Shiprocket Fastrr checkout and sent to your email & SMS. It begins with "RBL-" followed by digits.')}
             </p>
             <div className="pt-2 flex justify-center gap-3">
               <a

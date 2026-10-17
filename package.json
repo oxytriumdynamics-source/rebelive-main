@@ -6,8 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "test:security": "node scripts/test-frontend-security.mjs"
+    "lint": "eslint"
   },
   "dependencies": {
     "@fontsource/anton": "^5.3.0",

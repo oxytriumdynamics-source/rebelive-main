@@ -154,56 +154,11 @@ export async function initiateFastrrCheckout(params: {
   customer?: { name?: string; email?: string; phone?: string };
   couponCode?: string;
 }): Promise<FastrrInitiateResponse> {
-  try {
-    const res = await API.post('/shipping/fastrr/initiate', params);
-    if (res.data?.status === 'success' && res.data?.data) {
-      return res.data.data;
-    }
-  } catch (err) {
-    console.warn('Backend /shipping/fastrr/initiate unreachable, constructing client fallback session:', err);
+  const res = await API.post('/shipping/fastrr/initiate', params);
+  if (res.data?.status === 'success' && res.data?.data) {
+    return res.data.data;
   }
-
-  // Fallback calculation for offline / local mode
-  const subtotal = params.items.reduce((sum, item) => sum + (item.unitPrice || 499) * (item.quantity || 1), 0);
-  const discountAmount = params.couponCode ? 100 : 0;
-  const shippingAmount = subtotal >= 500 ? 0 : 60;
-  const total = Math.max(0, subtotal - discountAmount + shippingAmount);
-
-  return {
-    sessionId: `FASTRR-CLI-${Date.now()}`,
-    signature: 'mock_sig_local',
-    pricing: {
-      subtotal,
-      discountAmount,
-      taxAmount: Math.round(subtotal * 0.18),
-      shippingAmount,
-      total,
-      appliedCoupon: params.couponCode ? { code: params.couponCode, discountAmount } : null,
-    },
-    items: params.items.map((i) => ({
-      productId: i.productId || 'prod-default',
-      variantId: i.variantId || 'var-default',
-      name: i.name || 'REBELIVE Can',
-      flavor: i.flavor || 'Signature',
-      sku: `RBL-${(i.slug || 'CAN').toUpperCase()}-${i.packSize || 12}`,
-      quantity: i.quantity || 1,
-      unitPrice: i.unitPrice || 499,
-      totalPrice: (i.unitPrice || 499) * (i.quantity || 1),
-      image: i.image,
-    })),
-    customerPrefill: {
-      name: params.customer?.name || '',
-      email: params.customer?.email || '',
-      phone: params.customer?.phone || '',
-    },
-    savedAddresses: [],
-    paymentMethods: [
-      { id: 'UPI', name: 'Instant UPI (Google Pay, PhonePe, Paytm, QR)', isInstant: true },
-      { id: 'CREDIT_CARD', name: 'Credit / Debit Card (Visa, Mastercard, RuPay)', isInstant: true },
-      { id: 'NET_BANKING', name: 'Net Banking (All Indian Banks)', isInstant: true },
-      { id: 'COD', name: 'Cash on Delivery (Pay at Doorstep)', isInstant: false },
-    ],
-  };
+  throw new Error(res.data?.message || 'Failed to initiate Fastrr checkout');
 }
 
 /**
@@ -212,34 +167,11 @@ export async function initiateFastrrCheckout(params: {
 export async function completeFastrrCheckout(
   payload: FastrrCompleteInput
 ): Promise<FastrrCompleteResponse> {
-  try {
-    const res = await API.post('/shipping/fastrr/complete', payload);
-    if (res.data?.status === 'success' && res.data?.data) {
-      return res.data.data;
-    }
-  } catch (err) {
-    console.warn('Backend /shipping/fastrr/complete unreachable, generating fallback order completion:', err);
+  const res = await API.post('/shipping/fastrr/complete', payload);
+  if (res.data?.status === 'success' && res.data?.data) {
+    return res.data.data;
   }
-
-  // Graceful simulated completion
-  const randNum = Math.floor(Math.random() * 8999) + 1000;
-  const orderNumber = `RBL-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${randNum}`;
-  const awbCode = `SR-AWB-${randNum}914`;
-
-  return {
-    order: {
-      orderNumber,
-      total: payload.payment.amount || 1440,
-      status: 'CONFIRMED',
-      createdAt: new Date().toISOString(),
-      shippingAddress: payload.shippingAddress,
-    },
-    orderNumber,
-    trackingNumber: awbCode,
-    shiprocketOrderId: `SR-${randNum}`,
-    courierName: 'Shiprocket Express (Cold Logistics)',
-    trackingUrl: `/track-order?id=${orderNumber}`,
-  };
+  throw new Error(res.data?.message || 'Checkout completion failed');
 }
 
 /**
@@ -253,80 +185,20 @@ export async function trackShipment(identifier: string): Promise<TrackingResult>
       return res.data.data;
     }
   } catch (err) {
-    console.warn(`Backend /shipping/track/${cleanId} unreachable, generating fallback tracking:`, err);
+    console.warn(`Tracking query for ${cleanId} returned error:`, err);
   }
-
-  // Offline / fallback tracking generator for preview
-  const now = new Date();
-  const fmt = (d: Date) =>
-    d.toLocaleString('en-IN', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: true,
-    });
-
-  const awb = cleanId.startsWith('SR-') ? cleanId : `SR-AWB-${cleanId.replace(/[^0-9]/g, '').slice(-6) || '892147'}`;
-  const isDelivered = cleanId.toLowerCase().includes('deliv');
-
-  const activities = [];
-  if (isDelivered) {
-    activities.push({
-      date: fmt(now),
-      status: 'Delivered',
-      activity: 'Package delivered to recipient. Thermal insulation verified intact. Cold-chain seal intact.',
-      location: 'Pan-India Express Hub',
-    });
-    activities.push({
-      date: fmt(new Date(now.getTime() - 2 * 3600 * 1000)),
-      status: 'Out for Delivery',
-      activity: 'Out for delivery with courier executive. Cold box loaded for local drop.',
-      location: 'Local Delivery Terminal',
-    });
-  }
-
-  activities.push(
-    {
-      date: fmt(new Date(now.getTime() - 4 * 3600 * 1000)),
-      status: 'In Transit',
-      activity: 'Express linehaul transit initiated. Temperature monitored crate',
-      location: 'Amritsar Airport Gateway Hub',
-    },
-    {
-      date: fmt(new Date(now.getTime() - 6 * 3600 * 1000)),
-      status: 'Manifested',
-      activity: 'Consignment handed over to Shiprocket Express fleet. Thermal seal verified',
-      location: 'Rebelive Cold-Fulfilment Center (Amritsar)',
-    },
-    {
-      date: fmt(new Date(now.getTime() - 8 * 3600 * 1000)),
-      status: 'Packed',
-      activity: 'Crated in shock-cushioned matte-black protective box',
-      location: 'Packaging Line 02, Amritsar',
-    },
-    {
-      date: fmt(new Date(now.getTime() - 10 * 3600 * 1000)),
-      status: 'Confirmed',
-      activity: 'Order placed via Fastrr 1-Click Instant Checkout. Payment captured & verified',
-      location: 'Rebelive Digital Ops',
-    }
-  );
 
   return {
-    isLive: true,
-    orderNumber: cleanId.toUpperCase(),
-    trackingNumber: awb,
-    courierName: 'Shiprocket Express (Priority Cold Logistics)',
-    currentStatus: isDelivered ? 'DELIVERED' : 'IN_TRANSIT',
-    statusText: isDelivered ? 'Delivered · Handed to Recipient' : 'In Transit · Dispatched from Central Cold Hub',
-    estimatedDelivery: isDelivered ? `Delivered on ${fmt(now)}` : 'Within 24–48 Hours',
-    origin: 'Amritsar Cold Hub (Punjab)',
-    destination: 'Pan-India Express Hub',
-    activities,
-    shiprocketOrderId: `SR-${cleanId.slice(-6)}`,
-    shiprocketShipmentId: `SHP-${cleanId.slice(-7)}`,
+    isLive: false,
+    orderNumber: cleanId,
+    trackingNumber: cleanId,
+    courierName: 'Shiprocket Express',
+    currentStatus: 'NOT_FOUND',
+    statusText: 'No tracking record found for this identifier',
+    estimatedDelivery: 'N/A',
+    origin: '',
+    destination: '',
+    activities: [],
   };
 }
 
