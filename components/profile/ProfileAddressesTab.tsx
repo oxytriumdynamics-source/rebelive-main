@@ -1,8 +1,25 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { Plus, MapPin, Building, Home, Briefcase, Trash2, Edit3, ShieldCheck } from "lucide-react";
-import { Address, fetchAddresses, deleteAddress, updateAddress } from "@/lib/profileApi";
+import {
+  Home,
+  Briefcase,
+  Building,
+  MapPin,
+  Plus,
+  ShieldCheck,
+  Edit3,
+  Trash2,
+} from "lucide-react";
+import { Address } from "@/lib/profileApi";
+import {
+  fetchAddressesThunk,
+  deleteAddressThunk,
+  setDefaultAddressThunk,
+  selectProfileAddresses,
+  selectAddressesLoading,
+} from "@/store/slices/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import AddressModal from "./AddressModal";
 
 interface ProfileAddressesTabProps {
@@ -14,34 +31,23 @@ export default function ProfileAddressesTab({
   accentColor = "#ffffff",
   onNotify,
 }: ProfileAddressesTabProps) {
-  const [addresses, setAddresses] = useState<Address[]>([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const addresses = useAppSelector(selectProfileAddresses);
+  const loading = useAppSelector(selectAddressesLoading);
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingAddress, setEditingAddress] = useState<Address | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadAddresses();
-  }, []);
-
-  async function loadAddresses() {
-    setLoading(true);
-    try {
-      const data = await fetchAddresses();
-      setAddresses(data);
-    } catch (e) {
-      console.error("Failed to load addresses:", e);
-    } finally {
-      setLoading(false);
-    }
-  }
+    dispatch(fetchAddressesThunk());
+  }, [dispatch]);
 
   async function handleDelete(id: string) {
     if (!confirm("Are you sure you want to remove this delivery location?")) return;
     setActionLoadingId(id);
     try {
-      await deleteAddress(id);
-      setAddresses((prev) => prev.filter((a) => a.id !== id));
+      await dispatch(deleteAddressThunk(id)).unwrap();
       if (onNotify) onNotify("Delivery location removed successfully.");
     } catch (e) {
       console.error("Failed to delete address:", e);
@@ -53,13 +59,7 @@ export default function ProfileAddressesTab({
   async function handleSetDefault(address: Address) {
     setActionLoadingId(address.id);
     try {
-      await updateAddress(address.id, { isDefault: true });
-      setAddresses((prev) =>
-        prev.map((a) => ({
-          ...a,
-          isDefault: a.id === address.id,
-        }))
-      );
+      await dispatch(setDefaultAddressThunk(address.id)).unwrap();
       if (onNotify) onNotify(`Set "${address.label || 'Address'}" as primary location.`);
     } catch (e) {
       console.error("Failed to set default address:", e);
@@ -80,22 +80,8 @@ export default function ProfileAddressesTab({
 
   function handleModalSuccess(savedAddr: Address) {
     if (editingAddress) {
-      setAddresses((prev) =>
-        prev.map((a) => {
-          if (savedAddr.isDefault && a.id !== savedAddr.id) {
-            return { ...a, isDefault: false };
-          }
-          return a.id === savedAddr.id ? savedAddr : a;
-        })
-      );
       if (onNotify) onNotify("Delivery location updated.");
     } else {
-      setAddresses((prev) => {
-        const next = savedAddr.isDefault
-          ? prev.map((a) => ({ ...a, isDefault: false }))
-          : [...prev];
-        return [savedAddr, ...next];
-      });
       if (onNotify) onNotify("New delivery location added.");
     }
   }

@@ -14,7 +14,9 @@ import {
   Ban,
   ShieldAlert,
 } from "lucide-react";
-import { Order, OrderStatus, cancelOrder } from "@/lib/profileApi";
+import { Order, OrderStatus } from "@/lib/profileApi";
+import { cancelOrderThunk } from "@/store/slices/profileSlice";
+import { useAppDispatch } from "@/store/hooks";
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -33,6 +35,7 @@ export default function OrderDetailsModal({
   onOrderUpdated,
   accentColor = "#ffffff",
 }: OrderDetailsModalProps) {
+  const dispatch = useAppDispatch();
   const [cancelling, setCancelling] = useState(false);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
@@ -54,21 +57,14 @@ export default function OrderDetailsModal({
     setCancelError(null);
 
     try {
-      await cancelOrder(order.id, cancelReason.trim() || "Customer requested cancellation");
-      const updated: Order = {
-        ...order,
-        status: "CANCELLED",
-        statusHistory: [
-          ...(order.statusHistory || []),
-          {
-            id: `h-${Date.now()}`,
-            status: "CANCELLED",
-            note: cancelReason.trim() || "Customer cancelled order",
-            createdAt: new Date().toISOString(),
-          },
-        ],
-      };
-      if (onOrderUpdated) onOrderUpdated(updated);
+      const res = await dispatch(
+        cancelOrderThunk({
+          orderId: order.id,
+          reason: cancelReason.trim() || "Customer requested cancellation",
+        })
+      ).unwrap();
+
+      if (onOrderUpdated) onOrderUpdated(res || { ...order, status: "CANCELLED" });
       setShowCancelConfirm(false);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to cancel order.";

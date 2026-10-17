@@ -18,7 +18,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { PRICES, PackSize, Product } from '@/data/products';
-import { fetchProducts } from '@/lib/productsApi';
+import { fetchProducts, selectProducts, selectProductsLoading, selectProductsError } from '@/store/slices/productSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
 import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
@@ -35,54 +35,39 @@ const MONO = "'Poppins', sans-serif";
 
 export default function ShopPage() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
   const [selectedCategory, setSelectedCategory] = useState<'all' | 'single' | 'bundle'>('all');
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
-  const [productsList, setProductsList] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
   const [isInstantBuying, setIsInstantBuying] = useState<boolean>(false);
+
+  // Redux state from productSlice
+  const productsList = useAppSelector(selectProducts);
+  const reduxLoading = useAppSelector(selectProductsLoading);
+  const reduxError = useAppSelector(selectProductsError);
+
+  const isLoading = reduxLoading && productsList.length === 0;
+  const isError = Boolean(reduxError) && productsList.length === 0;
 
   // Quick-Add Modal Popup State
   const [quickAddProduct, setQuickAddProduct] = useState<Product | null>(null);
   const [modalPack, setModalPack] = useState<PackSize>(3);
   const [modalQty, setModalQty] = useState<number>(1);
 
-  const dispatch = useAppDispatch();
   const cart = useAppSelector((state) => state.cart.items);
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.pricePerUnit * item.quantity, 0);
 
-  const loadProducts = async (force = false) => {
-    try {
-      setIsError(false);
-      const data = await fetchProducts(force);
-      if (data && data.length > 0) {
-        setProductsList(data);
-        setIsError(false);
-      } else {
-        setProductsList([]);
-        setIsError(true);
-      }
-    } catch (err) {
-      console.error('Failed to load products from database:', err);
-      setProductsList([]);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-      setIsRetrying(false);
-    }
-  };
-
-  // Load products strictly from backend database (serves from cache instantly when fresh)
+  // Load products via Redux dispatch
   React.useEffect(() => {
-    loadProducts(false);
-  }, []);
+    dispatch(fetchProducts(false));
+  }, [dispatch]);
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setIsRetrying(true);
-    loadProducts(true);
+    await dispatch(fetchProducts(true));
+    setIsRetrying(false);
   };
 
   const filteredProducts = productsList.filter((p) => {

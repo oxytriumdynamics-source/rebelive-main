@@ -16,7 +16,12 @@ import EverestPattern from "@/components/persona/EverestPattern";
 import { PERSONAS } from "@/data/personas";
 import { AuthUser, logoutUser } from "@/store/slices/authslice";
 import { formatRebelId } from "@/lib/auth";
-import { fetchOrders, fetchAddresses } from "@/lib/profileApi";
+import {
+  fetchOrdersThunk,
+  fetchAddressesThunk,
+  selectProfileOrders,
+  selectProfileAddresses,
+} from "@/store/slices/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import ProfileOverviewTab from "./ProfileOverviewTab";
 import ProfileOrdersTab from "./ProfileOrdersTab";
@@ -43,6 +48,8 @@ export default function ProfileStage({
   const router = useRouter();
   const searchParams = useSearchParams();
   const reduxUser = useAppSelector((s) => s.auth.user);
+  const orders = useAppSelector(selectProfileOrders);
+  const addresses = useAppSelector(selectProfileAddresses);
 
   const user = reduxUser || initialUser;
 
@@ -61,25 +68,17 @@ export default function ProfileStage({
     }
   }, [tabParam]);
 
-  // Order & address counts for quick badges
-  const [orderCount, setOrderCount] = useState(0);
-  const [addressCount, setAddressCount] = useState(0);
+  // Order & address counts from Redux
+  const orderCount = orders.length;
+  const addressCount = addresses.length;
 
   // Notification toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    async function loadStats() {
-      try {
-        const [ords, addrs] = await Promise.all([fetchOrders(), fetchAddresses()]);
-        setOrderCount(ords.length);
-        setAddressCount(addrs.length);
-      } catch (e) {
-        console.error("Failed to load profile metrics:", e);
-      }
-    }
-    loadStats();
-  }, []);
+    dispatch(fetchOrdersThunk());
+    dispatch(fetchAddressesThunk());
+  }, [dispatch]);
 
   function handleNotify(msg: string) {
     setToastMessage(msg);

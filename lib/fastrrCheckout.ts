@@ -136,10 +136,13 @@ export async function launchFastrrCheckout(
 
   const fallbackUrl = `${window.location.origin}/order-confirmation`;
 
-  // Sync active checkout items into cookie so Shopify headless cart endpoints (/cart.js, /cart.json) stay 100% synchronized
+  // Sync active checkout items into storage and cookies so order confirmation and headless cart stay 100% synchronized
   try {
+    const itemsJson = JSON.stringify(items);
+    sessionStorage.setItem('rebelive_fastrr_items', itemsJson);
+    localStorage.setItem('rebelive_fastrr_items', itemsJson);
     document.cookie = `rebelive_fastrr_items=${encodeURIComponent(
-      JSON.stringify(items)
+      itemsJson
     )}; path=/; max-age=3600; SameSite=Lax`;
   } catch {}
 
@@ -204,8 +207,10 @@ export async function launchFastrrCheckout(
     if (res.ok) {
       const data = await res.json();
       token = data.token;
-      if (data.order_id || data.orderId) {
-        sessionStorage.setItem('rebelive_last_order_id', String(data.order_id || data.orderId));
+      const oid = data.order_id || data.orderId || data.fastrrOrderId || data.fastrr_order_id;
+      if (oid) {
+        sessionStorage.setItem('rebelive_last_order_id', String(oid));
+        localStorage.setItem('rebelive_last_order_id', String(oid));
       }
     } else {
       const err = await res.text();

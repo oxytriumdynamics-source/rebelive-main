@@ -4,7 +4,8 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowUpRight } from 'lucide-react';
 import { Product } from '@/data/products';
-import { fetchProducts } from '@/lib/productsApi';
+import { fetchProducts, selectProducts } from '@/store/slices/productSlice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { ProductScene } from '@/components/product/ProductScene';
 import { FlavorCarouselOverlay } from '@/components/hero/FlavorCarouselOverlay';
 import { PodiumOverlays } from '@/components/hero/PodiumOverlays';
@@ -87,9 +88,17 @@ const lerpClamp = (val: number, inMin: number, inMax: number) =>
 
 export default function App() {
   const router = useRouter();
+  const dispatch = useAppDispatch();
+  const rawProducts = useAppSelector(selectProducts);
+
+  // Derive flagship products from Redux store
+  const productsList = React.useMemo(() => {
+    if (!rawProducts || rawProducts.length === 0) return [];
+    const flagships = rawProducts.filter((p) => p.id !== 'variety');
+    return flagships.length > 0 ? flagships : rawProducts;
+  }, [rawProducts]);
 
   // ── Core State ───────────────────────────────────────────────────────
-  const [productsList, setProductsList] = useState<Product[]>([]);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [targetOffset, setTargetOffset] = useState(0);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -99,15 +108,10 @@ export default function App() {
   const [isTablet, setIsTablet] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(false);
 
-  // Fetch live products from backend MongoDB API
+  // Fetch live products from backend MongoDB API via Redux
   useEffect(() => {
-    fetchProducts().then((data) => {
-      if (data && data.length > 0) {
-        const flagships = data.filter((p) => p.id !== 'variety');
-        setProductsList(flagships.length > 0 ? flagships : data);
-      }
-    });
-  }, []);
+    dispatch(fetchProducts(false));
+  }, [dispatch]);
 
   // Sync sound status with SoundEngine singleton
   useEffect(() => {

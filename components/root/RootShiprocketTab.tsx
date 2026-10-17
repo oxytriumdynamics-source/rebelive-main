@@ -16,32 +16,38 @@ import {
   ArrowRight,
   AlertCircle,
 } from 'lucide-react';
-import { trackShipment, TrackingResult } from '@/lib/shiprocketApi';
+import {
+  trackShipmentThunk,
+  selectTrackingResult,
+  selectShippingLoading,
+  selectShippingError,
+} from '@/store/slices/shippingSlice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
 export function RootShiprocketTab() {
+  const dispatch = useAppDispatch();
+  const trackingResult = useAppSelector(selectTrackingResult);
+  const isSearching = useAppSelector(selectShippingLoading);
+  const reduxError = useAppSelector(selectShippingError);
+
   const [searchAwb, setSearchAwb] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
-  const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null);
   const [searchError, setSearchError] = useState('');
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!searchAwb.trim()) return;
 
-    setIsSearching(true);
     setSearchError('');
     try {
-      const res = await trackShipment(searchAwb.trim());
-      setTrackingResult(res);
+      const res = await dispatch(trackShipmentThunk(searchAwb.trim())).unwrap();
       showAdminToast(`Tracking located for ${res.orderNumber} (${res.currentStatus})`, 'success', 'Shipment Found');
     } catch (err: any) {
-      setSearchError(err.message || 'Tracking identifier not located.');
-      showAdminToast(err.message || 'Tracking identifier not located.', 'error', 'Lookup Failed');
-    } finally {
-      setIsSearching(false);
+      const errMsg = err || 'Tracking identifier not located.';
+      setSearchError(errMsg);
+      showAdminToast(errMsg, 'error', 'Lookup Failed');
     }
   };
 

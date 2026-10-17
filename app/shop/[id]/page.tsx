@@ -42,7 +42,14 @@ import {
   PRICES,
   PackSize,
 } from '@/data/products';
-import { fetchProducts, fetchProductBySlug } from '@/lib/productsApi';
+import {
+  fetchProducts,
+  fetchProductBySlug,
+  selectProducts,
+  selectCurrentProduct,
+  selectProductsLoading,
+  selectProductsError,
+} from '@/store/slices/productSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
 import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
@@ -323,52 +330,55 @@ export default function ProductDetailPage() {
   const params = useParams();
   const router = useRouter();
   const productId = (params?.id as string) || 'apex';
+  const dispatch = useAppDispatch();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [allProductsList, setAllProductsList] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
-  const [isError, setIsError] = useState<boolean>(false);
+  // Redux state from productSlice
+  const currentProductFromRedux = useAppSelector(selectCurrentProduct);
+  const productsListFromRedux = useAppSelector(selectProducts);
+  const reduxLoading = useAppSelector(selectProductsLoading);
+  const reduxError = useAppSelector(selectProductsError);
+
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
-  const loadProductData = async (force = false) => {
-    try {
-      setIsError(false);
-      const [serverProd, list] = await Promise.all([
-        fetchProductBySlug(productId, force),
-        fetchProducts(force).catch(() => []),
-      ]);
-
-      if (serverProd) {
-        setProduct(serverProd);
-        setIsError(false);
-      } else {
-        setProduct(null);
-        setIsError(true);
-      }
-
-      if (list && list.length > 0) {
-        setAllProductsList(list);
-      }
-    } catch (err) {
-      console.error('Failed to load product from backend:', err);
-      setProduct(null);
-      setIsError(true);
-    } finally {
-      setIsLoading(false);
-      setIsRetrying(false);
+  // Derive matching active product from Redux
+  const product = useMemo(() => {
+    if (
+      currentProductFromRedux &&
+      (currentProductFromRedux.id.toLowerCase() === productId.toLowerCase() ||
+        (currentProductFromRedux as any).slug?.toLowerCase() === productId.toLowerCase())
+    ) {
+      return currentProductFromRedux;
     }
-  };
+    return (
+      productsListFromRedux.find(
+        (p) =>
+          p.id.toLowerCase() === productId.toLowerCase() ||
+          (p as any).slug?.toLowerCase() === productId.toLowerCase()
+      ) || null
+    );
+  }, [currentProductFromRedux, productsListFromRedux, productId]);
 
+  const allProductsList = productsListFromRedux;
+  const isLoading = reduxLoading && !product;
+  const isError = Boolean(reduxError) && !product;
+
+  // Dispatch Redux thunks to fetch product by slug and list from MongoDB
   useEffect(() => {
-    loadProductData(false);
-  }, [productId]);
+    dispatch(fetchProductBySlug(productId));
+    if (productsListFromRedux.length === 0) {
+      dispatch(fetchProducts(false));
+    }
+  }, [dispatch, productId, productsListFromRedux.length]);
 
-  const handleRetry = () => {
+  const handleRetry = async () => {
     setIsRetrying(true);
-    loadProductData(true);
+    await Promise.all([
+      dispatch(fetchProductBySlug(productId)),
+      dispatch(fetchProducts(true)),
+    ]);
+    setIsRetrying(false);
   };
 
-  const dispatch = useAppDispatch();
   const cartItems = useAppSelector((state) => state.cart.items);
   const totalCartCount = cartItems.reduce((sum, item) => sum + item.quantity, 0);
 

@@ -475,6 +475,10 @@ export async function deleteAddress(id: string): Promise<boolean> {
   return true;
 }
 
+export async function setDefaultAddress(id: string): Promise<Address> {
+  return updateAddress(id, { isDefault: true });
+}
+
 // ─── Orders API ──────────────────────────────────────────
 
 export async function fetchOrders(): Promise<Order[]> {
@@ -503,16 +507,20 @@ export async function fetchOrderById(id: string): Promise<Order | null> {
   return orders.find((o) => o.id === id || o.orderNumber === id) || null;
 }
 
-export async function cancelOrder(id: string, reason?: string): Promise<boolean> {
+export async function cancelOrder(id: string, reason?: string): Promise<Order> {
   try {
-    await API.post(`/orders/${id}/cancel`, { reason });
+    const res = await API.post(`/orders/${id}/cancel`, { reason });
+    if (res.data?.data) {
+      return res.data.data as Order;
+    }
   } catch (err) {
     console.warn('Backend cancel order failed, updating local state:', err);
   }
 
+  let updatedOrder: Order | null = null;
   const orders = readLocalOrders().map((o) => {
     if (o.id === id) {
-      return {
+      updatedOrder = {
         ...o,
         status: 'CANCELLED' as OrderStatus,
         statusHistory: [
@@ -525,9 +533,11 @@ export async function cancelOrder(id: string, reason?: string): Promise<boolean>
           },
         ],
       };
+      return updatedOrder;
     }
     return o;
   });
   writeLocalOrders(orders);
-  return true;
+  if (updatedOrder) return updatedOrder;
+  throw new Error('Order not found');
 }

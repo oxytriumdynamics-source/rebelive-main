@@ -47,6 +47,7 @@ interface AdminLayoutShellProps {
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
+  adminUser?: AdminUser | null;
 }
 
 export function AdminLayoutShell({
@@ -56,10 +57,11 @@ export function AdminLayoutShell({
   searchPlaceholder = 'Search..',
   searchValue,
   onSearchChange,
+  adminUser: userProp,
 }: AdminLayoutShellProps) {
   const router = useRouter();
-  const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [isInitializing, setIsInitializing] = useState(true);
+  const [adminUser, setAdminUser] = useState<AdminUser | null>(userProp || null);
+  const [isInitializing, setIsInitializing] = useState(!userProp);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
@@ -76,8 +78,14 @@ export function AdminLayoutShell({
   const [passwordError, setPasswordError] = useState('');
   const [passwordSuccess, setPasswordSuccess] = useState('');
 
-  // Check stored admin session on mount
+  // Sync or check stored admin session on mount
   useEffect(() => {
+    if (userProp !== undefined) {
+      setAdminUser(userProp);
+      setIsInitializing(false);
+      return;
+    }
+
     let isMounted = true;
 
     const checkSession = async () => {
@@ -99,7 +107,7 @@ export function AdminLayoutShell({
       isMounted = false;
       window.removeEventListener('admin-session-expired', handleSessionExpired);
     };
-  }, []);
+  }, [userProp]);
 
   const handleAuthenticated = (user: AdminUser) => {
     setAdminUser(user);
@@ -188,15 +196,15 @@ export function AdminLayoutShell({
     href: string;
   }> = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
-    { id: 'orders', label: 'My Tasks / Orders', icon: Package, href: '/root?tab=orders' },
-    { id: 'products', label: 'Products / Catalog', icon: Boxes, href: '/root?tab=products' },
-    { id: 'testimonials', label: 'Testimonials / Voices', icon: Quote, href: '/root?tab=testimonials' },
-    { id: 'contact-queries', label: 'Contact Queries', icon: Mail, href: '/root?tab=contact-queries' },
-    { id: 'corporate-queries', label: 'Corporate & Bulk', icon: Building2, href: '/root?tab=corporate-queries' },
-    { id: 'users', label: 'Messages / Users', icon: Users, href: '/root?tab=users' },
-    { id: 'shiprocket', label: 'Notifications / Logistics', icon: Truck, href: '/root?tab=shiprocket' },
+    { id: 'orders', label: 'Orders', icon: Package, href: '/root?tab=orders' },
+    { id: 'products', label: 'Catalog', icon: Boxes, href: '/root?tab=products' },
+    { id: 'testimonials', label: 'Testimonials', icon: Quote, href: '/root?tab=testimonials' },
+    { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail, href: '/root?tab=contact-queries' },
+    { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2, href: '/root?tab=corporate-queries' },
+    { id: 'users', label: 'Users', icon: Users, href: '/root?tab=users' },
+    { id: 'shiprocket', label: 'Logistics', icon: Truck, href: '/root?tab=shiprocket' },
     ...(adminUser.role === 'SUPERADMIN'
-      ? [{ id: 'settings' as const, label: 'Settings / Admins', icon: SlidersHorizontal, href: '/root?tab=settings' }]
+      ? [{ id: 'settings' as const, label: 'Settings', icon: SlidersHorizontal, href: '/root?tab=settings' }]
       : []),
   ];
 
@@ -242,38 +250,37 @@ export function AdminLayoutShell({
 
         {/* ─── Fixed Left Sidebar ─── */}
         <aside
-          className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-black border-r border-white/10 flex flex-col transition-transform duration-200 ease-in-out md:translate-x-0 ${
+          className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#090909] border-r border-white/10 flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0 ${
             mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
-          {/* Brand Header */}
-          <div className="p-6 border-b border-white/5 flex items-center justify-between">
-            <Link href="/root" className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center font-black text-black text-base tracking-tighter">
-                R
-              </div>
-              <div className="flex flex-col">
-                <span className="font-bold text-sm tracking-tight text-white uppercase">REBELIVE</span>
-                <span className="text-[9px] font-mono tracking-widest text-white/40 uppercase">
-                  {adminUser.role === 'SUPERADMIN' ? 'SUPER ADMIN CONSOLE' : 'ADMIN CONSOLE'}
-                </span>
-              </div>
-            </Link>
+          {/* Top Header / Branding */}
+          <div>
+            <div className="p-6 pb-5 flex items-center justify-between border-b border-white/5">
+              <Link href="/root" className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-black font-mono text-sm shadow-sm">
+                  R
+                </div>
+                <div>
+                  <h1 className="font-bold text-base tracking-tight text-white leading-tight">
+                    {NAV_TABS.find((t) => t.id === activeTab)?.label || 'Dashboard'}
+                  </h1>
+                  <p className="text-[10px] text-white/40 font-mono tracking-wider uppercase">
+                    ROOT CONSOLE
+                  </p>
+                </div>
+              </Link>
 
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-1 rounded-lg text-white/40 hover:text-white md:hidden"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation Links */}
-          <div className="flex-1 py-6 px-4 overflow-y-auto">
-            <div className="text-[10px] font-mono uppercase tracking-widest text-white/30 px-3 mb-2">
-              NAVIGATION
+              <button
+                onClick={() => setMobileMenuOpen(false)}
+                className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 md:hidden cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
             </div>
-            <nav className="space-y-1">
+
+            {/* Navigation Tabs (Arranged vertically on left side matching Image 2) */}
+            <nav className="p-4 space-y-1.5">
               {NAV_TABS.map((tab) => {
                 const Icon = tab.icon;
                 const isActive = activeTab === tab.id;
@@ -281,7 +288,7 @@ export function AdminLayoutShell({
                   <button
                     key={tab.id}
                     onClick={() => handleTabClick(tab.id)}
-                    className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-xs font-mono transition-all text-left cursor-pointer ${
+                    className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-3 cursor-pointer text-left ${
                       isActive
                         ? 'bg-white text-black font-semibold shadow-sm'
                         : 'text-white/60 hover:text-white hover:bg-white/5'
@@ -297,17 +304,6 @@ export function AdminLayoutShell({
 
           {/* Bottom Sidebar Actions */}
           <div className="p-4 border-t border-white/5 space-y-1">
-            {adminUser.role === 'SUPERADMIN' && (
-              <button
-                onClick={() => setPasswordModalOpen(true)}
-                className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/70 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3 cursor-pointer text-left"
-                title="Change Password"
-              >
-                <KeyRound className="w-4 h-4 shrink-0" />
-                <span>Change Password</span>
-              </button>
-            )}
-
             <Link
               href="/"
               target="_blank"
@@ -332,8 +328,8 @@ export function AdminLayoutShell({
 
         {/* ─── Main Content Canvas (Offset for Fixed Sidebar) ─── */}
         <div className="flex-1 md:pl-64 flex flex-col min-h-screen bg-black w-full">
-          {/* Top Utility Bar */}
-          <div className="w-full px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-md sticky top-0 z-30">
+          {/* Top Utility Bar (Fixed Header) */}
+          <header className="fixed top-0 right-0 left-0 md:left-64 z-30 h-14 px-4 sm:px-8 border-b border-white/5 bg-black/80 backdrop-blur-md flex items-center justify-between">
             <div className="flex items-center gap-3 flex-1 max-w-md">
               {/* Mobile Hamburger Menu Toggle */}
               <button
@@ -461,10 +457,10 @@ export function AdminLayoutShell({
                 )}
               </div>
             </div>
-          </div>
+          </header>
 
-          {/* Main Content Area */}
-          <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+          {/* Main Content Area (Offset for fixed header) */}
+          <main className="flex-1 pt-20 p-4 sm:p-8 max-w-7xl mx-auto w-full">
             {children}
           </main>
         </div>

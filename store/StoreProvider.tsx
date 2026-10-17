@@ -6,10 +6,11 @@ import { store } from './store';
 import { useAppDispatch } from './hooks';
 import { getMe } from './slices/authslice';
 import { hydrateCart } from './slices/cartSlice';
+import { fetchProducts } from './slices/productSlice';
 
 /**
- * Dispatches getMe on website load to verify user is logged in or not from the backend.
- * Also safely hydrates cart state from localStorage.
+ * Dispatches getMe, hydrateCart, and fetchProducts on website load.
+ * Keeps user session, cart state, and live product catalog synced across the entire app.
  */
 function AuthInitializer() {
   const dispatch = useAppDispatch();
@@ -19,9 +20,10 @@ function AuthInitializer() {
     if (initialized.current) return;
     initialized.current = true;
 
-    // Call getMe from backend to verify user is logged in or not on website load
+    // Call getMe from backend to verify user session
     dispatch(getMe());
     dispatch(hydrateCart());
+    dispatch(fetchProducts());
   }, [dispatch]);
 
   return null;

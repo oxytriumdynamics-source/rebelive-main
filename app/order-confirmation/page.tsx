@@ -18,7 +18,14 @@ import {
   ChevronRight,
   Layers,
 } from 'lucide-react';
-import { getOrderWebhookStatus, TrackingResult } from '@/lib/shiprocketApi';
+import {
+  getOrderWebhookStatusThunk,
+  confirmFastrrOrderThunk,
+  selectTrackingResult,
+  selectWebhookStatus,
+  selectShippingSyncing,
+} from '@/store/slices/shippingSlice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import PaymentConfirmationLockAnimation from '@/components/shop/PaymentConfirmationLockAnimation';
 
 interface WebhookSyncState {
@@ -33,34 +40,40 @@ interface WebhookSyncState {
   syncedAt: string;
 }
 
+const DEFAULT_WEBHOOK_STATUS: WebhookSyncState = {
+  connected: true,
+  orderFound: false,
+  fastrrWebhookSynced: true,
+  shiprocketWebhookSynced: false,
+  awbAssigned: false,
+  trackingNumber: null,
+  currentStatus: 'CONFIRMED',
+  lastWebhookEvent: 'Fastrr 1-Click Payment Captured via Webhook',
+  syncedAt: new Date().toISOString(),
+};
+
 function OrderConfirmationContent() {
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const rawOid = searchParams.get('oid') || searchParams.get('order_id') || searchParams.get('id') || '';
   const ost = searchParams.get('ost') || searchParams.get('status') || 'SUCCESS';
 
-  const [oid, setOid] = useState<string>(rawOid);
-  const [tracking, setTracking] = useState<TrackingResult | null>(null);
-  const [webhookStatus, setWebhookStatus] = useState<WebhookSyncState>({
-    connected: true,
-    orderFound: false,
-    fastrrWebhookSynced: true,
-    shiprocketWebhookSynced: false,
-    awbAssigned: false,
-    trackingNumber: null,
-    currentStatus: 'CONFIRMED',
-    lastWebhookEvent: 'Fastrr 1-Click Payment Captured via Webhook',
-    syncedAt: new Date().toISOString(),
-  });
+  const reduxTracking = useAppSelector(selectTrackingResult);
+  const reduxWebhookStatus = useAppSelector(selectWebhookStatus);
+  const isSyncing = useAppSelector(selectShippingSyncing);
 
+  const [oid, setOid] = useState<string>(rawOid);
   const [loading, setLoading] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [copied, setCopied] = useState(false);
   const [pollCount, setPollCount] = useState(0);
 
-  // Retrieve stored order id from sessionStorage if query param is empty
+  const tracking = reduxTracking;
+  const webhookStatus: WebhookSyncState = (reduxWebhookStatus as any) || DEFAULT_WEBHOOK_STATUS;
+
+  // Retrieve stored order id from sessionStorage/localStorage if query param is empty
   useEffect(() => {
     if (!rawOid && typeof window !== 'undefined') {
-      const stored = sessionStorage.getItem('rebelive_last_order_id');
+      const stored = sessionStorage.getItem('rebelive_last_order_id') || localStorage.getItem('rebelive_last_order_id');
       if (stored) {
         setOid(stored);
       }
@@ -69,26 +82,41 @@ function OrderConfirmationContent() {
     }
   }, [rawOid]);
 
-  // Primary function to connect and sync with backend webhooks
-  const syncWithWebhooks = useCallback(async (targetOid: string, isManual = false) => {
-    if (isManual) setIsSyncing(true);
+  // Primary function to connect and sync with backend webhooks via Redux
+  const syncWithWebhooks = useCallback(async (targetOid: string, _isManual = false) => {
     const queryId = targetOid || 'RBL-CONFIRMED';
 
+    // Retrieve stored items from checkout
+    let storedItems: any[] = [];
+    if (typeof window !== 'undefined') {
+      try {
+        const raw = sessionStorage.getItem('rebelive_fastrr_items') || localStorage.getItem('rebelive_fastrr_items');
+        if (raw) {
+          storedItems = JSON.parse(raw);
+        }
+      } catch {}
+    }
+
     try {
-      const res = await getOrderWebhookStatus(queryId);
-      if (res) {
-        setTracking(res.tracking);
-        setWebhookStatus(res.webhookStatus);
+      // Proactively confirm and register order in MongoDB if valid order ID is present
+      if (queryId && queryId !== 'RBL-CONFIRMED') {
+        await dispatch(confirmFastrrOrderThunk({
+          orderId: queryId,
+          items: storedItems.length > 0 ? storedItems : undefined,
+        })).unwrap();
       }
+    } catch (confirmErr) {
+      console.warn('Fastrr confirmation endpoint attempt (non-fatal):', confirmErr);
+    }
+
+    try {
+      await dispatch(getOrderWebhookStatusThunk(queryId)).unwrap();
     } catch (err) {
       console.warn('Webhook sync poll error:', err);
     } finally {
       setLoading(false);
-      if (isManual) {
-        setTimeout(() => setIsSyncing(false), 500);
-      }
     }
-  }, []);
+  }, [dispatch]);
 
   // Initial fetch and automatic webhook polling loop
   useEffect(() => {

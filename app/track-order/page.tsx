@@ -19,19 +19,28 @@ import {
 } from 'lucide-react';
 import SubpageShell from '@/components/layout/SubpageShell';
 import { Skeleton } from '@/components/ui/Skeleton';
-import { trackShipment, TrackingResult } from '@/lib/shiprocketApi';
+import {
+  trackShipmentThunk,
+  selectTrackingResult,
+  selectShippingLoading,
+  selectShippingError,
+} from '@/store/slices/shippingSlice';
+import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 function TrackOrderContent() {
+  const dispatch = useAppDispatch();
   const searchParams = useSearchParams();
   const initialId = searchParams.get('id') || searchParams.get('order') || searchParams.get('awb') || '';
 
+  const trackingData = useAppSelector(selectTrackingResult);
+  const isLoading = useAppSelector(selectShippingLoading);
+  const reduxError = useAppSelector(selectShippingError);
+
   const [orderId, setOrderId] = useState(initialId);
   const [hasSearched, setHasSearched] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [trackingData, setTrackingData] = useState<TrackingResult | null>(null);
   const [copiedAwb, setCopiedAwb] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -39,18 +48,14 @@ function TrackOrderContent() {
     const cleanId = idToTrack.trim();
     if (!cleanId) return;
 
-    setIsLoading(true);
     setErrorMessage('');
     try {
-      const result = await trackShipment(cleanId);
-      setTrackingData(result);
+      await dispatch(trackShipmentThunk(cleanId)).unwrap();
       setHasSearched(true);
     } catch (err: any) {
       console.error('Failed to track shipment:', err);
-      setErrorMessage(err.message || 'Unable to locate tracking information. Please check your ID.');
+      setErrorMessage(err || 'Unable to locate tracking information. Please check your ID.');
       setHasSearched(true);
-    } finally {
-      setIsLoading(false);
     }
   };
 

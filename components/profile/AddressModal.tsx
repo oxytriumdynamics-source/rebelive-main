@@ -2,7 +2,9 @@
 
 import React, { useState, useEffect } from "react";
 import { X, MapPin, Building, Home, Briefcase, Compass, Check, AlertCircle } from "lucide-react";
-import { Address, CreateAddressInput, createAddress, updateAddress } from "@/lib/profileApi";
+import { Address, CreateAddressInput } from "@/lib/profileApi";
+import { createAddressThunk, updateAddressThunk } from "@/store/slices/profileSlice";
+import { useAppDispatch } from "@/store/hooks";
 
 interface AddressModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ export default function AddressModal({
   addressToEdit,
   accentColor = "#ffffff",
 }: AddressModalProps) {
+  const dispatch = useAppDispatch();
   const [label, setLabel] = useState("");
   const [line1, setLine1] = useState("");
   const [line2, setLine2] = useState("");
@@ -99,9 +102,11 @@ export default function AddressModal({
 
       let result: Address;
       if (addressToEdit) {
-        result = await updateAddress(addressToEdit.id, payload);
+        result = await dispatch(
+          updateAddressThunk({ id: addressToEdit.id, input: payload })
+        ).unwrap();
       } else {
-        result = await createAddress(payload);
+        result = await dispatch(createAddressThunk(payload)).unwrap();
       }
 
       onSuccess(result);

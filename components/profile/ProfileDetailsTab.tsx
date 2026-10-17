@@ -9,7 +9,8 @@ import {
   AlertCircle,
 } from "lucide-react";
 import { AuthUser } from "@/store/slices/authslice";
-import { updateProfileDetails, changePassword } from "@/lib/profileApi";
+import { changePassword } from "@/lib/profileApi";
+import { updateProfileThunk } from "@/store/slices/profileSlice";
 import { useAppDispatch } from "@/store/hooks";
 import { setUser } from "@/store/slices/authslice";
 import { formatRebelId } from "@/lib/auth";
@@ -55,14 +56,17 @@ export default function ProfileDetailsTab({
 
     setDetailsSaving(true);
     try {
-      const updated = await updateProfileDetails({
-        firstName: firstName.trim(),
-        lastName: lastName.trim(),
-        phone: phone.trim() || undefined,
-        avatarUrl,
-      });
+      const updated = await dispatch(
+        updateProfileThunk({
+          firstName: firstName.trim(),
+          lastName: lastName.trim(),
+          phone: phone.trim() || undefined,
+        })
+      ).unwrap();
 
-      dispatch(setUser(updated));
+      if (updated) {
+        dispatch(setUser(updated));
+      }
       if (onNotify) onNotify("Operator details saved successfully.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to save details.";

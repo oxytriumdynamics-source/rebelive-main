@@ -26,6 +26,7 @@ import {
   AdminUser,
   AdminDashboardData,
 } from '@/lib/adminApi';
+import { AdminLayoutShell } from '@/components/root/AdminLayoutShell';
 import { RootAuthGateway } from '@/components/root/RootAuthGateway';
 import { RootOverviewTab } from '@/components/root/RootOverviewTab';
 import { RootOrdersTab } from '@/components/root/RootOrdersTab';
@@ -37,7 +38,6 @@ import { RootUsersTab } from '@/components/root/RootUsersTab';
 import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
 import { RootSettingsTab } from '@/components/root/RootSettingsTab';
 import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
-import { Building2, Mail, SlidersHorizontal } from 'lucide-react';
 
 const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
@@ -57,9 +57,7 @@ export default function AdminRootPage() {
   >('overview');
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [notificationsOpen, setNotificationsOpen] = useState(false);
 
   // Check stored admin session on mount
   useEffect(() => {
@@ -149,14 +147,6 @@ export default function AdminRootPage() {
     showAdminToast(`Welcome, ${user.firstName || 'Administrator'}! Session active.`, 'success', 'Session Authenticated');
   };
 
-  const handleLogout = () => {
-    clearAdminSession();
-    setAdminUser(null);
-    setDashboardData(null);
-    showAdminToast('Signed out of Admin console.', 'info', 'Session Ended');
-    window.location.href = '/root';
-  };
-
   // If initial load checking
   if (isInitializing) {
     return (
@@ -174,213 +164,34 @@ export default function AdminRootPage() {
     return <RootAuthGateway onAuthenticated={handleAuthenticated} />;
   }
 
-  type RootTabId =
-    | 'overview'
-    | 'orders'
-    | 'products'
-    | 'testimonials'
-    | 'contact-queries'
-    | 'corporate-queries'
-    | 'users'
-    | 'shiprocket'
-    | 'settings';
-
-  const NAV_TABS: Array<{
-    id: RootTabId;
-    label: string;
-    icon: React.ComponentType<{ className?: string }>;
-  }> = [
-    { id: 'overview', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'orders', label: 'Orders', icon: Package },
-    { id: 'products', label: 'Catalog', icon: Boxes },
-    { id: 'testimonials', label: 'Testimonials', icon: Quote },
-    { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail },
-    { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2 },
-    { id: 'users', label: 'Users', icon: Users },
-    { id: 'shiprocket', label: 'Logistics', icon: Truck },
-    ...(adminUser.role === 'SUPERADMIN'
-      ? [{ id: 'settings' as const, label: 'Settings', icon: SlidersHorizontal }]
-      : []),
-  ];
-
   return (
     <AdminToastProvider>
-      <div style={{ fontFamily: SANS }} className="min-h-screen bg-black text-white flex">
-        {/* ─── Mobile Sidebar Overlay Backdrop ─── */}
-        {mobileMenuOpen && (
-        <div
-          onClick={() => setMobileMenuOpen(false)}
-          className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm md:hidden"
-        />
-      )}
-
-      {/* ─── Fixed Left Sidebar ─── */}
-      <aside
-        className={`fixed top-0 bottom-0 left-0 z-50 w-64 bg-[#090909] border-r border-white/10 flex flex-col justify-between transition-transform duration-200 ease-in-out md:translate-x-0 ${
-          mobileMenuOpen ? 'translate-x-0' : '-translate-x-full'
-        }`}
+      <AdminLayoutShell
+        activeTab={activeTab}
+        adminUser={adminUser}
+        onTabChange={(tab) => {
+          setActiveTab(tab);
+          if (typeof window !== 'undefined') {
+            const url = tab === 'overview' ? '/root' : `/root?tab=${tab}`;
+            window.history.pushState({}, '', url);
+          }
+        }}
+        searchValue={searchQuery}
+        onSearchChange={setSearchQuery}
+        searchPlaceholder="Search.."
       >
-        {/* Top Header / Branding */}
-        <div>
-          <div className="p-6 pb-5 flex items-center justify-between border-b border-white/5">
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-lg bg-white text-black flex items-center justify-center font-black font-mono text-sm">
-                R
-              </div>
-              <div>
-                <h1 className="font-bold text-base tracking-tight text-white leading-tight">
-                  Dashboard
-                </h1>
-                <p className="text-[10px] text-white/40 font-mono tracking-wider">
-                  ROOT CONSOLE
-                </p>
-              </div>
-            </div>
-
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="p-1 rounded-lg text-white/50 hover:text-white hover:bg-white/10 md:hidden cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-
-          {/* Navigation Tabs (Arranged vertically on left side) */}
-          <nav className="p-4 space-y-1.5">
-            {NAV_TABS.map((tab) => {
-              const Icon = tab.icon;
-              const isActive = activeTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => {
-                    setActiveTab(tab.id);
-                    setMobileMenuOpen(false);
-                  }}
-                  className={`w-full px-3.5 py-2.5 rounded-xl text-xs font-medium transition-all flex items-center gap-3 cursor-pointer text-left ${
-                    isActive
-                      ? 'bg-white text-black font-semibold shadow-sm'
-                      : 'text-white/60 hover:text-white hover:bg-white/5'
-                  }`}
-                >
-                  <Icon className={`w-4 h-4 shrink-0 ${isActive ? 'text-black' : 'text-white/60'}`} />
-                  <span className="truncate">{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
-        </div>
-
-        {/* Bottom Sidebar Actions */}
-        <div className="p-4 border-t border-white/5 space-y-1">
-          <Link
-            href="/"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/50 hover:text-white hover:bg-white/5 transition-colors flex items-center gap-3"
-            title="Open Public Storefront"
-          >
-            <ExternalLink className="w-4 h-4 shrink-0" />
-            <span>Storefront</span>
-          </Link>
-
-          <button
-            onClick={handleLogout}
-            className="w-full px-3.5 py-2.5 rounded-xl text-xs font-mono text-white/60 hover:text-white hover:bg-white/10 transition-colors flex items-center gap-3 cursor-pointer text-left"
-            title="Log Out"
-          >
-            <LogOut className="w-4 h-4 shrink-0" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* ─── Main Content Canvas (Offset for Fixed Sidebar) ─── */}
-      <div className="flex-1 md:pl-64 flex flex-col min-h-screen bg-black w-full">
-        {/* Top Utility Bar (Clean Headerless Bar matching screenshot) */}
-        <div className="w-full px-4 sm:px-8 py-3.5 flex items-center justify-between border-b border-white/5 bg-black/60 backdrop-blur-md sticky top-0 z-30">
-          <div className="flex items-center gap-3 flex-1 max-w-md">
-            {/* Mobile Hamburger Menu Toggle */}
-            <button
-              onClick={() => setMobileMenuOpen(true)}
-              className="p-2 rounded-xl text-white/60 hover:text-white hover:bg-white/10 md:hidden cursor-pointer"
-            >
-              <Menu className="w-5 h-5" />
-            </button>
-
-            {/* Search Input Box */}
-            <div className="relative w-full max-w-xs">
-              <Search className="w-3.5 h-3.5 text-white/40 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search.."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full bg-[#111111] border border-white/10 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-white/30 font-sans focus:outline-none focus:border-white/30 transition-colors"
-              />
-            </div>
-          </div>
-
-          {/* Right Status / Notification & User Profile */}
-          <div className="flex items-center gap-3 sm:gap-4">
-            {/* Notification Button */}
-            <div className="relative">
-              <button
-                onClick={() => setNotificationsOpen(!notificationsOpen)}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-white/70 hover:text-white hover:bg-white/5 transition-colors cursor-pointer"
-              >
-                <div className="relative">
-                  <Bell className="w-4 h-4" />
-                  <span className="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-white animate-pulse" />
-                </div>
-                <span className="hidden sm:inline text-xs font-medium">Notification</span>
-                <span className="text-[10px] font-bold bg-white text-black px-1.5 py-0.2 rounded-full">
-                  3
-                </span>
-              </button>
-
-              {notificationsOpen && (
-                <div className="absolute right-0 mt-2 w-72 bg-[#121212] border border-white/10 rounded-2xl p-3 shadow-2xl z-50 text-xs">
-                  <div className="font-bold text-white mb-2 pb-2 border-b border-white/10">
-                    Notifications
-                  </div>
-                  <div className="space-y-2 text-white/70">
-                    <div className="p-2 rounded-lg bg-white/5">
-                      <p className="font-semibold text-white">Consignment Synchronized</p>
-                      <p className="text-[10px] text-white/40">Shiprocket dispatch ready</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5">
-                      <p className="font-semibold text-white">Stock Level Update</p>
-                      <p className="text-[10px] text-white/40">Inventory reserves synced</p>
-                    </div>
-                    <div className="p-2 rounded-lg bg-white/5">
-                      <p className="font-semibold text-white">New Order Placed</p>
-                      <p className="text-[10px] text-white/40">Prepaid order confirmed</p>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* User Profile Avatar & Name */}
-            <div className="flex items-center gap-2.5 px-2 py-1 rounded-xl bg-white/5 border border-white/10">
-              <div className="w-6 h-6 rounded-full bg-white text-black flex items-center justify-center font-bold text-xs">
-                <UserIcon className="w-3.5 h-3.5 text-black" />
-              </div>
-              <span className="text-xs font-semibold text-white hidden sm:inline">
-                {adminUser.firstName || 'User'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Main Content Area */}
-        <main className="flex-1 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+        <div className="w-full">
           {activeTab === 'overview' && (
             <RootOverviewTab
               data={dashboardData}
               userName={adminUser.firstName || 'User'}
-              onNavigateTab={(tab) => setActiveTab(tab)}
+              onNavigateTab={(tab) => {
+                setActiveTab(tab);
+                if (typeof window !== 'undefined') {
+                  const url = tab === 'overview' ? '/root' : `/root?tab=${tab}`;
+                  window.history.pushState({}, '', url);
+                }
+              }}
             />
           )}
           {activeTab === 'orders' && <RootOrdersTab />}
@@ -391,9 +202,8 @@ export default function AdminRootPage() {
           {activeTab === 'users' && <RootUsersTab />}
           {activeTab === 'shiprocket' && <RootShiprocketTab />}
           {activeTab === 'settings' && <RootSettingsTab adminUser={adminUser} />}
-        </main>
-      </div>
-    </div>
+        </div>
+      </AdminLayoutShell>
     </AdminToastProvider>
   );
 }

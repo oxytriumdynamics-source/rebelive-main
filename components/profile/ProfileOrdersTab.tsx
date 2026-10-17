@@ -10,7 +10,13 @@ import {
   ArrowRight,
   Eye,
 } from "lucide-react";
-import { Order, OrderStatus, fetchOrders } from "@/lib/profileApi";
+import { Order, OrderStatus } from "@/lib/profileApi";
+import {
+  fetchOrdersThunk,
+  selectProfileOrders,
+  selectOrdersLoading,
+} from "@/store/slices/profileSlice";
+import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import OrderDetailsModal from "./OrderDetailsModal";
 
 interface ProfileOrdersTabProps {
@@ -24,27 +30,17 @@ export default function ProfileOrdersTab({
   accentColor = "#ffffff",
   onNotify,
 }: ProfileOrdersTabProps) {
-  const [orders, setOrders] = useState<Order[]>([]);
-  const [loading, setLoading] = useState(true);
+  const dispatch = useAppDispatch();
+  const orders = useAppSelector(selectProfileOrders);
+  const loading = useAppSelector(selectOrdersLoading);
+
   const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
-    loadOrders();
-  }, []);
-
-  async function loadOrders() {
-    setLoading(true);
-    try {
-      const data = await fetchOrders();
-      setOrders(data);
-    } catch (e) {
-      console.error("Failed to fetch orders:", e);
-    } finally {
-      setLoading(false);
-    }
-  }
+    dispatch(fetchOrdersThunk());
+  }, [dispatch]);
 
   function handleViewDetails(order: Order) {
     setSelectedOrder(order);
@@ -52,7 +48,6 @@ export default function ProfileOrdersTab({
   }
 
   function handleOrderUpdated(updated: Order) {
-    setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
     setSelectedOrder(updated);
     if (onNotify) onNotify(`Order ${updated.orderNumber} updated.`);
   }

@@ -392,3 +392,48 @@ export async function getOrderWebhookStatus(identifier: string): Promise<{
     },
   };
 }
+
+export interface ConfirmFastrrOrderInput {
+  orderId: string;
+  items?: FastrrCheckoutItemInput[];
+  customer?: {
+    name?: string;
+    firstName?: string;
+    lastName?: string;
+    email?: string;
+    phone?: string;
+  };
+  shippingAddress?: {
+    line1?: string;
+    line2?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+    country?: string;
+  };
+  payment?: {
+    method?: string;
+    transactionId?: string;
+    gatewayResponse?: any;
+  };
+  totalAmount?: number;
+  notes?: string;
+}
+
+/**
+ * Confirms and persists Fastrr order data in MongoDB.
+ * Works seamlessly for both authenticated users and anonymous (guest) checkouts.
+ */
+export async function confirmFastrrOrder(
+  payload: ConfirmFastrrOrderInput
+): Promise<any> {
+  try {
+    const res = await API.post('/shipping/fastrr/confirm', payload);
+    if (res.data?.status === 'success' && res.data?.data) {
+      return res.data.data;
+    }
+  } catch (err) {
+    console.warn('Backend /shipping/fastrr/confirm endpoint non-fatal error:', err);
+  }
+  return null;
+}
