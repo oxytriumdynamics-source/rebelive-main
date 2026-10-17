@@ -302,16 +302,19 @@ export default function OrderDetailsModal({
               {order.shippingAddress ? (
                 <div className="font-sans text-xs text-white/80 space-y-0.5">
                   <p className="font-mono text-[10px] text-white font-semibold uppercase">
-                    {order.shippingAddress.label || "Saved Address"}
+                    {(order.shippingAddress as any).billing_customer_name || (order.shippingAddress as any).name || (order.shippingAddress as any).label || "Delivery Destination"}
                   </p>
-                  <p>{order.shippingAddress.line1}</p>
-                  {order.shippingAddress.line2 && <p>{order.shippingAddress.line2}</p>}
+                  <p>{(order.shippingAddress as any).billing_address || (order.shippingAddress as any).line1}</p>
+                  {((order.shippingAddress as any).billing_address_2 || (order.shippingAddress as any).line2) && (
+                    <p>{(order.shippingAddress as any).billing_address_2 || (order.shippingAddress as any).line2}</p>
+                  )}
                   <p>
-                    {order.shippingAddress.city}, {order.shippingAddress.state} -{" "}
-                    {order.shippingAddress.postalCode}
+                    {(order.shippingAddress as any).billing_city || (order.shippingAddress as any).city},{" "}
+                    {(order.shippingAddress as any).billing_state || (order.shippingAddress as any).state} -{" "}
+                    {(order.shippingAddress as any).billing_pincode || (order.shippingAddress as any).postalCode}
                   </p>
                   <p className="font-mono text-[9px] text-white/50 uppercase">
-                    {order.shippingAddress.country}
+                    {(order.shippingAddress as any).billing_country || (order.shippingAddress as any).country || "India"}
                   </p>
                 </div>
               ) : (

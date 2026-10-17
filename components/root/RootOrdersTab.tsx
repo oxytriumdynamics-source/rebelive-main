@@ -164,19 +164,22 @@ export function RootOrdersTab() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
-      {/* Top Controls: Search, Filter, Refresh */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        {/* Search Input */}
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
-          <Search className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search Order Number, Customer, AWB..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full bg-[#0f0f0f] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
-          />
-        </form>
+      {/* ─── Top Section Header ─── */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-2 border-b border-white/10">
+        <div>
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-[10px] tracking-widest text-white/70 uppercase bg-white/5 px-2 py-0.5 rounded border border-white/10">
+              FULFILLMENT CONSOLE
+            </span>
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black uppercase text-white tracking-tight mt-1 flex items-center gap-2.5">
+            <Package className="w-5 h-5 text-white" />
+            Orders & Shipments
+          </h2>
+          <p className="text-xs text-white/50 font-mono mt-0.5">
+            Real-time customer orders, automated dispatch queue, and Shiprocket live carrier sync
+          </p>
+        </div>
 
         <div className="flex items-center gap-2">
           <button
@@ -186,7 +189,7 @@ export function RootOrdersTab() {
             title="Post all pending orders to Shiprocket dashboard"
           >
             <Send className={`w-3.5 h-3.5 text-black ${isSyncingAll ? 'animate-spin' : ''}`} />
-            <span>{isSyncingAll ? 'Syncing with Shiprocket...' : 'Post All to Shiprocket'}</span>
+            <span>{isSyncingAll ? 'Syncing...' : 'Post All to Shiprocket'}</span>
           </button>
 
           <button
@@ -200,21 +203,36 @@ export function RootOrdersTab() {
         </div>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2 overflow-x-auto pb-1 text-xs">
-        {STATUS_PILLS.map((st) => (
-          <button
-            key={st}
-            onClick={() => setStatusFilter(st)}
-            className={`px-3 py-1.5 rounded-xl uppercase font-mono text-[10px] font-bold tracking-wider transition-all cursor-pointer shrink-0 border ${
-              statusFilter === st
-                ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
-                : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/20'
-            }`}
-          >
-            {st}
-          </button>
-        ))}
+      {/* ─── Controls: Search & Status Filter Pills ─── */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Search Input */}
+        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-md">
+          <Search className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Search Order Number, Customer, AWB..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full bg-[#0f0f0f] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
+          />
+        </form>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-1 text-xs shrink-0">
+          {STATUS_PILLS.map((st) => (
+            <button
+              key={st}
+              onClick={() => setStatusFilter(st)}
+              className={`px-3 py-1.5 rounded-xl uppercase font-mono text-[10px] font-bold tracking-wider transition-all cursor-pointer shrink-0 border ${
+                statusFilter === st
+                  ? 'bg-white text-black border-white shadow-[0_0_15px_rgba(255,255,255,0.2)]'
+                  : 'bg-white/[0.03] text-white/60 border-white/10 hover:border-white/20'
+              }`}
+            >
+              {st}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Success Notification */}

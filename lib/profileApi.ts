@@ -115,17 +115,10 @@ const DEFAULT_SAMPLE_ADDRESSES: Address[] = [];
 const DEFAULT_SAMPLE_ORDERS: Order[] = [];
 
 function readLocalAddresses(): Address[] {
-  if (typeof window === 'undefined') return [];
-  const raw = localStorage.getItem(LOCAL_ADDR_KEY);
-  if (!raw) return [];
-  try {
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    // Purge any legacy dummy sample addresses if previously cached
-    return parsed.filter((a: any) => a.id !== 'addr-base-01' && a.id !== 'addr-base-02');
-  } catch {
-    return [];
+  if (typeof window !== 'undefined') {
+    localStorage.removeItem(LOCAL_ADDR_KEY);
   }
+  return [];
 }
 
 function writeLocalAddresses(addrs: Address[]) {

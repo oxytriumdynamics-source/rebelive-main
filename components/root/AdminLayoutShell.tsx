@@ -460,7 +460,7 @@ export function AdminLayoutShell({
           </header>
 
           {/* Main Content Area (Offset for fixed header) */}
-          <main className="flex-1 pt-20 p-4 sm:p-8 max-w-7xl mx-auto w-full">
+          <main className="flex-1 pt-24 sm:pt-28 pb-16 px-4 sm:px-8 max-w-7xl mx-auto w-full">
             {children}
           </main>
         </div>

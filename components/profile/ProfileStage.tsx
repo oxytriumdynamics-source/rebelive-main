@@ -5,7 +5,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   LogOut,
   User,
-  MapPin,
   Package,
   Shield,
   CheckCircle2,
@@ -18,14 +17,11 @@ import { AuthUser, logoutUser } from "@/store/slices/authslice";
 import { formatRebelId } from "@/lib/auth";
 import {
   fetchOrdersThunk,
-  fetchAddressesThunk,
   selectProfileOrders,
-  selectProfileAddresses,
 } from "@/store/slices/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import ProfileOverviewTab from "./ProfileOverviewTab";
 import ProfileOrdersTab from "./ProfileOrdersTab";
-import ProfileAddressesTab from "./ProfileAddressesTab";
 import ProfileDetailsTab from "./ProfileDetailsTab";
 
 const MONO = "JetBrains Mono, Courier New, monospace";
@@ -37,7 +33,7 @@ const SLUG_TO_PERSONA: Record<string, keyof typeof PERSONAS> = {
   aviva: "AVIVA",
 };
 
-export type ProfileTab = "overview" | "orders" | "addresses" | "details";
+export type ProfileTab = "overview" | "orders" | "details";
 
 export default function ProfileStage({
   user: initialUser,
@@ -49,35 +45,32 @@ export default function ProfileStage({
   const searchParams = useSearchParams();
   const reduxUser = useAppSelector((s) => s.auth.user);
   const orders = useAppSelector(selectProfileOrders);
-  const addresses = useAppSelector(selectProfileAddresses);
 
   const user = reduxUser || initialUser;
 
   // Active tab state from URL search params or default to "overview"
   const tabParam = searchParams?.get("tab") as ProfileTab | null;
   const [activeTab, setActiveTab] = useState<ProfileTab>(
-    tabParam && ["overview", "orders", "addresses", "details"].includes(tabParam)
+    tabParam && ["overview", "orders", "details"].includes(tabParam)
       ? tabParam
       : "overview"
   );
 
   // Sync tab state when URL searchParams changes
   useEffect(() => {
-    if (tabParam && ["overview", "orders", "addresses", "details"].includes(tabParam)) {
+    if (tabParam && ["overview", "orders", "details"].includes(tabParam)) {
       setActiveTab(tabParam);
     }
   }, [tabParam]);
 
-  // Order & address counts from Redux
+  // Order counts from Redux
   const orderCount = orders.length;
-  const addressCount = addresses.length;
 
   // Notification toast message
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   useEffect(() => {
     dispatch(fetchOrdersThunk());
-    dispatch(fetchAddressesThunk());
   }, [dispatch]);
 
   function handleNotify(msg: string) {
@@ -195,7 +188,6 @@ export default function ProfileStage({
         {[
           { id: "overview", label: "Overview", icon: Shield },
           { id: "orders", label: `Orders (${orderCount})`, icon: Package },
-          { id: "addresses", label: `Addresses (${addressCount})`, icon: MapPin },
           { id: "details", label: "Personal Details", icon: User },
         ].map((tab) => {
           const isActive = activeTab === tab.id;
@@ -239,7 +231,6 @@ export default function ProfileStage({
                 accentColor={accentColor}
                 onSelectTab={handleTabChange}
                 orderCount={orderCount}
-                addressCount={addressCount}
               />
             </motion.div>
           )}
@@ -253,21 +244,6 @@ export default function ProfileStage({
               transition={{ duration: 0.25 }}
             >
               <ProfileOrdersTab
-                accentColor={accentColor}
-                onNotify={handleNotify}
-              />
-            </motion.div>
-          )}
-
-          {activeTab === "addresses" && (
-            <motion.div
-              key="tab-addresses"
-              initial={{ opacity: 0, y: 12 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -12 }}
-              transition={{ duration: 0.25 }}
-            >
-              <ProfileAddressesTab
                 accentColor={accentColor}
                 onNotify={handleNotify}
               />

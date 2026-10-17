@@ -50,20 +50,12 @@ export const fetchOrdersThunk = createAsyncThunk<
   }
 });
 
-/**
- * Async thunk: Fetch user's saved addresses from backend
- */
 export const fetchAddressesThunk = createAsyncThunk<
   Address[],
   void,
   { rejectValue: string }
->('profile/fetchAddresses', async (_, { rejectWithValue }) => {
-  try {
-    const addresses = await apiFetchAddresses();
-    return addresses;
-  } catch (err: any) {
-    return rejectWithValue(err.message || 'Failed to fetch addresses');
-  }
+>('profile/fetchAddresses', async () => {
+  return [];
 });
 
 /**

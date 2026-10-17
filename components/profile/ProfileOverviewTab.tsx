@@ -21,7 +21,7 @@ interface ProfileOverviewTabProps {
   persona: PersonaProfile | null;
   personaSlug?: string | null;
   accentColor?: string;
-  onSelectTab: (tab: "overview" | "details" | "addresses" | "orders") => void;
+  onSelectTab: (tab: "overview" | "details" | "orders") => void;
   orderCount?: number;
   addressCount?: number;
 }
