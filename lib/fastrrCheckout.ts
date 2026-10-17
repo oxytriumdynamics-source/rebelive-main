@@ -238,6 +238,12 @@ export function getVariantId(productIdOrSlug?: string, packSize: number = 6): nu
 }
 
 /**
+ * Global Instant Checkout Pause Flag
+ * Set to true to temporarily pause and disable 1-Click Fastrr Instant Checkout across the store.
+ */
+export const IS_INSTANT_CHECKOUT_PAUSED = true;
+
+/**
  * Generates token from backend and triggers the native Shiprocket Fastrr Instant Checkout UI directly.
  */
 export async function launchFastrrCheckout(
@@ -246,6 +252,10 @@ export async function launchFastrrCheckout(
   couponCode?: string
 ): Promise<void> {
   if (typeof window === 'undefined') return;
+
+  if (IS_INSTANT_CHECKOUT_PAUSED) {
+    throw new Error('Instant checkout is temporarily paused for maintenance. Please check back shortly.');
+  }
 
   if (!items || items.length === 0) {
     throw new Error('Your crate is empty. Please select an item to checkout.');

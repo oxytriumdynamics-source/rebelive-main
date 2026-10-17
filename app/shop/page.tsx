@@ -21,7 +21,7 @@ import { PRICES, PackSize, Product } from '@/data/products';
 import { fetchProducts, selectProducts, selectProductsLoading, selectProductsError } from '@/store/slices/productSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
+import { launchFastrrCheckout, getVariantId, IS_INSTANT_CHECKOUT_PAUSED } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ShopSkeleton } from '@/components/ui/Skeleton';
 import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
@@ -408,7 +408,7 @@ export default function ShopPage() {
                   </button>
                   <button
                     type="button"
-                    disabled={isInstantBuying}
+                    disabled={isInstantBuying || IS_INSTANT_CHECKOUT_PAUSED}
                     onClick={async (e) => {
                       if (!quickAddProduct) return;
                       try {
@@ -447,10 +447,20 @@ export default function ShopPage() {
                         setIsInstantBuying(false);
                       }
                     }}
-                    className="w-full py-3.5 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-white/20 active:scale-[0.98] disabled:opacity-60"
+                    className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+                      IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'bg-white/10 text-white/40 border border-white/10 cursor-not-allowed'
+                        : 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-white/20 active:scale-[0.98] disabled:opacity-60'
+                    }`}
                   >
-                    <Zap className="w-3.5 h-3.5 text-black fill-black" />
-                    <span>{isInstantBuying ? 'Connecting Fastrr...' : 'Instant Buy'}</span>
+                    <Zap className={`w-3.5 h-3.5 ${IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/30 fill-white/30' : 'text-black fill-black'}`} />
+                    <span>
+                      {IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'Checkout Paused'
+                        : isInstantBuying
+                        ? 'Connecting Fastrr...'
+                        : 'Instant Buy'}
+                    </span>
                   </button>
                 </div>
               </motion.div>

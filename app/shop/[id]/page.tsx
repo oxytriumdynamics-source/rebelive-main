@@ -52,7 +52,7 @@ import {
 } from '@/store/slices/productSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout, getVariantId } from '@/lib/fastrrCheckout';
+import { launchFastrrCheckout, getVariantId, IS_INSTANT_CHECKOUT_PAUSED } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ProductDetailSkeleton } from '@/components/ui/Skeleton';
 import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
@@ -904,13 +904,23 @@ export default function ProductDetailPage() {
                   <button
                     id="product-instant-checkout-btn"
                     type="button"
-                    disabled={isFastrrLoading}
+                    disabled={isFastrrLoading || IS_INSTANT_CHECKOUT_PAUSED}
                     onClick={handleQuickBuy}
-                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98] shadow-md hover:border-white/40 disabled:opacity-60"
-                    title="1-Click Instant Checkout via Shiprocket Fastrr"
+                    className={`py-3 sm:py-3.5 px-4 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
+                      IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'bg-white/5 text-white/40 border border-white/10 cursor-not-allowed'
+                        : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer active:scale-[0.98] hover:border-white/40 disabled:opacity-60'
+                    }`}
+                    title={IS_INSTANT_CHECKOUT_PAUSED ? 'Instant checkout is temporarily paused for maintenance' : '1-Click Instant Checkout via Shiprocket Fastrr'}
                   >
-                    <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
-                    <span>{isFastrrLoading ? 'Connecting Fastrr...' : 'Instant Checkout'}</span>
+                    <Zap className={`w-3.5 h-3.5 ${IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/30 fill-white/30' : 'text-emerald-400 fill-emerald-400'}`} />
+                    <span>
+                      {IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'Checkout Paused'
+                        : isFastrrLoading
+                        ? 'Connecting Fastrr...'
+                        : 'Instant Checkout'}
+                    </span>
                   </button>
                 </div>
 
