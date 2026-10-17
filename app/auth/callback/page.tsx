@@ -80,7 +80,13 @@ function AuthCallbackInner() {
             await dispatch(claimPersona(pending.toLowerCase()));
           }
         }
-        router.replace("/");
+
+        // If user logged in via Google and has no phone saved, prompt to link phone
+        if (!action.payload?.phone) {
+          router.replace("/?link_phone=true");
+        } else {
+          router.replace("/");
+        }
       } else {
         router.replace("/auth?error=oauth_failed");
       }

@@ -39,7 +39,26 @@ export default function ProfileOverviewTab({
 
   return (
     <div className="space-y-8">
-     
+      {/* Phone Link Banner for Instant Checkout & Past Order Sync */}
+      {!user.phone && (
+        <div className="rounded-2xl border border-white/20 bg-white/[0.04] p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 font-mono text-xs">
+          <div className="flex items-center gap-3">
+            <span className="w-2.5 h-2.5 rounded-full bg-white animate-pulse shrink-0" />
+            <div>
+              <p className="font-bold text-white uppercase tracking-wider">Link Mobile Number</p>
+              <p className="text-[11px] text-white/60 font-sans mt-0.5">
+                Connect your phone to sync past orders placed via Fastrr and enable 1-Click Instant Checkout.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => onSelectTab("details")}
+            className="py-2 px-3.5 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-[11px] uppercase tracking-wider shrink-0 transition-all cursor-pointer"
+          >
+            Link Phone Now
+          </button>
+        </div>
+      )}
 
       {/* Main 2-Column Section: Card on Left, Dossier Details on Right */}
       <div className="flex flex-col lg:flex-row items-center lg:items-start justify-center gap-8 lg:gap-12">

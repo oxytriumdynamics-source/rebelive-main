@@ -81,16 +81,17 @@ const nextConfig: NextConfig = {
         },
         {
           key: 'Permissions-Policy',
-          value: 'camera=(), microphone=(), geolocation=(), payment=(self)',
+          value: 'camera=(), microphone=(), geolocation=(self "https://checkout-ui.shiprocket.com" "https://fastrr-boost-ui.pickrr.com"), payment=*',
         },
         {
           key: 'Content-Security-Policy',
           value: [
             "default-src 'self'",
             "script-src 'self' 'unsafe-eval' 'unsafe-inline' https:",
-            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-            "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.googleusercontent.com https://avatars.githubusercontent.com",
+            "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://checkout-ui.shiprocket.com https://*.shiprocket.com https://customcheckoutfastrr.netlify.app",
+            "img-src 'self' data: blob: https://res.cloudinary.com https://images.unsplash.com https://*.googleusercontent.com https://avatars.githubusercontent.com https://*.shiprocket.com https://*.pickrr.com https://fastrr-boost-ui.pickrr.com https://*.shiprocket.in https://*.pickrr.in https:",
             "font-src 'self' data: https://fonts.gstatic.com",
+            "frame-src 'self' https://fastrr-boost-ui.pickrr.com https://checkout-ui.shiprocket.com https://*.shiprocket.com https://*.pickrr.com https://otpless.com https://*.otpless.com https://customcheckoutfastrr.netlify.app https://api.razorpay.com https://*.razorpay.com",
             "connect-src 'self' http://localhost:5000 https://* ws://localhost:* wss://*",
             "worker-src 'self' blob:",
             "media-src 'self' data: blob:",

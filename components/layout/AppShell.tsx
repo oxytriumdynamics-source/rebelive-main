@@ -5,8 +5,10 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { Footer } from '@/components/layout/Footer';
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { PRODUCTS } from '@/data/products';
 import { soundEngine } from '@/lib/audio';
+import GlobalPhoneLinkManager from '@/components/auth/GlobalPhoneLinkManager';
 
 const MenuDrawer = dynamic(() => import('@/components/ui/MenuDrawer').then((m) => m.MenuDrawer), {
   ssr: false,
@@ -78,6 +80,11 @@ export function AppShell({ children }: AppShellProps) {
         onOpenSpecs={() => {}}
         onOpenOrder={() => router.push('/shop')}
       />
+
+      {/* ── Global Phone Link Manager (Syncs Past Guest Orders & Enables Instant Checkout) ── */}
+      <Suspense fallback={null}>
+        <GlobalPhoneLinkManager />
+      </Suspense>
     </div>
   );
 }

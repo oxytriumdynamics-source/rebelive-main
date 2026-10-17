@@ -45,9 +45,10 @@ import {
 import { fetchProducts, fetchProductBySlug } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
-import { FastrrCheckoutModal } from '@/components/shop/FastrrCheckoutModal';
+import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ProductDetailSkeleton } from '@/components/ui/Skeleton';
+import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
 
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
@@ -152,13 +153,17 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     id: 'monk-fruit',
     icons: ['/benifits/monk-fruit-badge.png'],
     title: (
-      <span className="block font-black text-white tracking-tight">
-        Monkfruit
-      </span>
+     
+  
+            <>
+        <span className="block">  Naturally sweetened</span>
+ 
+        <span className="block"> with Monk fruit</span>
+      </>
     ),
     desc: (
       <>
-        Naturally sweetened with monk fruit, delivering intense sweetness with zero calories, zero carbs, and a glycemic index of zero.
+         Delivering intense sweetness with zero calories, zero carbs, and a glycemic index of zero.
       </>
     ),
   },
@@ -166,13 +171,17 @@ const BENEFIT_BOXES: BenefitBoxItem[] = [
     id: 'zero-sugar',
     icons: ['/benifits/zero-sugar-badge.png'],
     title: (
-      <span className="block font-black text-white tracking-tight">
-        Zero Added Sugar
-      </span>
+    
+         <>
+        <span className="block">  No added sugar</span>
+  <span className="block text-white/50 font-normal my-0.5">or</span>
+        <span className="block"> artificial colours</span>
+      </>
+      
     ),
     desc: (
       <>
-        No added sugar or artificial colours, keeping every can clean, simple, and refreshingly guilt-free
+       Keeping every can clean, simple, and refreshingly guilt-free.
       </>
     ),
   },
@@ -321,12 +330,12 @@ export default function ProductDetailPage() {
   const [isError, setIsError] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
 
-  const loadProductData = async () => {
+  const loadProductData = async (force = false) => {
     try {
       setIsError(false);
       const [serverProd, list] = await Promise.all([
-        fetchProductBySlug(productId, true),
-        fetchProducts(true).catch(() => []),
+        fetchProductBySlug(productId, force),
+        fetchProducts(force).catch(() => []),
       ]);
 
       if (serverProd) {
@@ -351,13 +360,12 @@ export default function ProductDetailPage() {
   };
 
   useEffect(() => {
-    setIsLoading(true);
-    loadProductData();
+    loadProductData(false);
   }, [productId]);
 
   const handleRetry = () => {
     setIsRetrying(true);
-    loadProductData();
+    loadProductData(true);
   };
 
   const dispatch = useAppDispatch();
@@ -383,7 +391,7 @@ export default function ProductDetailPage() {
   // ── Photo Gallery State ──
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
-  const [isFastrrModalOpen, setIsFastrrModalOpen] = useState<boolean>(false);
+  const [isFastrrLoading, setIsFastrrLoading] = useState<boolean>(false);
 
   // Reset photo index when product changes
   useEffect(() => {
@@ -472,8 +480,29 @@ export default function ProductDetailPage() {
     );
   };
 
-  const handleQuickBuy = () => {
-    setIsFastrrModalOpen(true);
+  const handleQuickBuy = async (e: React.MouseEvent) => {
+    if (!product) return;
+    try {
+      setIsFastrrLoading(true);
+      await launchFastrrCheckout(e, [
+        {
+          productId: product.id,
+          slug: product.id,
+          name: product.name,
+          flavor: product.flavor,
+          packSize,
+          quantity,
+          unitPrice: pricing.price,
+          image: product.image || product.canImage,
+        },
+      ]);
+    } catch (err: any) {
+      console.warn('Fastrr checkout error:', err);
+      handleAddToCart();
+      dispatch(openCart());
+    } finally {
+      setIsFastrrLoading(false);
+    }
   };
 
   if (isLoading) {
@@ -526,120 +555,17 @@ export default function ProductDetailPage() {
         />
 
         {/* ── Main PDP Container ── */}
-        <main className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-24 px-3 sm:px-6 md:px-8 max-w-6xl mx-auto relative z-10">
+        <main className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1440px] mx-auto relative z-10">
 
           {/* ── Product Hero: Two Column Grid (side-by-side on tablet/desktop, stacked on mobile) ── */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mt-4 sm:mt-8 md:mt-10 items-start">
-            {/* ── Left Column: Showcase & Photo Options (6 cols on tablet/desktop) ── */}
-            <div className="md:col-span-6 flex flex-col items-center md:sticky md:top-24 md:z-20 self-start w-full">
-              {/* Main Can Showcase Card */}
-              <div className="relative w-full aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
-                {/* Edge Highlights */}
-                <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
-
-                {/* Backlight Halo in Monochrome Silver */}
-                <div
-                  className="absolute inset-4 sm:inset-8 rounded-full blur-3xl opacity-20 group-hover:opacity-35 transition-opacity duration-700 pointer-events-none z-10"
-                  style={{
-                    background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
-                  }}
-                />
-
-                {/* Top Info Bar: Angle Badge + Fullscreen Lightbox Button */}
-                <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-5 sm:right-5 flex items-center justify-between z-20 pointer-events-auto">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-mono text-white/50 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md">
-                      {selectedPhotoIndex + 1} / {galleryList.length}
-                    </span>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsLightboxOpen(true)}
-                    className="p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition-all backdrop-blur-md flex items-center gap-1 text-[10px] sm:text-[11px] font-mono cursor-pointer shadow-lg"
-                    title="Inspect High-Res Photo"
-                  >
-                    <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                    <span className="hidden xs:inline pr-1">Zoom</span>
-                  </button>
-                </div>
-
-                {/* Navigation Chevrons: always touch-friendly on mobile/tablet */}
+            {/* ── Left Column: Showcase & Photo Options (7 cols on desktop with side thumbnails) ── */}
+            <div className="md:col-span-6 lg:col-span-7 flex flex-col md:sticky md:top-24 md:z-20 self-start w-full">
+              {/* Flex wrapper holding Thumbnails on the left-top side and Main Showcase on the right */}
+              <div className="flex flex-row gap-3 sm:gap-4 lg:gap-5 items-start w-full">
+                {/* ── Photo Options Thumbnails (Left Top Side of Main Image) ── */}
                 {galleryList.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handlePrevPhoto();
-                      }}
-                      className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-white/25 border border-white/15 text-white/90 hover:text-white transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md cursor-pointer shadow-lg"
-                      aria-label="Previous Photo"
-                    >
-                      <ChevronLeft className="w-4 h-4" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleNextPhoto();
-                      }}
-                      className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-white/25 border border-white/15 text-white/90 hover:text-white transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md cursor-pointer shadow-lg"
-                      aria-label="Next Photo"
-                    >
-                      <ChevronRight className="w-4 h-4" />
-                    </button>
-                  </>
-                )}
-
-                {/* Interactive Center Stage Render / Photo (Full display) */}
-                <div
-                  className={`relative w-full h-full flex items-center justify-center z-10 ${
-                    activePhoto?.src ? 'cursor-zoom-in' : ''
-                  }`}
-                  onClick={() => {
-                    if (activePhoto?.src) setIsLightboxOpen(true);
-                  }}
-                >
-                  {activePhoto?.src ? (
-                    /* Selected Photo View from DB / Cloudinary - Full Edge to Edge */
-                    <div className="relative w-full h-full transition-transform duration-500 group-hover:scale-[1.02]">
-                      <Image
-                        key={activePhoto.src}
-                        src={activePhoto.src}
-                        alt={`${product.name} - ${activePhoto.label}`}
-                        fill
-                        sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 650px"
-                        priority
-                        className="object-cover transition-all duration-300"
-                        unoptimized={activePhoto.src.startsWith('http')}
-                      />
-                    </div>
-                  ) : (
-                    /* Clean Dark Placeholder (No Local Dummy Files) */
-                    <div className="w-full h-full flex flex-col items-center justify-center text-center p-4">
-                      <div className="w-28 xs:w-32 sm:w-36 h-44 xs:h-52 sm:h-60 rounded-3xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-2xl group-hover:border-white/30 transition-colors">
-                        <div className="w-8 h-1 rounded-full bg-white/20 mb-3" />
-                        <span className="font-bold text-xs sm:text-sm text-white/70 tracking-widest uppercase font-mono px-2 truncate max-w-full">
-                          {product.name}
-                        </span>
-                        <span className="text-[9px] sm:text-[10px] text-white/30 uppercase font-mono mt-1 px-2 truncate max-w-full">
-                          {product.flavor || '250ML'}
-                        </span>
-                        <div className="w-8 h-1 rounded-full bg-white/10 mt-4" />
-                      </div>
-                      <span className="text-[10px] sm:text-xs text-white/40 font-mono uppercase tracking-wider mt-3">
-                        Artwork Pending (Upload via Admin)
-                      </span>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* ── Photo Options Thumbnails Carousel ── */}
-              {galleryList.length > 1 && (
-                <div className="w-full mt-3 sm:mt-4 flex flex-col gap-2">
-                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2 md:gap-2.5 w-full">
+                  <div className="flex flex-col gap-2.5 sm:gap-3 shrink-0 py-0.5 max-h-[580px] sm:max-h-[640px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {galleryList.map((item, idx) => {
                       const isSelected = selectedPhotoIndex === idx;
                       return (
@@ -647,9 +573,9 @@ export default function ProductDetailPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setSelectedPhotoIndex(idx)}
-                          className={`group relative rounded-lg sm:rounded-xl aspect-square p-1 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden border cursor-pointer ${isSelected
-                            ? 'bg-neutral-900 border-white scale-[1.02]'
-                            : 'bg-neutral-950/70 border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
+                          className={`group relative rounded-xl sm:rounded-2xl w-14 h-14 sm:w-16 sm:h-16 md:w-18 md:h-18 lg:w-20 lg:h-20 shrink-0 p-1 sm:p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${isSelected
+                            ? 'bg-neutral-900 border-2 border-white scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.25)] ring-1 ring-white/50'
+                            : 'bg-[#0e0e0e] border border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
                             }`}
                           title={item.label}
                         >
@@ -658,31 +584,135 @@ export default function ProductDetailPage() {
                               src={item.src}
                               alt={item.label}
                               fill
-                              sizes="70px"
-                              className="object-cover rounded-md group-hover:scale-105 transition-transform"
+                              sizes="(max-width: 640px) 60px, 80px"
+                              className="object-cover rounded-lg group-hover:scale-105 transition-transform"
                               unoptimized={item.src.startsWith('http')}
                             />
                           </div>
 
                           {/* Subtle Active Accent Dot */}
                           {isSelected && (
-                            <div className="absolute top-1 right-1 w-1.5 h-1.5 rounded-full bg-white" />
+                            <div className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#fff]" />
                           )}
 
                           {/* Mini Label badge on hover */}
-                          <div className="absolute inset-x-0 bottom-0 py-0.5 bg-black/85 backdrop-blur-sm text-[8px] font-mono text-center text-white/80 truncate px-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <div className="absolute inset-x-0 bottom-0 py-0.5 bg-black/90 backdrop-blur-sm text-[7px] sm:text-[8px] font-mono text-center text-white/90 truncate px-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
                             {item.label}
                           </div>
                         </button>
                       );
                     })}
                   </div>
+                )}
+
+                {/* Main Can Showcase Card (Expanded flex-1) */}
+                <div className="relative flex-1 min-w-0 w-full aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
+                  {/* Edge Highlights */}
+                  <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
+
+                  {/* Backlight Halo in Monochrome Silver */}
+                  <div
+                    className="absolute inset-4 sm:inset-8 rounded-full blur-3xl opacity-20 group-hover:opacity-35 transition-opacity duration-700 pointer-events-none z-10"
+                    style={{
+                      background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
+                    }}
+                  />
+
+                  {/* Top Info Bar: Angle Badge + Fullscreen Lightbox Button */}
+                  <div className="absolute top-3 left-3 right-3 sm:top-4 sm:left-5 sm:right-5 flex items-center justify-between z-20 pointer-events-auto">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[10px] font-mono text-white/50 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-md">
+                        {selectedPhotoIndex + 1} / {galleryList.length}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsLightboxOpen(true)}
+                      className="p-1.5 sm:p-2 rounded-full bg-black/60 hover:bg-white/20 border border-white/15 text-white/80 hover:text-white transition-all backdrop-blur-md flex items-center gap-1 text-[10px] sm:text-[11px] font-mono cursor-pointer shadow-lg"
+                      title="Inspect High-Res Photo"
+                    >
+                      <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                      <span className="hidden xs:inline pr-1">Zoom</span>
+                    </button>
+                  </div>
+
+                  {/* Navigation Chevrons: always touch-friendly on mobile/tablet */}
+                  {galleryList.length > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handlePrevPhoto();
+                        }}
+                        className="absolute left-2 sm:left-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-white/25 border border-white/15 text-white/90 hover:text-white transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md cursor-pointer shadow-lg"
+                        aria-label="Previous Photo"
+                      >
+                        <ChevronLeft className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleNextPhoto();
+                        }}
+                        className="absolute right-2 sm:right-3 top-1/2 -translate-y-1/2 z-20 p-2 sm:p-2.5 rounded-full bg-black/70 hover:bg-white/25 border border-white/15 text-white/90 hover:text-white transition-all opacity-100 sm:opacity-0 sm:group-hover:opacity-100 backdrop-blur-md cursor-pointer shadow-lg"
+                        aria-label="Next Photo"
+                      >
+                        <ChevronRight className="w-4 h-4" />
+                      </button>
+                    </>
+                  )}
+
+                  {/* Interactive Center Stage Render / Photo (Full display) */}
+                  <div
+                    className={`relative w-full h-full flex items-center justify-center z-10 ${
+                      activePhoto?.src ? 'cursor-zoom-in' : ''
+                    }`}
+                    onClick={() => {
+                      if (activePhoto?.src) setIsLightboxOpen(true);
+                    }}
+                  >
+                    {activePhoto?.src ? (
+                      /* Selected Photo View from DB / Cloudinary - Full Edge to Edge */
+                      <div className="relative w-full h-full transition-transform duration-500 group-hover:scale-[1.02]">
+                        <Image
+                          key={activePhoto.src}
+                          src={activePhoto.src}
+                          alt={`${product.name} - ${activePhoto.label}`}
+                          fill
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 750px"
+                          priority
+                          className="object-cover transition-all duration-300"
+                          unoptimized={activePhoto.src.startsWith('http')}
+                        />
+                      </div>
+                    ) : (
+                      /* Clean Dark Placeholder (No Local Dummy Files) */
+                      <div className="w-full h-full flex flex-col items-center justify-center text-center p-4">
+                        <div className="w-28 xs:w-32 sm:w-36 h-44 xs:h-52 sm:h-60 rounded-3xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-2xl group-hover:border-white/30 transition-colors">
+                          <div className="w-8 h-1 rounded-full bg-white/20 mb-3" />
+                          <span className="font-bold text-xs sm:text-sm text-white/70 tracking-widest uppercase font-mono px-2 truncate max-w-full">
+                            {product.name}
+                          </span>
+                          <span className="text-[9px] sm:text-[10px] text-white/30 uppercase font-mono mt-1 px-2 truncate max-w-full">
+                            {product.flavor || '250ML'}
+                          </span>
+                          <div className="w-8 h-1 rounded-full bg-white/10 mt-4" />
+                        </div>
+                        <span className="text-[10px] sm:text-xs text-white/40 font-mono uppercase tracking-wider mt-3">
+                          Artwork Pending (Upload via Admin)
+                        </span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              )}
+              </div>
             </div>
 
-            {/* ── Right Column: Specs, Pricing, Pack Selector & CTAs (6 cols on tablet/desktop) ── */}
-            <div className="md:col-span-6 flex flex-col justify-between mt-4 md:mt-0 w-full">
+            {/* ── Right Column: Specs, Pricing, Pack Selector & CTAs (5 cols on desktop) ── */}
+            <div className="md:col-span-6 lg:col-span-5 flex flex-col justify-between mt-4 md:mt-0 w-full">
               <div>
                 {/* Big Title & Flavor / Category Tag */}
                 <div className="mt-1 sm:mt-3">
@@ -823,13 +853,15 @@ export default function ProductDetailPage() {
 
                   {/* Express Checkout */}
                   <button
+                    id="product-instant-checkout-btn"
                     type="button"
-                    disabled
-                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white/[0.04] text-white/40 border border-white/10 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-not-allowed flex items-center justify-center gap-2 select-none"
-                    title="Ordering is currently disabled"
+                    disabled={isFastrrLoading}
+                    onClick={handleQuickBuy}
+                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white/10 hover:bg-white/20 text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 active:scale-[0.98] shadow-md hover:border-white/40 disabled:opacity-60"
+                    title="1-Click Instant Checkout via Shiprocket Fastrr"
                   >
-                    <Zap className="w-3.5 h-3.5 text-white/30 fill-white/30" />
-                    <span>Instant Checkout</span>
+                    <Zap className="w-3.5 h-3.5 text-emerald-400 fill-emerald-400" />
+                    <span>{isFastrrLoading ? 'Connecting Fastrr...' : 'Instant Checkout'}</span>
                   </button>
                 </div>
 
@@ -1603,40 +1635,16 @@ export default function ProductDetailPage() {
                 <Link
                   key={other.id}
                   href={`/shop/${other.id}`}
-                  className="rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between overflow-hidden"
+                  className="rounded-2xl bg-[#0e0e0e] border border-white/10 hover:border-white/30 transition-all duration-300 group hover:-translate-y-1 hover:shadow-[0_12px_30px_rgba(0,0,0,0.8)] flex flex-col justify-between overflow-hidden transform-gpu will-change-transform [backface-visibility:hidden]"
                 >
-                  <div>
-                    {/* Full Image Showcase with bottom fade */}
-                    <div className="relative w-full aspect-square overflow-hidden bg-neutral-950">
-                      {(() => {
-                        const otherImg = other.image || other.canImage;
-                        if (otherImg) {
-                          return (
-                            <div className="relative w-full h-full">
-                              <Image
-                                src={otherImg}
-                                alt={other.name}
-                                fill
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 350px"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                unoptimized={otherImg.startsWith('http')}
-                              />
-                              {/* Little black gradient faded from bottom of image */}
-                              <div className="absolute inset-x-0 bottom-0 h-20 sm:h-24 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/60 to-transparent pointer-events-none z-10" />
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="w-full h-full min-h-[180px] flex flex-col items-center justify-center p-4">
-                            <span className="font-bold text-xs text-white/60 font-mono uppercase">
-                              {other.name}
-                            </span>
-                          </div>
-                        );
-                      })()}
+                  <div className="relative">
+                    {/* Full Image Showcase with Hover Image Carousel */}
+                    <div className="relative w-full aspect-square overflow-hidden bg-[#0e0e0e]">
+                      <ProductCardImageCarousel product={other} />
                     </div>
 
-                    <div className="px-4 sm:px-5 pt-3">
+                    {/* Title & Descriptor with 1px overlap & solid card background */}
+                    <div className="px-4 sm:px-5 pt-3 -mt-[1px] relative z-20 bg-[#0e0e0e]">
                       <h3 className="text-base sm:text-lg font-bold uppercase text-white tracking-tight">
                         {other.name}
                       </h3>
@@ -1774,22 +1782,6 @@ export default function ProductDetailPage() {
             </div>
           </div>
         )}
-
-        {/* Shiprocket Fastrr Instant Checkout Modal */}
-        <FastrrCheckoutModal
-          isOpen={isFastrrModalOpen}
-          onClose={() => setIsFastrrModalOpen(false)}
-          directItem={{
-            productId: product.id,
-            slug: product.id,
-            name: product.name,
-            flavor: product.flavor,
-            packSize,
-            quantity,
-            unitPrice: pricing.price,
-            image: product.image || product.canImage,
-          }}
-        />
       </div>
     </>
   );

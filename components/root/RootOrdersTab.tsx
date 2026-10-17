@@ -26,6 +26,7 @@ import {
   fetchAdminOrders,
   updateOrderStatus,
   dispatchOrderToShiprocket,
+  syncAllOrdersToShiprocket,
   trackOrderShiprocket,
   AdminOrder,
 } from '@/lib/adminApi';
@@ -37,6 +38,7 @@ export function RootOrdersTab() {
   const [orders, setOrders] = useState<AdminOrder[]>([]);
   const [total, setTotal] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [searchQuery, setSearchQuery] = useState('');
 
@@ -48,6 +50,29 @@ export function RootOrdersTab() {
 
   const [copiedAwb, setCopiedAwb] = useState<string | null>(null);
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
+
+  const handleSyncAllShiprocket = async () => {
+    setIsSyncingAll(true);
+    try {
+      const res = await syncAllOrdersToShiprocket();
+      showAdminToast(
+        res.message || `Processed ${res.syncedCount} orders to Shiprocket`,
+        'success',
+        'Shiprocket Sync'
+      );
+      setActionSuccessMsg(`Processed ${res.syncedCount} orders to Shiprocket`);
+      setTimeout(() => setActionSuccessMsg(''), 4000);
+      await loadOrders();
+    } catch (err: any) {
+      showAdminToast(
+        err.message || 'Failed to sync orders to Shiprocket',
+        'error',
+        'Sync Failed'
+      );
+    } finally {
+      setIsSyncingAll(false);
+    }
+  };
 
   const loadOrders = async () => {
     setIsLoading(true);
@@ -154,6 +179,16 @@ export function RootOrdersTab() {
         </form>
 
         <div className="flex items-center gap-2">
+          <button
+            onClick={handleSyncAllShiprocket}
+            disabled={isSyncingAll || isLoading}
+            className="px-3.5 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-md disabled:opacity-50"
+            title="Post all pending orders to Shiprocket dashboard"
+          >
+            <Send className={`w-3.5 h-3.5 text-black ${isSyncingAll ? 'animate-spin' : ''}`} />
+            <span>{isSyncingAll ? 'Syncing with Shiprocket...' : 'Post All to Shiprocket'}</span>
+          </button>
+
           <button
             onClick={loadOrders}
             disabled={isLoading}
@@ -296,47 +331,71 @@ export function RootOrdersTab() {
 
                       {/* Shiprocket Dispatch / Tracking */}
                       <td className="py-4 px-4">
-                        {order.trackingNumber ? (
+                        {order.shiprocketOrderId ? (
                           <div className="space-y-1">
-                            <div className="flex items-center gap-1 font-mono text-[10px] text-white font-bold">
-                              <span>{order.trackingNumber}</span>
+                            <div className="flex items-center gap-1.5 font-mono text-[10px] text-white font-bold">
+                              <span>{order.trackingNumber || 'Manifested'}</span>
+                              {order.trackingNumber && (
+                                <button
+                                  onClick={() => copyToClipboard(order.trackingNumber!)}
+                                  className="p-0.5 hover:text-white transition-colors cursor-pointer"
+                                  title="Copy AWB"
+                                >
+                                  {copiedAwb === order.trackingNumber ? (
+                                    <Check className="w-3 h-3 text-white" />
+                                  ) : (
+                                    <Copy className="w-3 h-3 text-white/50" />
+                                  )}
+                                </button>
+                              )}
+                              <span className="text-[9px] px-1.5 py-0.5 rounded bg-white/10 text-white font-mono border border-white/15">
+                                SR #{order.shiprocketOrderId}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-[9px] font-mono">
                               <button
-                                onClick={() => copyToClipboard(order.trackingNumber!)}
-                                className="p-0.5 hover:text-white transition-colors cursor-pointer"
-                                title="Copy AWB"
+                                onClick={() => handleOpenLiveTracking(order)}
+                                className="text-white/60 hover:text-white hover:underline flex items-center gap-1 cursor-pointer"
                               >
-                                {copiedAwb === order.trackingNumber ? (
-                                  <Check className="w-3 h-3 text-white" />
-                                ) : (
-                                  <Copy className="w-3 h-3 text-white/50" />
-                                )}
+                                <Truck className="w-3 h-3" /> Live Carrier Scan
+                              </button>
+                              <button
+                                onClick={() => handleDispatchShiprocket(order.id)}
+                                disabled={dispatchingOrderId === order.id}
+                                className="text-white/40 hover:text-white hover:underline flex items-center gap-0.5 cursor-pointer disabled:opacity-50"
+                                title="Re-post or refresh consignment in Shiprocket"
+                              >
+                                <RefreshCw className={`w-2.5 h-2.5 ${dispatchingOrderId === order.id ? 'animate-spin' : ''}`} />
+                                <span>Re-sync</span>
                               </button>
                             </div>
-                            <button
-                              onClick={() => handleOpenLiveTracking(order)}
-                              className="text-[9px] font-mono text-white/60 hover:text-white hover:underline flex items-center gap-1 cursor-pointer"
-                            >
-                              <Truck className="w-3 h-3" /> Live Carrier Scan
-                            </button>
                           </div>
                         ) : (
-                          <button
-                            onClick={() => handleDispatchShiprocket(order.id)}
-                            disabled={dispatchingOrderId === order.id}
-                            className="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 font-mono text-[10px] uppercase tracking-wider font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
-                          >
-                            {dispatchingOrderId === order.id ? (
-                              <>
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                <span>Dispatching...</span>
-                              </>
-                            ) : (
-                              <>
-                                <Send className="w-3 h-3 text-black" />
-                                <span>Ship via Shiprocket</span>
-                              </>
+                          <div className="space-y-1">
+                            <button
+                              onClick={() => handleDispatchShiprocket(order.id)}
+                              disabled={dispatchingOrderId === order.id}
+                              className="px-3 py-1.5 rounded-lg bg-white text-black hover:bg-neutral-200 font-mono text-[10px] uppercase tracking-wider font-bold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                              title="Post this order directly to Shiprocket dashboard"
+                            >
+                              {dispatchingOrderId === order.id ? (
+                                <>
+                                  <RefreshCw className="w-3 h-3 animate-spin" />
+                                  <span>Posting to SR...</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Send className="w-3 h-3 text-black" />
+                                  <span>Post to Shiprocket</span>
+                                </>
+                              )}
+                            </button>
+                            {order.trackingNumber && (
+                              <span className="text-[9px] text-white/40 font-mono block">
+                                Temp Ref: {order.trackingNumber}
+                              </span>
                             )}
-                          </button>
+                          </div>
                         )}
                       </td>
 

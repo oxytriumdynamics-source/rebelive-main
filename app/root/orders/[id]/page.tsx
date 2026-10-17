@@ -234,28 +234,26 @@ export default function OrderDetailsPage() {
                   </select>
                 </div>
 
-                {!order.trackingNumber && (
-                  <div className="space-y-1">
-                    <label className="text-[10px] font-mono text-white/40 uppercase block">Carrier Engine</label>
-                    <button
-                      onClick={handleDispatch}
-                      disabled={isDispatching}
-                      className="px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-mono text-xs uppercase font-bold flex items-center gap-2 cursor-pointer transition-all disabled:opacity-50"
-                    >
-                      {isDispatching ? (
-                        <>
-                          <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                          <span>Dispatching...</span>
-                        </>
-                      ) : (
-                        <>
-                          <Send className="w-3.5 h-3.5 text-black" />
-                          <span>Ship via Shiprocket</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-                )}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-mono text-white/40 uppercase block">Shiprocket Engine</label>
+                  <button
+                    onClick={handleDispatch}
+                    disabled={isDispatching}
+                    className="px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-mono text-xs uppercase font-bold flex items-center gap-2 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  >
+                    {isDispatching ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Posting to Shiprocket...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5 text-black" />
+                        <span>{order.shiprocketOrderId ? 'Re-sync with Shiprocket' : 'Post to Shiprocket'}</span>
+                      </>
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -367,13 +365,30 @@ export default function OrderDetailsPage() {
                   )}
                 </div>
               ) : (
-                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex items-center justify-between text-xs">
+                <div className="p-4 rounded-xl bg-white/[0.02] border border-white/5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                   <div>
-                    <p className="font-medium text-white">Consignment Awaiting Courier Manifest</p>
+                    <p className="font-medium text-white">Consignment Awaiting Shiprocket Manifest</p>
                     <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                      Click "Ship via Shiprocket" to generate live AWB and book courier pickup.
+                      Push order to your Shiprocket merchant dashboard to generate live AWB and courier label.
                     </p>
                   </div>
+                  <button
+                    onClick={handleDispatch}
+                    disabled={isDispatching}
+                    className="px-4 py-2 rounded-xl bg-white text-black hover:bg-neutral-200 font-mono text-xs uppercase font-bold flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-95 disabled:opacity-50 shrink-0"
+                  >
+                    {isDispatching ? (
+                      <>
+                        <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                        <span>Posting...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Send className="w-3.5 h-3.5 text-black" />
+                        <span>Post to Shiprocket</span>
+                      </>
+                    )}
+                  </button>
                 </div>
               )}
             </div>

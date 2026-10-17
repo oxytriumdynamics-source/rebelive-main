@@ -229,7 +229,7 @@ export default function ProfileDetailsTab({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
-                    Phone 
+                    Phone (1-Click Fastrr Checkout &amp; Order Sync)
                   </label>
                   <input
                     type="tel"
@@ -238,6 +238,9 @@ export default function ProfileDetailsTab({
                     placeholder="+91 98765 43210"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 font-sans text-xs text-white placeholder-white/30 focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40"
                   />
+                  <p className="mt-1 text-[10px] text-white/40 font-mono">
+                    Past guest orders placed with this number will be automatically linked to your account.
+                  </p>
                 </div>
 
                 <div>

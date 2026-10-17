@@ -11,12 +11,37 @@ import {
   removeFromCart,
   clearCart,
 } from '@/store/slices/cartSlice';
-import { FastrrCheckoutModal } from './FastrrCheckoutModal';
+import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
 
 export function CartDrawer() {
   const dispatch = useAppDispatch();
   const { items, isOpen } = useAppSelector((state) => state.cart);
-  const [isFastrrOpen, setIsFastrrOpen] = useState(false);
+  const [isLaunching, setIsLaunching] = useState(false);
+  const [checkoutError, setCheckoutError] = useState<string | null>(null);
+
+  const handleInstantCheckout = async (e: React.MouseEvent) => {
+    try {
+      setCheckoutError(null);
+      setIsLaunching(true);
+      await launchFastrrCheckout(
+        e,
+        items.map((i) => ({
+          productId: i.id,
+          variantId: i.id,
+          name: i.name,
+          flavor: i.flavor,
+          packSize: i.packSize,
+          quantity: i.quantity,
+          unitPrice: i.pricePerUnit,
+          image: i.image,
+        }))
+      );
+    } catch (err: any) {
+      setCheckoutError(err.message || 'Unable to open Fastrr checkout');
+    } finally {
+      setIsLaunching(false);
+    }
+  };
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -236,26 +261,32 @@ export function CartDrawer() {
               </div>
             </div>
 
+            {checkoutError && (
+              <p className="text-[11px] text-red-400 font-mono text-center px-1">
+                {checkoutError}
+              </p>
+            )}
+
             <button
-              disabled
-              className="w-full py-3.5 rounded-xl bg-white/10 text-white/40 border border-white/10 text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-not-allowed select-none"
-              title="Ordering is currently disabled"
+              id="cart-fastrr-checkout-btn"
+              disabled={isLaunching}
+              onClick={handleInstantCheckout}
+              className="w-full py-3.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-white/10 active:scale-[0.98] disabled:opacity-60"
             >
-              <Zap className="w-4 h-4 text-white/30 fill-white/30" />
-              <span>Checkout Disabled • ₹{subtotal.toLocaleString('en-IN')}</span>
+              <Zap className="w-4 h-4 text-black fill-black" />
+              <span>
+                {isLaunching
+                  ? 'Connecting Fastrr...'
+                  : `Instant Checkout • ₹${subtotal.toLocaleString('en-IN')}`}
+              </span>
             </button>
-            <p className="text-[10px] text-center text-white/40 font-mono tracking-wider">
-              ONLINE ORDERS ARE TEMPORARILY DISABLED
-            </p>
+            <div className="flex items-center justify-center gap-1.5 text-[10px] text-white/50 font-mono tracking-wider">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+              <span>POWERED BY SHIPROCKET FASTRR 1-CLICK</span>
+            </div>
           </div>
         )}
       </div>
-
-      {/* Shiprocket Fastrr 1-Click Checkout Modal */}
-      <FastrrCheckoutModal
-        isOpen={isFastrrOpen}
-        onClose={() => setIsFastrrOpen(false)}
-      />
     </div>
   );
 }

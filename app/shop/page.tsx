@@ -21,8 +21,10 @@ import { PRICES, PackSize, Product } from '@/data/products';
 import { fetchProducts } from '@/lib/productsApi';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { addToCart, openCart } from '@/store/slices/cartSlice';
+import { launchFastrrCheckout } from '@/lib/fastrrCheckout';
 import { NotFoundState } from '@/components/ui/NotFoundState';
 import { ShopSkeleton } from '@/components/ui/Skeleton';
+import { ProductCardImageCarousel } from '@/components/shop/ProductCardImageCarousel';
 
 const CartDrawer = dynamic(() => import('@/components/shop/CartDrawer').then((m) => m.CartDrawer), {
   ssr: false,
@@ -40,6 +42,7 @@ export default function ShopPage() {
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [isError, setIsError] = useState<boolean>(false);
   const [isRetrying, setIsRetrying] = useState<boolean>(false);
+  const [isInstantBuying, setIsInstantBuying] = useState<boolean>(false);
 
   // Quick-Add Modal Popup State
   const [quickAddProduct, setQuickAddProduct] = useState<Product | null>(null);
@@ -51,10 +54,10 @@ export default function ShopPage() {
   const totalCartCount = cart.reduce((total, item) => total + item.quantity, 0);
   const subtotal = cart.reduce((sum, item) => sum + item.pricePerUnit * item.quantity, 0);
 
-  const loadProducts = async () => {
+  const loadProducts = async (force = false) => {
     try {
       setIsError(false);
-      const data = await fetchProducts(true);
+      const data = await fetchProducts(force);
       if (data && data.length > 0) {
         setProductsList(data);
         setIsError(false);
@@ -72,14 +75,14 @@ export default function ShopPage() {
     }
   };
 
-  // Load products strictly from backend database
+  // Load products strictly from backend database (serves from cache instantly when fresh)
   React.useEffect(() => {
-    loadProducts();
+    loadProducts(false);
   }, []);
 
   const handleRetry = () => {
     setIsRetrying(true);
-    loadProducts();
+    loadProducts(true);
   };
 
   const filteredProducts = productsList.filter((p) => {
@@ -150,14 +153,14 @@ export default function ShopPage() {
 
         {/* Subtle ambient light in pure monochrome */}
         <div
-          className="absolute top-0 left-1/2 -translate-x-1/2 w-[750px] h-[450px] rounded-full blur-3xl pointer-events-none -z-10 opacity-20"
+          className="absolute top-0 left-1/2 -translate-x-1/2 w-[1100px] max-w-[90vw] h-[550px] rounded-full blur-3xl pointer-events-none -z-10 opacity-20"
           style={{
             background: 'radial-gradient(ellipse at center, rgba(255, 255, 255, 0.1) 0%, transparent 70%)',
           }}
         />
 
         {/* ── Main Shop Content ── */}
-        <main className="pt-24 sm:pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto relative z-10">
+        <main className="pt-24 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1440px] mx-auto relative z-10">
           {/* ── Top Header / Breadcrumb ── */}
           <div className="flex items-center justify-between border-b border-white/10 pb-6">
             <div>
@@ -170,76 +173,40 @@ export default function ShopPage() {
         
 
           {/* ── Compact Premium Product Grid (Pure Black & White Theme) ── */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-6 mt-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8 mt-8">
             {filteredProducts.map((p) => {
               const isVariety = p.id === 'variety';
 
               return (
                 <div
                   key={p.id}
-                  className="group relative bg-[#0e0e0e] rounded-2xl border border-white/10 hover:border-white/30 flex flex-col justify-between transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 overflow-hidden"
+                  className="group relative bg-[#0e0e0e] rounded-2xl border border-white/10 hover:border-white/30 flex flex-col justify-between transition-all duration-300 shadow-[0_8px_30px_rgba(0,0,0,0.5)] hover:shadow-[0_16px_40px_rgba(0,0,0,0.85)] hover:-translate-y-1 overflow-hidden transform-gpu will-change-transform [backface-visibility:hidden]"
                 >
                   {/* Subtle top edge highlight in pure silver/white */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/25 to-transparent pointer-events-none z-20" />
 
                   {/* ── Upper Section: Full Image Showcase with bottom fade ── */}
-                  <div>
-                    {/* Can Showcase (Clickable to details) */}
+                  <div className="relative">
+                    {/* Can Showcase with Hover Image Carousel (Clickable to details) */}
                     <Link
                       href={`/shop/${p.id}`}
-                      className="relative w-full aspect-square overflow-hidden block cursor-pointer bg-neutral-950"
+                      className="relative w-full aspect-square overflow-hidden block cursor-pointer bg-[#0e0e0e]"
                       title={`View ${p.name} Details`}
                     >
-                      {/* Monochrome Silver/White Ambient Glow */}
+                      {/* Monochrome Silver/White Ambient Glow - positioned safely behind with z-0 */}
                       <div
-                        className="absolute inset-0 opacity-15 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-10"
+                        className="absolute inset-x-0 top-0 bottom-6 opacity-15 group-hover:opacity-30 transition-opacity duration-500 blur-xl pointer-events-none z-0"
                         style={{
                           background: 'radial-gradient(circle, rgba(255, 255, 255, 0.2) 0%, transparent 70%)',
                         }}
                       />
 
-                      {/* Display authentic Can Render from DB / Cloudinary */}
-                      {(() => {
-                        const productImg = p.image || p.canImage;
-                        if (productImg) {
-                          return (
-                            <div className="relative w-full h-full">
-                              <Image
-                                src={productImg}
-                                alt={p.name}
-                                fill
-                                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 400px"
-                                className="object-cover transition-transform duration-500 group-hover:scale-105"
-                                priority={p.id === 'apex'}
-                                unoptimized={productImg.startsWith('http')}
-                              />
-                              {/* Little black gradient faded from the bottom of image */}
-                              <div className="absolute inset-x-0 bottom-0 h-24 sm:h-28 bg-gradient-to-t from-[#0e0e0e] via-[#0e0e0e]/60 to-transparent pointer-events-none z-10" />
-                            </div>
-                          );
-                        }
-                        return (
-                          <div className="w-full h-full min-h-[220px] flex flex-col items-center justify-center text-center p-3">
-                            <div className="w-20 h-32 rounded-2xl bg-neutral-900/90 border border-white/10 flex flex-col items-center justify-center shadow-inner group-hover:border-white/30 transition-colors">
-                              <div className="w-6 h-1 rounded-full bg-white/20 mb-2" />
-                              <span className="font-bold text-[9px] text-white/70 tracking-widest uppercase font-mono px-1 truncate max-w-full">
-                                {p.name}
-                              </span>
-                              <span className="text-[7.5px] text-white/30 uppercase font-mono mt-1 px-1 truncate max-w-full">
-                                {p.flavor || '250ML'}
-                              </span>
-                              <div className="w-6 h-1 rounded-full bg-white/10 mt-3" />
-                            </div>
-                            <span className="text-[8.5px] text-white/30 font-mono uppercase tracking-wider mt-2">
-                              Artwork Pending
-                            </span>
-                          </div>
-                        );
-                      })()}
+                      {/* Dynamic Multi-Angle Image Carousel on Hover */}
+                      <ProductCardImageCarousel product={p} priority={p.id === 'apex'} />
                     </Link>
 
-                    {/* Title & Descriptor */}
-                    <div className="px-4 sm:px-5 pt-3">
+                    {/* Title & Descriptor with 1px overlap & solid card background to eliminate subpixel gap */}
+                    <div className="px-4 sm:px-5 pt-3 -mt-[1px] relative z-20 bg-[#0e0e0e]">
                       <div className="flex items-baseline justify-between gap-2">
                         <Link
                           href={`/shop/${p.id}`}
@@ -395,20 +362,52 @@ export default function ShopPage() {
                   </div>
                 </div>
 
-                {/* Confirm Add to Cart Button */}
-                <button
-                  type="button"
-                  onClick={handleConfirmAddToCart}
-                  className="w-full py-4 rounded-2xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.01] active:scale-[0.98] flex items-center justify-center gap-2.5"
-                >
-                  <ShoppingBag className="w-4 h-4" />
-                  <span>Confirm &amp; Add to Cart • ₹{PRICES[modalPack].price}</span>
-                </button>
+                {/* Confirm Add to Cart and Instant Checkout Buttons */}
+                <div className="grid grid-cols-2 gap-2 mt-4">
+                  <button
+                    type="button"
+                    onClick={handleConfirmAddToCart}
+                    className="w-full py-3.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
+                  >
+                    <ShoppingBag className="w-3.5 h-3.5" />
+                    <span>Add to Cart</span>
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isInstantBuying}
+                    onClick={async (e) => {
+                      if (!quickAddProduct) return;
+                      try {
+                        setIsInstantBuying(true);
+                        const itemToBuy = {
+                          productId: quickAddProduct.id,
+                          slug: quickAddProduct.id,
+                          name: quickAddProduct.name,
+                          flavor: quickAddProduct.flavor,
+                          packSize: modalPack,
+                          quantity: 1,
+                          unitPrice: PRICES[modalPack].price,
+                          image: quickAddProduct.image || quickAddProduct.canImage,
+                        };
+                        setQuickAddProduct(null);
+                        await launchFastrrCheckout(e, [itemToBuy]);
+                      } catch (err: any) {
+                        console.warn('Fastrr checkout error:', err);
+                        dispatch(openCart());
+                      } finally {
+                        setIsInstantBuying(false);
+                      }
+                    }}
+                    className="w-full py-3.5 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-white/20 active:scale-[0.98] disabled:opacity-60"
+                  >
+                    <Zap className="w-3.5 h-3.5 text-black fill-black" />
+                    <span>{isInstantBuying ? 'Connecting Fastrr...' : 'Instant Buy'}</span>
+                  </button>
+                </div>
               </motion.div>
             </div>
           )}
         </AnimatePresence>
-
       </div>
     </>
   );

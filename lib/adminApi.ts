@@ -527,6 +527,29 @@ export async function dispatchOrderToShiprocket(
   };
 }
 
+/**
+ * Pushes all pending / unsynced orders to Shiprocket
+ */
+export async function syncAllOrdersToShiprocket(): Promise<{
+  syncedCount: number;
+  totalChecked: number;
+  message: string;
+}> {
+  try {
+    const res = await adminClient.post('/orders/sync-shiprocket');
+    return {
+      syncedCount: res.data?.data?.syncedCount ?? 0,
+      totalChecked: res.data?.data?.totalChecked ?? 0,
+      message: res.data?.message || 'Sync complete',
+    };
+  } catch (err: any) {
+    if (err.response?.data?.message) {
+      throw new Error(err.response.data.message);
+    }
+    throw new Error('Failed to connect to Shiprocket sync endpoint');
+  }
+}
+
 export async function fetchAdminOrder(orderId: string): Promise<AdminOrder> {
   try {
     const res = await adminClient.get(`/orders/${orderId}`);

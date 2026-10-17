@@ -153,8 +153,23 @@ export default function RootLayout({
             }).replace(/</g, '\\u003c'),
           }}
         />
+        {/* Shiprocket Checkout (SRC / Fastrr) Stylesheet & Script (PRODUCTION) */}
+        <link
+          rel="stylesheet"
+          href="https://checkout-ui.shiprocket.com/assets/styles/shopify.css"
+        />
+        <script
+          src="https://checkout-ui.shiprocket.com/assets/js/channels/shopify.js"
+          async
+        />
       </head>
       <body className="min-h-full flex flex-col antialiased bg-black text-white" suppressHydrationWarning>
+        {/* Shiprocket Checkout (SRC / Fastrr) Merchant Domain Identification */}
+        <input
+          type="hidden"
+          id="sellerDomain"
+          defaultValue={process.env.NEXT_PUBLIC_SELLER_DOMAIN || "rebelive.com"}
+        />
         <StoreProvider>
           <AuthProvider>
             <SmoothScroll>

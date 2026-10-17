@@ -355,6 +355,19 @@ export const updateProfile = createAsyncThunk(
   },
 );
 
+/** Link phone number & merge guest orders */
+export const linkUserPhone = createAsyncThunk(
+  'auth/linkPhone',
+  async (phone: string, { rejectWithValue }) => {
+    try {
+      const { data } = await API.post('/users/link-phone', { phone });
+      return data.data as { user?: AuthUser; mergedOrdersCount?: number } & AuthUser;
+    } catch (err: unknown) {
+      return rejectWithValue(extractErrorMessage(err, 'Failed to link phone number'));
+    }
+  },
+);
+
 // ─── Slice ─────────────────────────────────────────────
 
 const initialState: AuthState = {
@@ -562,6 +575,25 @@ const authSlice = createSlice({
         }
       })
       .addCase(updateProfile.rejected, (state, { payload }) => {
+        state.loading = false;
+        state.error = payload as string;
+      })
+      .addCase(linkUserPhone.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(linkUserPhone.fulfilled, (state, { payload }) => {
+        state.loading = false;
+        const updatedUser = (payload as any).user || payload;
+        state.user = {
+          ...(state.user || {}),
+          ...updatedUser,
+        } as AuthUser;
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('authUser', JSON.stringify(state.user));
+        }
+      })
+      .addCase(linkUserPhone.rejected, (state, { payload }) => {
         state.loading = false;
         state.error = payload as string;
       });
