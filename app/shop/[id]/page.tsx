@@ -1250,12 +1250,12 @@ export default function ProductDetailPage() {
                                       '2nd Floor, House No. 81, Ward No. 12, Manikpur, Keshopur, Rajpur, Buxar, Bihar, India, 802113'}
                                   </span>
                                 </p>
-                                <div className="pt-1.5 border-t border-white/5 flex items-center gap-1.5">
+                                {/* <div className="pt-1.5 border-t border-white/5 flex items-center gap-1.5">
                                   <span className="text-[10px] font-mono text-white/40 uppercase">FSSAI Lic. No.</span>
                                   <span className="text-[11px] font-mono font-bold text-white/90">
                                     {activeAdditional?.marketedBy?.fssaiLicNo || '10013021000941'}
                                   </span>
-                                </div>
+                                </div> */}
                               </div>
                             </div>
                           </div>
