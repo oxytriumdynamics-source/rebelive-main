@@ -402,6 +402,7 @@ export default function ProductDetailPage() {
   const [selectedPhotoIndex, setSelectedPhotoIndex] = useState<number>(0);
   const [isLightboxOpen, setIsLightboxOpen] = useState<boolean>(false);
   const [isFastrrLoading, setIsFastrrLoading] = useState<boolean>(false);
+  const touchStartXRef = useRef<number | null>(null);
 
   // Reset photo index when product changes
   useEffect(() => {
@@ -420,10 +421,15 @@ export default function ProductDetailPage() {
         .filter(Boolean) as { id: string; label: string; src: string; type: 'render' }[];
       if (parsed.length > 0) return parsed;
     }
+    const wrapPath =
+      (product.id.toLowerCase().includes('aviva') && '/brand/aviva-can.webp') ||
+      (product.id.toLowerCase().includes('capella') && '/brand/capella-can.webp') ||
+      '/brand/apex-can.webp';
+
     const candidates = [
-      { id: 'hero', label: 'Can Hero', src: product.canImage, type: 'render' as const },
-      { id: 'secondary', label: 'Secondary View', src: product.image, type: 'render' as const },
-      { id: 'wrap', label: '360° Wrap', src: product.renderImage, type: 'wrap' as const },
+      { id: 'hero', label: 'Can Hero', src: product.image, type: 'render' as const },
+      { id: 'secondary', label: 'Secondary View', src: product.renderImage, type: 'render' as const },
+      { id: 'wrap', label: '360° Wrap Design', src: wrapPath, type: 'wrap' as const },
     ];
     return candidates.filter((item): item is { id: string; label: string; src: string; type: 'render' | 'wrap' } => Boolean(item.src));
   }, [product]);
@@ -595,7 +601,7 @@ export default function ProductDetailPage() {
         />
 
         {/* ── Main PDP Container ── */}
-        <main className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1440px] mx-auto relative z-10">
+        <main className="pt-20 sm:pt-28 md:pt-32 pb-16 sm:pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1340px] mx-auto relative z-10">
 
           {/* ── Product Hero: Two Column Grid (side-by-side on tablet/desktop, stacked on mobile) ── */}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-6 md:gap-8 lg:gap-12 mt-4 sm:mt-8 md:mt-10 items-start">
@@ -603,9 +609,9 @@ export default function ProductDetailPage() {
             <div className="md:col-span-5 lg:col-span-5 flex flex-col md:sticky md:top-24 md:z-20 self-start w-full">
               {/* Flex wrapper holding Thumbnails on the left-top side and Main Showcase on the right */}
               <div className="flex flex-row gap-2.5 sm:gap-3.5 lg:gap-4 items-start w-full justify-center md:justify-start">
-                {/* ── Photo Options Thumbnails (Left Top Side of Main Image) ── */}
+                {/* ── Photo Options Thumbnails (Hidden on mobile/small screen, prominent on desktop) ── */}
                 {galleryList.length > 1 && (
-                  <div className="flex flex-col gap-2 sm:gap-2.5 shrink-0 py-0.5 max-h-[360px] xs:max-h-[380px] sm:max-h-[420px] md:max-h-[430px] lg:max-h-[450px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                  <div className="hidden md:flex flex-col gap-2.5 sm:gap-3 shrink-0 py-0.5 max-h-[400px] md:max-h-[440px] lg:max-h-[470px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                     {galleryList.map((item, idx) => {
                       const isSelected = selectedPhotoIndex === idx;
                       return (
@@ -613,9 +619,9 @@ export default function ProductDetailPage() {
                           key={item.id}
                           type="button"
                           onClick={() => setSelectedPhotoIndex(idx)}
-                          className={`group relative rounded-lg sm:rounded-xl w-12 h-12 sm:w-13 sm:h-13 md:w-14 md:h-14 lg:w-15 lg:h-15 shrink-0 p-1 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${isSelected
-                            ? 'bg-neutral-900 border-2 border-white scale-[1.02] shadow-[0_0_15px_rgba(255,255,255,0.25)] ring-1 ring-white/50'
-                            : 'bg-[#0e0e0e] border border-white/10 hover:border-white/40 hover:bg-neutral-900/60 opacity-60 hover:opacity-100'
+                          className={`group relative rounded-xl lg:rounded-2xl w-16 h-16 md:w-[72px] md:h-[72px] lg:w-[82px] lg:h-[82px] shrink-0 p-1.5 flex flex-col items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${isSelected
+                            ? 'bg-neutral-900 border-2 border-white scale-[1.03] shadow-[0_0_18px_rgba(255,255,255,0.3)] ring-1 ring-white/60'
+                            : 'bg-[#0e0e0e] border border-white/15 hover:border-white/50 hover:bg-neutral-900/80 opacity-60 hover:opacity-100 hover:scale-[1.01]'
                             }`}
                           title={item.label}
                         >
@@ -624,29 +630,41 @@ export default function ProductDetailPage() {
                               src={item.src}
                               alt={item.label}
                               fill
-                              sizes="(max-width: 640px) 50px, 60px"
-                              className="object-cover rounded-md group-hover:scale-105 transition-transform"
+                              sizes="(max-width: 1024px) 72px, 84px"
+                              className="object-cover rounded-lg lg:rounded-xl group-hover:scale-105 transition-transform"
                               unoptimized={item.src.startsWith('http')}
                             />
                           </div>
 
                           {/* Subtle Active Accent Dot */}
                           {isSelected && (
-                            <div className="absolute top-1 sm:top-1.5 right-1 sm:right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#fff]" />
+                            <div className="absolute top-1.5 right-1.5 w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_6px_#fff]" />
                           )}
-
-                          {/* Mini Label badge on hover */}
-                          <div className="absolute inset-x-0 bottom-0 py-0.5 bg-black/90 backdrop-blur-sm text-[7px] sm:text-[8px] font-mono text-center text-white/90 truncate px-0.5 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            {item.label}
-                          </div>
                         </button>
                       );
                     })}
                   </div>
                 )}
 
-                {/* Main Can Showcase Card (Compact & Proportionate) */}
-                <div className="relative flex-1 min-w-0 w-full max-w-[360px] xs:max-w-[390px] sm:max-w-[420px] md:max-w-[430px] lg:max-w-[450px] aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]">
+                {/* Main Can Showcase Card (Compact & Proportionate, with mobile swipe gestures) */}
+                <div
+                  onTouchStart={(e) => {
+                    touchStartXRef.current = e.touches[0].clientX;
+                  }}
+                  onTouchEnd={(e) => {
+                    if (touchStartXRef.current === null) return;
+                    const diffX = touchStartXRef.current - e.changedTouches[0].clientX;
+                    if (Math.abs(diffX) > 40) {
+                      if (diffX > 0) {
+                        handleNextPhoto();
+                      } else {
+                        handlePrevPhoto();
+                      }
+                    }
+                    touchStartXRef.current = null;
+                  }}
+                  className="relative flex-1 min-w-0 w-full max-w-[360px] xs:max-w-[400px] sm:max-w-[440px] md:max-w-[430px] lg:max-w-[450px] aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_12px_45px_rgba(0,0,0,0.7)]"
+                >
                   {/* Edge Highlights */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
 
@@ -747,6 +765,22 @@ export default function ProductDetailPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Mobile Carousel Dots Indicator (Only on small screens when thumbnails are hidden) */}
+                  {galleryList.length > 1 && (
+                    <div className="md:hidden absolute bottom-3.5 inset-x-0 flex items-center justify-center gap-1.5 z-20 pointer-events-none">
+                      {galleryList.map((_, dotIdx) => (
+                        <span
+                          key={dotIdx}
+                          className={`h-1 rounded-full transition-all duration-300 ${
+                            selectedPhotoIndex === dotIdx
+                              ? 'w-5 bg-white shadow-[0_0_8px_rgba(255,255,255,0.9)]'
+                              : 'w-1.5 bg-white/30'
+                          }`}
+                        />
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             </div>

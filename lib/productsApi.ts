@@ -3,8 +3,8 @@ import { Product } from '@/data/products';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes fresh TTL
-const STORAGE_KEY_PRODUCTS = 'rebelive_products_cache_v2';
-const STORAGE_KEY_SLUG_PREFIX = 'rebelive_prod_slug_';
+const STORAGE_KEY_PRODUCTS = 'rebelive_products_cache_v4';
+const STORAGE_KEY_SLUG_PREFIX = 'rebelive_prod_slug_v4_';
 
 interface CacheEntry<T> {
   data: T;
@@ -280,12 +280,22 @@ function formatServerProduct(raw: any): Product {
   const defaultSlug = raw.slug || raw.id || 'product';
   const defaultTitle = raw.displayTitle || raw.name || 'Functional Formula';
 
+  const defaultWrap =
+    defaultSlug.includes('aviva')
+      ? '/brand/aviva-can.webp'
+      : defaultSlug.includes('capella')
+      ? '/brand/capella-can.webp'
+      : '/brand/apex-can.webp';
+
+  const authenticWrap =
+    (raw.canImage && raw.canImage.includes('-can.webp') ? raw.canImage : null) || defaultWrap;
+
   const firstImageUrl =
-    raw.canImage ||
     raw.image ||
     (Array.isArray(raw.images) && raw.images.length > 0
       ? (raw.images.find((img: any) => img.isPrimary)?.url || raw.images[0]?.url)
-      : '');
+      : '') ||
+    authenticWrap;
 
   return {
     id: defaultSlug,
@@ -302,7 +312,7 @@ function formatServerProduct(raw: any): Product {
     notes: Array.isArray(raw.notes) ? raw.notes : [],
     tastingNotesDetailed: Array.isArray(raw.tastingNotesDetailed) ? raw.tastingNotesDetailed : [],
     model: raw.model || '/models/soda-can1.glb',
-    canImage: raw.canImage || firstImageUrl || '',
+    canImage: authenticWrap,
     image: raw.image || firstImageUrl || '',
     renderImage: raw.renderImage || raw.image || firstImageUrl || '',
     brandLogo: raw.brandLogo || '',
@@ -331,9 +341,8 @@ function formatServerProduct(raw: any): Product {
             type: 'render' as ('render' | 'wrap' | 'logo' | 'mood'),
           }))
         : [
-            raw.canImage ? { id: 'hero', label: 'Can Hero', src: raw.canImage, type: 'render' as const } : null,
-            raw.image ? { id: 'secondary', label: 'Secondary View', src: raw.image, type: 'render' as const } : null,
-            raw.renderImage ? { id: 'wrap', label: '360° Wrap', src: raw.renderImage, type: 'wrap' as const } : null,
+            raw.image ? { id: 'hero', label: 'Can Hero', src: raw.image, type: 'render' as const } : null,
+            { id: 'wrap', label: '360° Wrap', src: authenticWrap, type: 'wrap' as const },
           ].filter(Boolean),
     specs: raw.specs || {},
     netQuantity: raw.netQuantity || '250 ml',

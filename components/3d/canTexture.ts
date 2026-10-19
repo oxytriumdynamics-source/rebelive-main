@@ -34,12 +34,37 @@ export function getDeviceProfile(): DeviceProfile {
 }
 
 /**
+ * Default authentic 360 flat can wrap designs in /brand
+ */
+export const CAN_WRAP_DEFAULTS: Record<string, string> = {
+  apex: '/brand/apex-can.webp',
+  aviva: '/brand/aviva-can.webp',
+  capella: '/brand/capella-can.webp',
+};
+
+/**
+ * Returns the authentic flat wrap design path for a given product
+ */
+export function getCanWrapPath(product: Product | { id?: string; slug?: string; name?: string; canImage?: string }): string {
+  // If product.canImage is explicitly an authentic wrap file, respect it
+  if (product.canImage && product.canImage.includes('-can.webp')) {
+    return product.canImage;
+  }
+
+  const idKey = `${product.id || ''} ${(product as any).slug || ''} ${product.name || ''}`.toLowerCase();
+  if (idKey.includes('aviva')) return CAN_WRAP_DEFAULTS.aviva;
+  if (idKey.includes('capella')) return CAN_WRAP_DEFAULTS.capella;
+  return CAN_WRAP_DEFAULTS.apex;
+}
+
+/**
  * Creates or retrieves a seamless 360 wrap-around texture for the cylindrical can body.
  * Built for CylinderGeometry with u=0..1 wrapping 360 degrees around the can.
  */
 export function getCanTexture(product: Product): THREE.Texture {
   const profile = getDeviceProfile();
-  const cacheKey = `${product.id}_wrap_2048_v2`;
+  const wrapSrc = getCanWrapPath(product);
+  const cacheKey = `${wrapSrc}_wrap_2048_v4`;
 
   if (textureCache[cacheKey]) {
     return textureCache[cacheKey];
@@ -61,13 +86,14 @@ export function getCanTexture(product: Product): THREE.Texture {
 
   // 1. Sleek metallic base fill matching the product identity (instant display before image arrives)
   const baseGrad = ctx.createLinearGradient(0, 0, width, 0);
-  if (product.id === 'aviva') {
+  const idKey = `${product.id || ''} ${(product as any).slug || ''} ${product.name || ''}`.toLowerCase();
+  if (idKey.includes('aviva')) {
     baseGrad.addColorStop(0.0, '#f2f2f5');
     baseGrad.addColorStop(0.25, '#ffffff');
     baseGrad.addColorStop(0.5, '#eaeaf0');
     baseGrad.addColorStop(0.75, '#ffffff');
     baseGrad.addColorStop(1.0, '#f2f2f5');
-  } else if (product.id === 'capella') {
+  } else if (idKey.includes('capella')) {
     baseGrad.addColorStop(0.0, '#0a0d14');
     baseGrad.addColorStop(0.25, '#121824');
     baseGrad.addColorStop(0.5, '#070a10');
@@ -97,23 +123,16 @@ export function getCanTexture(product: Product): THREE.Texture {
   textureCache[cacheKey] = texture;
 
   // 2. Load the authentic 360 flat can wrap image and draw cleanly onto the canvas
-  const CAN_WRAP_DEFAULTS: Record<string, string> = {
-    apex: '/brand/apex-can.webp',
-    aviva: '/brand/aviva-can.webp',
-    capella: '/brand/capella-can.webp',
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  const drawAndNotify = () => {
+    ctx.drawImage(img, 0, 0, width, height);
+    texture.needsUpdate = true;
   };
-
-  const wrapSrc =
-    product.canImage || CAN_WRAP_DEFAULTS[(product.id || '').toLowerCase()] || '/brand/apex-can.webp';
-
-  if (wrapSrc) {
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, width, height);
-      texture.needsUpdate = true;
-    };
-    img.src = wrapSrc;
+  img.onload = drawAndNotify;
+  img.src = wrapSrc;
+  if (img.complete) {
+    drawAndNotify();
   }
 
   return texture;

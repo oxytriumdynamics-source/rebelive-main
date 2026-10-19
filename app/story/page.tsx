@@ -230,12 +230,32 @@ export default function StoryPage() {
 
   // Transition locking & trackpad inertia absorber refs
   const isAnimatingRef = useRef(false);
+  const isGestureLockedRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
   const lastWheelTimeRef = useRef(0);
-  const hasTriggeredInGestureRef = useRef(false);
+  const accumulatedDeltaRef = useRef(0);
   const wheelQuietTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const minLockTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
+  const touchTriggeredInSwipeRef = useRef(false);
+
+  // Pause Lenis smooth-scroll on desktop so it never fights deck transitions
+  useEffect(() => {
+    if (isMobile) return;
+    const lenis = (window as any).__lenis;
+    if (lenis && typeof lenis.stop === 'function') {
+      lenis.stop();
+    }
+    window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
+
+    return () => {
+      const len = (window as any).__lenis;
+      if (len && typeof len.start === 'function') {
+        len.start();
+      }
+    };
+  }, [isMobile]);
 
   const goToSection = useCallback((targetIdx: number) => {
     if (isMobile) {
@@ -254,13 +274,20 @@ export default function StoryPage() {
     if (clamped === activeSectionRef.current) return;
 
     isAnimatingRef.current = true;
+    isGestureLockedRef.current = true;
     lastScrollTimeRef.current = Date.now();
     activeSectionRef.current = clamped;
     setActiveSection(clamped);
 
-    // Discrete 850ms lock to ensure smooth slide completion without input bleed
-    setTimeout(() => {
+    // Keep strict 850ms animation lock matching CSS transition duration
+    if (minLockTimerRef.current) clearTimeout(minLockTimerRef.current);
+    minLockTimerRef.current = setTimeout(() => {
       isAnimatingRef.current = false;
+      // Only unlock gesture if trackpad inertia has completely ceased (quiet for > 350ms)
+      if (Date.now() - lastWheelTimeRef.current > 350) {
+        isGestureLockedRef.current = false;
+        accumulatedDeltaRef.current = 0;
+      }
     }, 850);
   }, [isMobile]);
 
@@ -276,7 +303,7 @@ export default function StoryPage() {
     }
   }, [goToSection]);
 
-  // ── Trackpad Inertia & Fast Scroll Absorber (Strict 1-Section Snapping) ──
+  // ── Bulletproof Trackpad Inertia & Fast Scroll Absorber (Strict 1-Section Snapping) ──
   useEffect(() => {
     if (isMobile) return;
 
@@ -284,42 +311,24 @@ export default function StoryPage() {
       if (shopOpen) return;
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
 
-      const delta = e.deltaY;
-      if (Math.abs(delta) < 14) return;
-
-      // Ignore horizontal swipes
-      if (Math.abs(e.deltaX) > Math.abs(delta) * 1.5) return;
-
       const now = Date.now();
       lastWheelTimeRef.current = now;
 
-      // ── Reset gesture lock when trackpad wheel stream goes completely quiet ──
-      if (wheelQuietTimerRef.current) {
-        clearTimeout(wheelQuietTimerRef.current);
-      }
-      wheelQuietTimerRef.current = setTimeout(() => {
-        hasTriggeredInGestureRef.current = false;
-      }, 220);
-
-      // ALWAYS prevent default during animation to stop trackpad momentum bleed
-      if (isAnimatingRef.current) {
-        e.preventDefault();
-        e.stopPropagation();
-        return;
-      }
-
       // Check if user is scrolled down into footer
-      if (window.scrollY > 20) {
-        if (delta < 0) {
-          // Re-engaging top story section from footer:
+      const isInFooter = window.scrollY > 30;
+
+      if (isInFooter) {
+        // If user scrolls up while near top of footer, smoothly return to Manifesto slide:
+        if (e.deltaY < -20 && window.scrollY < 120) {
           e.preventDefault();
           e.stopPropagation();
-          if (hasTriggeredInGestureRef.current) return;
-          if (now - lastScrollTimeRef.current < 750) return;
 
-          hasTriggeredInGestureRef.current = true;
-          lastScrollTimeRef.current = now;
+          if (isAnimatingRef.current || isGestureLockedRef.current) return;
+          if (now - lastScrollTimeRef.current < 850) return;
+
           isAnimatingRef.current = true;
+          isGestureLockedRef.current = true;
+          lastScrollTimeRef.current = now;
 
           window.scrollTo({ top: 0, behavior: 'smooth' });
           activeSectionRef.current = SECTIONS.length - 1;
@@ -327,51 +336,84 @@ export default function StoryPage() {
 
           setTimeout(() => {
             isAnimatingRef.current = false;
+            isGestureLockedRef.current = false;
           }, 850);
-          return;
         }
         return;
       }
 
-      // If at last section (Manifesto) and scrolling down:
-      if (activeSectionRef.current === SECTIONS.length - 1 && delta > 0) {
+      // ── WITHIN STORY DECK: ALWAYS PREVENT DEFAULT ON EVERY SINGLE WHEEL EVENT ──
+      // This is crucial: stops native browser scroll, inertia bleed, and Lenis interference.
+      e.preventDefault();
+      e.stopPropagation();
+
+      const delta = e.deltaY;
+
+      // Ignore horizontal trackpad swipes
+      if (Math.abs(e.deltaX) > Math.abs(delta) * 1.5) return;
+
+      // Continuously refresh quiet timer on every single incoming wheel event
+      // regardless of magnitude to detect when the physical gesture/momentum ends.
+      if (wheelQuietTimerRef.current) {
+        clearTimeout(wheelQuietTimerRef.current);
+      }
+      wheelQuietTimerRef.current = setTimeout(() => {
+        // Trackpad momentum has completely stopped
+        if (!isAnimatingRef.current) {
+          isGestureLockedRef.current = false;
+          accumulatedDeltaRef.current = 0;
+        }
+      }, 350);
+
+      // If slide transition is animating OR gesture lock is active:
+      // Completely swallow all kinetic inertia and discard trailing events!
+      if (isAnimatingRef.current || isGestureLockedRef.current) {
+        return;
+      }
+
+      // Enforce strict 850ms cooldown between section triggers
+      if (now - lastScrollTimeRef.current < 850) {
+        return;
+      }
+
+      // If at last section (Manifesto) and user deliberately scrolls down:
+      if (activeSectionRef.current === SECTIONS.length - 1 && delta > 30) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
-          e.preventDefault();
-          e.stopPropagation();
-          if (hasTriggeredInGestureRef.current) return;
-          if (now - lastScrollTimeRef.current < 750) return;
-
-          hasTriggeredInGestureRef.current = true;
-          lastScrollTimeRef.current = now;
           isAnimatingRef.current = true;
+          isGestureLockedRef.current = true;
+          lastScrollTimeRef.current = now;
 
           footerEl.scrollIntoView({ behavior: 'smooth' });
           setTimeout(() => {
             isAnimatingRef.current = false;
+            isGestureLockedRef.current = false;
           }, 850);
         }
         return;
       }
 
-      // ── WITHIN STORY SECTIONS (0 to 6): STRICT 1-SECTION SNAP PER GESTURE ──
-      e.preventDefault();
-      e.stopPropagation();
+      // Direction check & accumulator reset on reversal
+      if (
+        (accumulatedDeltaRef.current > 0 && delta < 0) ||
+        (accumulatedDeltaRef.current < 0 && delta > 0)
+      ) {
+        accumulatedDeltaRef.current = 0;
+      }
+      accumulatedDeltaRef.current += delta;
 
-      // If already triggered in current gesture: absorb and discard all trailing inertia
-      if (hasTriggeredInGestureRef.current) {
+      // Sensitivity threshold for deliberate scroll initiation (works smoothly for slow & fast)
+      const THRESHOLD = 24;
+      if (Math.abs(accumulatedDeltaRef.current) < THRESHOLD && Math.abs(delta) < THRESHOLD) {
         return;
       }
 
-      // Enforce minimum gap
-      if (now - lastScrollTimeRef.current < 750) {
-        return;
-      }
+      // ── TRIGGER STRICTLY 1 SECTION JUMP ──
+      const isDown = accumulatedDeltaRef.current > 0 || delta > 0;
+      accumulatedDeltaRef.current = 0;
+      isGestureLockedRef.current = true;
 
-      hasTriggeredInGestureRef.current = true;
-      lastScrollTimeRef.current = now;
-
-      if (delta > 0) {
+      if (isDown) {
         goToNext();
       } else {
         goToPrev();
@@ -381,9 +423,8 @@ export default function StoryPage() {
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
-      if (wheelQuietTimerRef.current) {
-        clearTimeout(wheelQuietTimerRef.current);
-      }
+      if (wheelQuietTimerRef.current) clearTimeout(wheelQuietTimerRef.current);
+      if (minLockTimerRef.current) clearTimeout(minLockTimerRef.current);
     };
   }, [isMobile, shopOpen, goToNext, goToPrev]);
 
@@ -395,6 +436,7 @@ export default function StoryPage() {
       if (e.touches.length !== 1) return;
       touchStartYRef.current = e.touches[0].clientY;
       touchStartXRef.current = e.touches[0].clientX;
+      touchTriggeredInSwipeRef.current = false;
     };
 
     const handleTouchMove = (e: TouchEvent) => {
@@ -426,23 +468,29 @@ export default function StoryPage() {
 
       e.preventDefault();
 
-      if (isAnimatingRef.current) return;
+      if (isAnimatingRef.current || touchTriggeredInSwipeRef.current) return;
       const now = Date.now();
       if (now - lastScrollTimeRef.current < 850) return;
 
+      touchTriggeredInSwipeRef.current = true;
       if (deltaY > 0) {
         goToNext();
       } else {
         goToPrev();
       }
-      touchStartYRef.current = e.touches[0].clientY;
+    };
+
+    const handleTouchEnd = () => {
+      touchTriggeredInSwipeRef.current = false;
     };
 
     window.addEventListener('touchstart', handleTouchStart, { passive: true });
     window.addEventListener('touchmove', handleTouchMove, { passive: false });
+    window.addEventListener('touchend', handleTouchEnd, { passive: true });
     return () => {
       window.removeEventListener('touchstart', handleTouchStart);
       window.removeEventListener('touchmove', handleTouchMove);
+      window.removeEventListener('touchend', handleTouchEnd);
     };
   }, [isMobile, shopOpen, goToNext, goToPrev]);
 
@@ -614,19 +662,19 @@ export default function StoryPage() {
             whileInView={isMobile ? 'visible' : undefined}
             animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
             viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full"
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-16 md:pt-20"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
-              {/* Left: Panther */}
+              {/* Left: Apple Fall Illustration */}
               <motion.div variants={visualReveal} className="md:col-span-5 flex items-center justify-center">
-                <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 select-none flex items-center justify-center">
+                <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96 select-none flex items-center justify-center">
                   <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
                   <Image
-                    src="/brand/panther_white_icon-transparent.webp"
-                    alt="Rebelive Panther"
+                    src="/brand/why-did-it-fall.png"
+                    alt="Why did it fall - Apple moment illustration"
                     fill
-                    sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"
-                    className="object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+                    sizes="(max-width: 768px) 240px, (max-width: 1200px) 350px, 420px"
+                    className="object-contain mix-blend-screen "
                     priority
                   />
                 </div>
@@ -682,19 +730,19 @@ export default function StoryPage() {
             whileInView={isMobile ? 'visible' : undefined}
             animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
             viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full"
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-16 md:pt-20"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
-              {/* Left: Panther */}
+              {/* Left: Idea Lightbulb Illustration */}
               <motion.div variants={visualReveal} className="md:col-span-5 flex items-center justify-center">
-                <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 select-none flex items-center justify-center">
+                <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96 select-none flex items-center justify-center">
                   <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
                   <Image
-                    src="/brand/panther_white_icon-transparent.webp"
-                    alt="Rebelive Panther"
+                    src="/brand/why-the-hell.png"
+                    alt="Why the hell is taking care of yourself so difficult - Idea revelation illustration"
                     fill
-                    sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"
-                    className="object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.08)]"
+                    sizes="(max-width: 768px) 240px, (max-width: 1200px) 350px, 420px"
+                    className="object-contain mix-blend-screen "
                     priority
                   />
                 </div>
@@ -775,16 +823,16 @@ export default function StoryPage() {
               {/* RED: Replace REBELIVE. text with Rebelive Logo */}
               <motion.h2
                 variants={fadeUpSlow}
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-wrap items-center gap-2.5 sm:gap-4"
+                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-wrap items-end gap-2.5 sm:gap-4 leading-none"
               >
-                <span>HI. I’M</span>
-                <span className="relative inline-block w-40 sm:w-56 md:w-64 lg:w-72 h-8 sm:h-11 md:h-13 lg:h-15 align-middle">
+                <span className="leading-none pb-[1px] sm:pb-[2px]">HI. I’M</span>
+                <span className="relative inline-block h-6 sm:h-9 md:h-11 lg:h-14 w-[101px] sm:w-[152px] md:w-[186px] lg:w-[236px] flex-shrink-0">
                   <Image
                     src="/brand/rebelive-white.webp"
                     alt="REBELIVE"
                     fill
                     sizes="(max-width: 768px) 240px, 320px"
-                    className="object-contain object-left drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
+                    className="object-contain object-left-bottom drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
                     priority
                   />
                 </span>

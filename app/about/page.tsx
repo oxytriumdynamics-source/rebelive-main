@@ -169,7 +169,7 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="rebelive"
-          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-4 pb-8 sm:pb-16 lg:pb-20"
         >
           <motion.div
             variants={containerVariants}
@@ -178,9 +178,10 @@ export default function AboutPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="w-full max-w-7xl mx-auto"
           >
-            {/* Split Content: Narrative Left, Panther Emblem Right */}
+            {/* Content: Image at top on mobile (order-1), Narrative below (order-2); side-by-side on desktop */}
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
-              <div className="lg:col-span-7 space-y-5">
+              {/* Narrative Content */}
+              <div className="lg:col-span-7 order-2 lg:order-1 space-y-5">
                 <motion.h2
                   variants={fadeUpItem}
                   className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white leading-[0.95]"
@@ -204,14 +205,14 @@ export default function AboutPage() {
                 </motion.div>
               </div>
 
-              {/* Right: Panther Emblem Artwork */}
+              {/* Panther Emblem Artwork (Top on mobile) */}
               <motion.div
                 variants={scaleInItem}
-                className="lg:col-span-5 flex items-center justify-center"
+                className="lg:col-span-5 order-1 lg:order-2 flex items-center justify-center"
               >
                 <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 flex items-center justify-center select-none group">
                   <div className="absolute inset-0 rounded-full bg-white/[0.05] blur-3xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
-                  <div className="relative w-full h-full p-6 flex items-center justify-center">
+                  <div className="relative w-full h-full p-4 sm:p-6 flex items-center justify-center">
                     <Image
                       src="/brand/panther_white_icon-transparent.webp"
                       alt="Rebelive Panther Emblem"
@@ -227,12 +228,17 @@ export default function AboutPage() {
           </motion.div>
         </section>
 
+        {/* ── Generous Separation Divider Between Rebelive & Oxytrium Dynamics ── */}
+        <div className="w-full max-w-5xl mx-auto px-6 sm:px-12 my-6 sm:my-10 lg:my-14 select-none pointer-events-none">
+          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        </div>
+
         {/* ══════════════════════════════════════════════════════════════
             SECTION 2: OXYTRIUM DYNAMICS (INCUBATOR LAB)
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="oxytrium"
-          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-6 sm:pt-14 lg:pt-18 pb-8 sm:pb-16 lg:pb-20"
         >
           <motion.div
             variants={containerVariants}
@@ -241,10 +247,10 @@ export default function AboutPage() {
             viewport={{ once: true, amount: 0.2 }}
             className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center"
           >
-            {/* Left: Oxytrium Dynamics Official Logo Emblem */}
+            {/* Oxytrium Dynamics Official Logo Emblem (Top on mobile) */}
             <motion.div
               variants={scaleInItem}
-              className="lg:col-span-5 order-2 lg:order-1 flex items-center justify-center"
+              className="lg:col-span-5 order-1 lg:order-1 flex items-center justify-center"
             >
               <div className="relative w-64 h-64 sm:w-80 sm:h-80 md:w-96 md:h-96 flex items-center justify-center select-none group">
                 {/* Subtle Ambient Radial Backlight */}
@@ -263,8 +269,8 @@ export default function AboutPage() {
               </div>
             </motion.div>
 
-            {/* Right: Oxytrium Narrative */}
-            <div className="lg:col-span-7 order-1 lg:order-2 space-y-5">
+            {/* Oxytrium Narrative (Below image on mobile) */}
+            <div className="lg:col-span-7 order-2 lg:order-2 space-y-5">
               <motion.h2
                 variants={fadeUpItem}
                 className="text-3xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight text-white leading-[0.95]"

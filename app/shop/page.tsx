@@ -158,7 +158,7 @@ export default function ShopPage() {
         />
 
         {/* ── Main Shop Content ── */}
-        <main className="pt-24 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1440px] mx-auto relative z-10">
+        <main className="pt-24 sm:pt-32 pb-24 px-4 sm:px-6 lg:px-10 xl:px-12 max-w-[1340px] mx-auto relative z-10">
           {/* ── Top Header / Breadcrumb ── */}
           <div className="flex items-center justify-between border-b border-white/10 pb-6">
             <div>
