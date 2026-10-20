@@ -339,7 +339,7 @@ export const Header: React.FC<HeaderProps> = ({
                     unoptimized={Boolean(userAvatar?.startsWith('http'))}
                     className="object-cover rounded-full"
                   />
-                  <span className="absolute bottom-0 right-0 w-1.5 h-1.5 rounded-full bg-white ring-1 ring-black" />
+            
                 </div>
               </button>
 
@@ -363,7 +363,7 @@ export const Header: React.FC<HeaderProps> = ({
                     unoptimized={Boolean(userAvatar?.startsWith('http'))}
                     className="object-cover rounded-full"
                   />
-                  <span className="absolute bottom-0 right-0 w-2 h-2 rounded-full bg-white ring-1 ring-black" />
+          
                 </div>
 
                 {/* Name & ID snippet */}
@@ -449,33 +449,8 @@ export const Header: React.FC<HeaderProps> = ({
                       </span>
                     </Link>
 
-                    <Link
-                      href="/profile?tab=addresses"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-tech font-medium tracking-wider uppercase transition-colors ${isDark
-                          ? 'hover:bg-white/10 text-white/90 hover:text-white'
-                          : 'hover:bg-black/5 text-black/80 hover:text-black'
-                        }`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <MapPin className="w-3.5 h-3.5 text-white/80" />
-                        ADDRESSES
-                      </span>
-                    </Link>
+                   
 
-                    <Link
-                      href="/shop"
-                      onClick={() => setProfileDropdownOpen(false)}
-                      className={`flex items-center justify-between px-3 py-2 rounded-xl text-xs font-tech font-medium tracking-wider uppercase transition-colors ${isDark
-                          ? 'hover:bg-white/10 text-white/90 hover:text-white'
-                          : 'hover:bg-black/5 text-black/80 hover:text-black'
-                        }`}
-                    >
-                      <span className="flex items-center gap-2.5">
-                        <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
-                        CRATE ALLOCATION
-                      </span>
-                    </Link>
                   </div>
 
                   {/* Dropdown Footer: Logout */}

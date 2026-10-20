@@ -145,10 +145,10 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
 
           {/* PROFILE */}
           {isAuthenticated && user ? (
-            <div className="p-3.5 rounded-xl border border-amber-400/35 bg-amber-400/[0.06] flex flex-col gap-2.5">
+            <div className="p-3.5 rounded-xl border border-white/20 bg-white/[0.04] hover:border-white/30 transition-all flex flex-col gap-2.5 shadow-[0_4px_20px_rgba(0,0,0,0.35)]">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3.5">
-                  <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-amber-400/60 bg-black shrink-0">
+                  <div className="relative w-8 h-8 rounded-lg overflow-hidden border border-white/30 bg-black shrink-0">
                     <Image
                       src={user.avatarUrl || '/brand/panther_white_icon-transparent.webp'}
                       alt={user.firstName || 'User'}
@@ -159,22 +159,25 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     />
                   </div>
                   <div className="overflow-hidden">
-                    <div className="font-display text-sm font-bold tracking-wide uppercase text-amber-200 truncate">
+                    <div className="font-display text-sm font-bold tracking-wide uppercase text-white truncate">
                       {user.firstName} {user.lastName || ''}
                     </div>
-                    <div className="text-[9.5px] font-mono text-amber-400/80">
+                    <div className="text-[9.5px] font-mono text-white/50 tracking-wider">
                       OPERATOR ACTIVE
                     </div>
                   </div>
                 </div>
-                <span className="text-[9.5px] font-mono text-amber-400/90">ONLINE</span>
+                <span className="flex items-center gap-1.5 text-[9.5px] font-mono text-white/70 tracking-wider">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white shadow-[0_0_8px_rgba(255,255,255,0.8)] animate-pulse" />
+                  ONLINE
+                </span>
               </div>
 
               <div className="grid grid-cols-2 gap-2 pt-1">
                 <Link
                   href="/profile"
                   onClick={onClose}
-                  className="py-1.5 px-3 rounded-lg bg-amber-400/15 hover:bg-amber-400/25 text-amber-300 font-tech text-[10px] font-bold tracking-wider uppercase text-center border border-amber-400/30 transition-colors"
+                  className="py-1.5 px-3 rounded-lg bg-white hover:bg-neutral-200 text-black font-tech text-[10px] font-bold tracking-wider uppercase text-center transition-colors shadow-sm"
                 >
                   VIEW PROFILE
                 </Link>
@@ -183,7 +186,7 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
                     onClose();
                     await logoutUser();
                   }}
-                  className="py-1.5 px-3 rounded-lg bg-red-500/15 hover:bg-red-500/25 text-red-300 font-tech text-[10px] font-bold tracking-wider uppercase text-center border border-red-500/30 transition-colors cursor-pointer"
+                  className="py-1.5 px-3 rounded-lg bg-white/[0.05] hover:bg-white/10 hover:border-white/30 text-white/70 hover:text-white font-tech text-[10px] font-bold tracking-wider uppercase text-center border border-white/15 transition-colors cursor-pointer"
                 >
                   SIGN OUT
                 </button>

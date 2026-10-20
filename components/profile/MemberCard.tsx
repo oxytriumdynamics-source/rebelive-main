@@ -34,6 +34,7 @@ export default function MemberCard({
   const [shareState, setShareState] = useState<"idle" | "loading" | "done">("idle");
   const issuedDate = useMemo(() => getIssuedDate(), []);
   const cardFrontRef = useRef<HTMLDivElement>(null);
+  const cardBackRef = useRef<HTMLDivElement>(null);
 
   const isApex = persona.id === "APEX";
   const isCapella = persona.id === "CAPELLA";
@@ -42,7 +43,9 @@ export default function MemberCard({
   const [shareError, setShareError] = useState<string | null>(null);
 
   const shareCard = useCallback(async () => {
-    if (!cardFrontRef.current || shareState === "loading") return;
+    const targetEl = flipped ? cardBackRef.current : cardFrontRef.current;
+    const el = targetEl || cardFrontRef.current;
+    if (!el || shareState === "loading") return;
 
     setShareState("loading");
     setShareError(null);
@@ -52,13 +55,23 @@ export default function MemberCard({
         await document.fonts.ready;
       }
 
-      const el = cardFrontRef.current;
       const rect = el.getBoundingClientRect();
       const width = rect.width;
       const height = rect.height;
 
       const clone = el.cloneNode(true) as HTMLElement;
       const wrapper = document.createElement("div");
+
+      // Remove any interactive UI elements (e.g. Flip badge) from export clone
+      clone.querySelectorAll("[data-export-ignore='true']").forEach((node) => node.remove());
+
+      // Remove backdrop-filter to prevent SVG foreignObject rasterization artifacts
+      clone.querySelectorAll("*").forEach((node) => {
+        if (node instanceof HTMLElement) {
+          node.style.removeProperty("backdrop-filter");
+          node.style.removeProperty("-webkit-backdrop-filter");
+        }
+      });
 
       wrapper.style.cssText = `
         position: fixed;
@@ -91,9 +104,75 @@ export default function MemberCard({
       wrapper.appendChild(clone);
       document.body.appendChild(wrapper);
 
+      // Pre-inline all images inside clone as base64 Data URLs so dom-to-image-more
+      // renders them instantaneously without extra XHR network requests or CORS issues.
+      const originalImages = Array.from(el.querySelectorAll("img"));
+      const cloneImages = Array.from(clone.querySelectorAll("img"));
+
+      await Promise.all(
+        cloneImages.map(async (cloneImg, idx) => {
+          const originalImg = originalImages[idx];
+
+          // 1. Try immediate canvas rasterization from existing rendered image
+          if (originalImg && originalImg.complete && originalImg.naturalWidth > 0) {
+            try {
+              const canvas = document.createElement("canvas");
+              canvas.width = originalImg.naturalWidth;
+              canvas.height = originalImg.naturalHeight;
+              const ctx = canvas.getContext("2d");
+              if (ctx) {
+                ctx.drawImage(originalImg, 0, 0);
+                const dataUrl = canvas.toDataURL("image/png");
+                if (dataUrl && dataUrl.startsWith("data:image")) {
+                  cloneImg.src = dataUrl;
+                  cloneImg.removeAttribute("srcset");
+                  cloneImg.loading = "eager";
+                  return;
+                }
+              }
+            } catch {
+              // Canvas draw might be tainted if cross-origin; continue to fetch fallback
+            }
+          }
+
+          // 2. Fallback: fetch blob directly and convert to base64 Data URL
+          try {
+            const src = cloneImg.src || originalImg?.src;
+            if (src && !src.startsWith("data:")) {
+              const res = await fetch(src);
+              const blob = await res.blob();
+              const dataUrl = await new Promise<string>((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result as string);
+                reader.readAsDataURL(blob);
+              });
+              if (dataUrl) {
+                cloneImg.src = dataUrl;
+                cloneImg.removeAttribute("srcset");
+                cloneImg.loading = "eager";
+              }
+            }
+          } catch (e) {
+            console.warn("[MemberCard] Could not pre-inline image:", e);
+          }
+        })
+      );
+
+      // Verify all clone images are ready
+      await Promise.all(
+        cloneImages.map((img) => {
+          if (img.complete && img.naturalHeight !== 0) return Promise.resolve();
+          return new Promise((resolve) => {
+            img.onload = resolve;
+            img.onerror = resolve;
+            setTimeout(resolve, 400);
+          });
+        })
+      );
+
       await new Promise((r) => requestAnimationFrame(r));
       await new Promise((r) => requestAnimationFrame(r));
-      await new Promise((r) => setTimeout(r, 150));
+      await new Promise((r) => setTimeout(r, 100));
 
       let blob: Blob | null = null;
       try {
@@ -105,16 +184,47 @@ export default function MemberCard({
           height,
           quality: 1,
           scale: 2,
+          ignoreCSSRuleErrors: true,
+          cacheBust: false,
+          logger: {
+            warn: () => {},
+            error: (msg: string, ...rest: unknown[]) => {
+              // Silence cross-origin stylesheet security errors from third-party scripts (e.g. Shiprocket shopify.css)
+              if (typeof msg === "string" && msg.includes("Error while reading CSS rules")) {
+                return;
+              }
+              console.error(msg, ...rest);
+            },
+          },
         });
       } catch (e) {
-        console.warn("dom-to-image-more failed, using fallback:", e);
+        console.warn("[MemberCard] dom-to-image-more capture failed, attempting html2canvas fallback:", e);
+      }
+
+      // Robust fallback with html2canvas if dom-to-image-more failed
+      if (!blob) {
+        try {
+          const html2canvas = (await import("html2canvas")).default;
+          const canvas = await html2canvas(clone, {
+            scale: 2,
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            logging: false,
+          });
+          blob = await new Promise<Blob | null>((resolve) =>
+            canvas.toBlob((b) => resolve(b), "image/png", 1)
+          );
+        } catch (h2cErr) {
+          console.warn("[MemberCard] html2canvas fallback failed:", h2cErr);
+        }
       }
 
       document.body.removeChild(wrapper);
 
       if (!blob) throw new Error("Image export failed");
 
-      const fileName = `rebelive-${persona.id.toLowerCase()}-card.png`;
+      const fileName = `rebelive-${persona.id.toLowerCase()}-card${flipped ? "-back" : ""}.png`;
       const file = new File([blob], fileName, { type: "image/png" });
 
       let shared = false;
@@ -165,7 +275,7 @@ export default function MemberCard({
       setShareState("idle");
       setTimeout(() => setShareError(null), 3000);
     }
-  }, [persona, shareState]);
+  }, [flipped, persona, shareState]);
 
   return (
     <div className="relative flex flex-col items-center gap-3">
@@ -222,6 +332,7 @@ export default function MemberCard({
                     alt="APEX Topography"
                     fill
                     priority
+                    unoptimized
                     sizes="340px"
                     className="object-cover object-[20%_45%]"
                   />
@@ -236,6 +347,7 @@ export default function MemberCard({
                     alt="Capella Constellation"
                     fill
                     priority
+                    unoptimized
                     sizes="340px"
                     className="object-cover object-[22%_18%]"
                   />
@@ -249,6 +361,7 @@ export default function MemberCard({
                     alt="Aviva Sakura & Fuji"
                     fill
                     priority
+                    unoptimized
                     sizes="340px"
                     className="object-cover object-[52%_bottom]"
                   />
@@ -261,13 +374,13 @@ export default function MemberCard({
             <div className={`relative z-10 flex items-center justify-between ${compact ? "p-3.5" : "p-6"}`}>
               <div className={`relative ${compact ? "h-6 w-28" : "h-8 w-36"}`}>
                 <Image
-                  src="/brand/REBELIVE Logo Black.webp"
+                  src={isApex ? "/brand/rebelive-white.webp" : "/brand/REBELIVE Logo Black.webp"}
                   alt="REBELIVE"
                   fill
                   priority
+                  unoptimized
                   sizes="160px"
                   className="object-contain object-left"
-                  style={isApex ? { filter: "invert(1) brightness(1.2)" } : undefined}
                 />
               </div>
 
@@ -286,13 +399,13 @@ export default function MemberCard({
                     src={
                       isApex
                         ? "/brand/panther_white_icon-transparent.webp"
-                        : "/brand/panther white icon.webp"
+                        : "/brand/panther_black_icon-transparent.webp"
                     }
                     alt="Panther Emblem"
                     fill
+                    unoptimized
                     sizes="36px"
                     className="object-contain"
-                    style={!isApex ? { filter: "invert(1)" } : undefined}
                   />
                 </div>
               </div>
@@ -414,7 +527,10 @@ export default function MemberCard({
             </div>
 
             {/* Subtle interactive flip hint */}
-            <div className="absolute bottom-2 right-3 z-10 flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 backdrop-blur-sm">
+            <div
+              data-export-ignore="true"
+              className="absolute bottom-2 right-3 z-10 flex items-center gap-1 rounded-full bg-black/40 px-2 py-0.5 backdrop-blur-sm"
+            >
               <RotateCcw className="h-2 w-2 text-white/70" />
               <span
                 className="font-mono text-[7.5px] uppercase tracking-[0.2em] text-white/80"
@@ -427,6 +543,7 @@ export default function MemberCard({
 
           {/* BACK FACE */}
           <div
+            ref={cardBackRef}
             className={`absolute inset-0 flex flex-col justify-between overflow-hidden ${
               compact ? "p-4" : "p-6"
             } rounded-[20px] select-none transition-all duration-300 ${isApex
@@ -455,6 +572,7 @@ export default function MemberCard({
                   src="/brand/APEX.webp"
                   alt="Watermark"
                   fill
+                  unoptimized
                   sizes="340px"
                   className="object-cover"
                 />
@@ -466,6 +584,7 @@ export default function MemberCard({
                   src="/brand/Capella.webp"
                   alt="Watermark"
                   fill
+                  unoptimized
                   sizes="340px"
                   className="object-cover"
                 />
@@ -477,6 +596,7 @@ export default function MemberCard({
                   src="/brand/Aviva.webp"
                   alt="Watermark"
                   fill
+                  unoptimized
                   sizes="340px"
                   className="object-cover object-right"
                 />
@@ -492,13 +612,13 @@ export default function MemberCard({
             >
               <div className={`relative ${compact ? "h-5 w-24" : "h-7 w-32"}`}>
                 <Image
-                  src="/brand/REBELIVE Logo Black.webp"
+                  src={isApex ? "/brand/rebelive-white.webp" : "/brand/REBELIVE Logo Black.webp"}
                   alt="REBELIVE"
                   fill
                   priority
+                  unoptimized
                   sizes="140px"
                   className="object-contain object-left"
-                  style={isApex ? { filter: "invert(1) brightness(1.2)" } : undefined}
                 />
               </div>
             </div>
@@ -645,12 +765,16 @@ export default function MemberCard({
 
               <div className={`relative ${compact ? "h-4 w-4" : "h-6 w-6"} opacity-70`}>
                 <Image
-                  src="/brand/panther_white_icon-transparent.webp"
+                  src={
+                    isApex
+                      ? "/brand/panther_white_icon-transparent.webp"
+                      : "/brand/panther_black_icon-transparent.webp"
+                  }
                   alt="Seal"
                   fill
+                  unoptimized
                   sizes="24px"
                   className="object-contain"
-                  style={!isApex ? { filter: "brightness(0)" } : undefined}
                 />
               </div>
             </div>

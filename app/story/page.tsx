@@ -548,7 +548,7 @@ export default function StoryPage() {
         className="w-full flex flex-col md:h-full md:transition-transform md:duration-[850ms] md:ease-[cubic-bezier(0.16,1,0.3,1)] md:will-change-transform"
         style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
-     
+
         <section
           id="hero"
           className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
@@ -563,7 +563,7 @@ export default function StoryPage() {
           >
             {/* Left Column: Heading and Narrative */}
             <div className="lg:col-span-7 flex flex-col justify-center items-start text-left order-2 lg:order-1">
-           
+
 
               <motion.h1
                 variants={fadeUpSlow}
@@ -583,7 +583,7 @@ export default function StoryPage() {
                 else who lives in the real world.
               </motion.p>
 
-        
+
             </div>
 
             {/* Right Column: 8137 Founders Image at Top */}
@@ -602,7 +602,7 @@ export default function StoryPage() {
                   className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
                   priority
                 />
-              
+
               </div>
             </motion.div>
           </motion.div>
@@ -823,22 +823,25 @@ export default function StoryPage() {
               {/* RED: Replace REBELIVE. text with Rebelive Logo */}
               <motion.h2
                 variants={fadeUpSlow}
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-wrap items-end gap-2.5 sm:gap-4 leading-none"
+                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-nowrap items-baseline gap-2.5 sm:gap-4 leading-none whitespace-nowrap"
               >
-                <span className="leading-none pb-[1px] sm:pb-[2px]">HI. I’M</span>
-                <span className="relative inline-block h-6 sm:h-9 md:h-11 lg:h-14 w-[101px] sm:w-[152px] md:w-[186px] lg:w-[236px] flex-shrink-0">
+                <span className="leading-none">HI. I’M</span>
+                <span
+                  className="relative inline-block flex-shrink-0 self-baseline"
+                  style={{ height: '0.92em', width: '3.89em' }}
+                >
                   <Image
                     src="/brand/rebelive-white.webp"
                     alt="REBELIVE"
                     fill
-                    sizes="(max-width: 768px) 240px, 320px"
+                    sizes="(max-width: 768px) 240px, 400px"
                     className="object-contain object-left-bottom drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
                     priority
                   />
                 </span>
               </motion.h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-12 items-center">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
                 {/* Left: Narrative copy */}
                 <motion.div
                   variants={fadeUpItem}
@@ -868,8 +871,8 @@ export default function StoryPage() {
                             isCallout
                               ? 'text-white font-bold text-sm sm:text-base md:text-lg'
                               : isPunchy
-                              ? 'text-white font-medium text-xs sm:text-sm md:text-[15px] xl:text-base'
-                              : ''
+                                ? 'text-white font-medium text-xs sm:text-sm md:text-[15px] xl:text-base'
+                                : ''
                           }
                         >
                           {/* ORANGE: Informal highlighted styling for 'two absolute idiots' */}
@@ -890,23 +893,29 @@ export default function StoryPage() {
                   })}
                 </motion.div>
 
-                {/* GREEN: Founders 8117 Portrait Photo replacing previous panther logo */}
+                {/* GREEN: Founders 8117 Portrait Photo - balanced size and positioned up */}
                 <motion.div
                   variants={visualReveal}
-                  className="lg:col-span-5 flex flex-col items-center justify-center py-4 lg:py-0"
+                  className="lg:col-span-5 flex flex-col items-center lg:items-center justify-start py-2 lg:py-0 w-full"
                 >
-                  <div className="relative w-full max-w-[320px] sm:max-w-[360px] md:max-w-[380px] lg:max-w-[420px] aspect-[2/3] max-h-[50vh] sm:max-h-[58vh] lg:max-h-[66vh] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 bg-neutral-950/80 shadow-[0_25px_60px_rgba(0,0,0,0.9)] group">
+                  <div
+                    className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 bg-neutral-900 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group lg:-mt-1"
+                    style={{
+                      height: 'min(490px, calc(100dvh - 190px), 65vh)',
+                      width: 'calc(min(490px, calc(100dvh - 190px), 69vh) * 2 / 3)',
+                      maxWidth: '100%',
+                      aspectRatio: '2 / 3',
+                    }}
+                  >
                     <div className="absolute -inset-1 rounded-3xl bg-white/[0.06] blur-2xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent z-10 pointer-events-none" />
                     <Image
                       src="/brand/founders-8117.webp"
                       alt="Rebelive Founders (8117)"
                       fill
-                      sizes="(max-width: 768px) 340px, (max-width: 1200px) 400px, 460px"
-                      className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
+                      sizes="(max-width: 768px) 300px, (max-width: 1200px) 360px, 420px"
+                      className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                       priority
                     />
-               
                   </div>
                 </motion.div>
               </div>
@@ -1058,13 +1067,13 @@ export default function StoryPage() {
 
                 <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
                   <Link href='/shop'>
-                  <button
-                   
-                    className="px-6 sm:px-8 py-3.5 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-200 cursor-pointer shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 inline-flex items-center gap-2"
-                  >
-                    <span>EXPLORE THE FLAVORS</span>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
+                    <button
+
+                      className="px-6 sm:px-8 py-3.5 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-200 cursor-pointer shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 inline-flex items-center gap-2"
+                    >
+                      <span>EXPLORE THE FLAVORS</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </button>
                   </Link>
 
                   <button
@@ -1078,7 +1087,7 @@ export default function StoryPage() {
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
 
-               
+
                 </div>
               </div>
             </motion.div>
@@ -1086,7 +1095,7 @@ export default function StoryPage() {
         </section>
       </div>
 
-   
+
     </div>
   );
 }

@@ -862,9 +862,7 @@ export default function ProductDetailPage() {
                             <div className="text-[11px] mt-1 font-semibold opacity-90 font-mono">
                               ₹{sizePrice.toLocaleString('en-IN')}
                             </div>
-                            <div className="text-[9px] font-mono opacity-70 mt-0.5">
-                              ₹{sizePerCan}/can
-                            </div>
+                        
                           </button>
                         );
                       })}
