@@ -81,10 +81,10 @@ export function CartDrawer() {
               </div>
               <div>
                 <h3 className="font-bold text-sm uppercase tracking-wider text-white">
-                  Cart 
+                  YOUR CART
                 </h3>
                 <p className="text-[10px] text-white/50 tracking-wider font-mono">
-                  {totalCount} {totalCount === 1 ? 'CRATE RESERVED' : 'CRATES RESERVED'}
+                  {totalCount} {totalCount === 1 ? 'PACK IN YOUR CART' : 'PACKS IN YOUR CART'}
                 </p>
               </div>
             </div>
@@ -108,9 +108,9 @@ export function CartDrawer() {
                 <div className="w-14 h-14 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-center mb-3">
                   <ShoppingBag className="w-6 h-6 text-white/20" />
                 </div>
-                <p className="font-semibold text-white/80">Your crate is empty</p>
-                <p className="text-[11px] text-white/40 mt-1 max-w-[220px] normal-case">
-                  Select a 12-pack or 24-pack of REBELIVE to initiate cold dispatch.
+                <p className="font-semibold text-white/80">YOUR CART IS EMPTY</p>
+                <p className="text-[11px] text-white/40 mt-1 max-w-[260px] normal-case">
+                  Choose your pack. Your next level starts here.
                 </p>
                 <Link
                   href="/shop"

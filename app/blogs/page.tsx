@@ -100,7 +100,7 @@ export default function BlogsPage() {
         {/* Category Pill Tag */}
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full border border-white/20 bg-white/[0.04] backdrop-blur-sm text-xs font-mono tracking-widest uppercase text-white/80">
           <Sparkles className="w-3.5 h-3.5 text-white/90" />
-          <span>REBELIVE JOURNAL / KNOWLEDGE LABS</span>
+          <span>REBELIVE JOURNAL</span>
         </div>
 
         {/* Big Impactful Title */}
@@ -108,14 +108,10 @@ export default function BlogsPage() {
           style={{ fontFamily: SANS }}
           className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-white uppercase max-w-4xl mx-auto leading-[1.1]"
         >
-          BIO-ENERGY SCIENCE & PERFORMANCE DISPATCHES
+          Blogs
         </h1>
 
-        {/* Subtitle */}
-        <p className="text-sm sm:text-base text-neutral-400 max-w-2xl mx-auto font-sans leading-relaxed">
-          Deep dives into cellular metabolism, neuro-enhancement, clean nutrition, and the
-          uncompromising pursuit of human velocity.
-        </p>
+     
       </div>
 
       {/* ─── Search & Category Filter Navigation ─── */}
