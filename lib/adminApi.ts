@@ -971,3 +971,84 @@ export async function deleteCorporateQuery(id: string): Promise<void> {
   await adminClient.delete(`/corporate-queries/${id}`);
 }
 
+// ─── BLOG POSTS & ARTICLES MANAGEMENT ────────────────────
+
+export interface AdminBlog {
+  id: string;
+  slug: string;
+  title: string;
+  excerpt?: string | null;
+  content: string;
+  coverImage?: string | null;
+  author: string;
+  authorRole?: string | null;
+  authorAvatar?: string | null;
+  category: string;
+  tags: string[];
+  readTime?: string | null;
+  isPublished: boolean;
+  featured: boolean;
+  views: number;
+  metaTitle?: string | null;
+  metaDesc?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  publishedAt?: string | null;
+}
+
+export interface AdminBlogCounts {
+  total: number;
+  published: number;
+  drafts: number;
+}
+
+export async function fetchAdminBlogs(params?: {
+  search?: string;
+  status?: string;
+  category?: string;
+}): Promise<{ blogs: AdminBlog[]; counts: AdminBlogCounts }> {
+  try {
+    const res = await adminClient.get('/blogs', { params });
+    return {
+      blogs: res.data.data || [],
+      counts: res.data.counts || { total: 0, published: 0, drafts: 0 },
+    };
+  } catch (err) {
+    console.warn('Failed to fetch admin blogs from server:', err);
+    return {
+      blogs: [],
+      counts: { total: 0, published: 0, drafts: 0 },
+    };
+  }
+}
+
+export async function fetchAdminBlogById(id: string): Promise<AdminBlog> {
+  const res = await adminClient.get(`/blogs/${id}`);
+  return res.data.data;
+}
+
+export async function createAdminBlog(data: Partial<AdminBlog>): Promise<AdminBlog> {
+  const res = await adminClient.post('/blogs', data);
+  return res.data.data;
+}
+
+export async function updateAdminBlog(id: string, data: Partial<AdminBlog>): Promise<AdminBlog> {
+  const res = await adminClient.patch(`/blogs/${id}`, data);
+  return res.data.data;
+}
+
+export async function deleteAdminBlog(id: string): Promise<void> {
+  await adminClient.delete(`/blogs/${id}`);
+}
+
+/**
+ * Uploads an image for blogs (cover image or inline rich text image) to Cloudinary
+ * in the 'rebelive/blogs' folder.
+ */
+export async function uploadBlogImage(
+  fileOrData: File | Blob | string
+): Promise<CloudinaryUploadResponse> {
+  return uploadProductImage(fileOrData, 'rebelive/blogs');
+}
+
+

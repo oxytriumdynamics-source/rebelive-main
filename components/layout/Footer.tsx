@@ -364,6 +364,14 @@ export const Footer: React.FC<FooterProps> = ({
                       Rebels Persona
                     </Link>
                   </li>
+                  <li>
+                    <Link
+                      href="/blogs"
+                      className="text-neutral-400 hover:text-white transition-colors block cursor-pointer"
+                    >
+                      Blogs
+                    </Link>
+                  </li>
                 </ul>
               </div>
 

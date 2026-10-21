@@ -54,8 +54,13 @@ export const fetchAddressesThunk = createAsyncThunk<
   Address[],
   void,
   { rejectValue: string }
->('profile/fetchAddresses', async () => {
-  return [];
+>('profile/fetchAddresses', async (_, { rejectWithValue }) => {
+  try {
+    const addresses = await apiFetchAddresses();
+    return addresses;
+  } catch (err: any) {
+    return rejectWithValue(err.message || 'Failed to fetch addresses');
+  }
 });
 
 /**

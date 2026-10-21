@@ -21,7 +21,7 @@ interface ProfileOverviewTabProps {
   persona: PersonaProfile | null;
   personaSlug?: string | null;
   accentColor?: string;
-  onSelectTab: (tab: "overview" | "details" | "orders") => void;
+  onSelectTab: (tab: "overview" | "details" | "orders" | "addresses") => void;
   orderCount?: number;
   addressCount?: number;
 }
@@ -178,6 +178,51 @@ export default function ProfileOverviewTab({
               </Link>
             </div>
           )}
+
+          {/* Quick Access Dossier: Orders & Addresses */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <button
+              type="button"
+              onClick={() => onSelectTab("orders")}
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06] transition-all text-left cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/80 group-hover:bg-white group-hover:text-black transition-all">
+                  <Package className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                    Consignments
+                  </p>
+                  <p className="font-mono text-[10px] text-white/50">
+                    {orderCount} {orderCount === 1 ? "order" : "orders"} placed
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => onSelectTab("addresses")}
+              className="flex items-center justify-between p-4 rounded-2xl border border-white/10 bg-white/[0.03] hover:border-white/25 hover:bg-white/[0.06] transition-all text-left cursor-pointer group"
+            >
+              <div className="flex items-center gap-3">
+                <div className="h-9 w-9 rounded-xl bg-white/[0.05] border border-white/10 flex items-center justify-center text-white/80 group-hover:bg-white group-hover:text-black transition-all">
+                  <MapPin className="h-4 w-4" />
+                </div>
+                <div>
+                  <p className="font-mono text-xs font-bold text-white uppercase tracking-wider">
+                    Saved Addresses
+                  </p>
+                  <p className="font-mono text-[10px] text-white/50">
+                    {addressCount} {addressCount === 1 ? "destination" : "destinations"} saved
+                  </p>
+                </div>
+              </div>
+              <ArrowRight className="h-3.5 w-3.5 text-white/40 group-hover:text-white group-hover:translate-x-1 transition-all" />
+            </button>
+          </div>
 
           {/* Social Channels - Monochrome */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">

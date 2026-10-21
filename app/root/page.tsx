@@ -31,6 +31,7 @@ import { RootAuthGateway } from '@/components/root/RootAuthGateway';
 import { RootOverviewTab } from '@/components/root/RootOverviewTab';
 import { RootOrdersTab } from '@/components/root/RootOrdersTab';
 import { RootProductsTab } from '@/components/root/RootProductsTab';
+import { RootBlogsTab } from '@/components/root/RootBlogsTab';
 import { RootTestimonialsTab } from '@/components/root/RootTestimonialsTab';
 import { RootContactQueriesTab } from '@/components/root/RootContactQueriesTab';
 import { RootCorporateQueriesTab } from '@/components/root/RootCorporateQueriesTab';
@@ -48,6 +49,7 @@ export default function AdminRootPage() {
     | 'overview'
     | 'orders'
     | 'products'
+    | 'blogs'
     | 'testimonials'
     | 'contact-queries'
     | 'corporate-queries'
@@ -95,6 +97,7 @@ export default function AdminRootPage() {
             'overview',
             'orders',
             'products',
+            'blogs',
             'testimonials',
             'contact-queries',
             'corporate-queries',
@@ -196,6 +199,7 @@ export default function AdminRootPage() {
           )}
           {activeTab === 'orders' && <RootOrdersTab />}
           {activeTab === 'products' && <RootProductsTab />}
+          {activeTab === 'blogs' && <RootBlogsTab />}
           {activeTab === 'testimonials' && <RootTestimonialsTab />}
           {activeTab === 'contact-queries' && <RootContactQueriesTab />}
           {activeTab === 'corporate-queries' && <RootCorporateQueriesTab />}

@@ -12,6 +12,7 @@ import {
   Sparkles,
   Compass,
   MessageSquare,
+  BookOpen,
 } from 'lucide-react';
 import { Product } from '../../data/products';
 import { useAuth } from '@/context/AuthContext';
@@ -240,6 +241,21 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
               <Compass className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
               <span className="font-display text-sm font-semibold tracking-wide uppercase">
                 PERSONAS
+              </span>
+            </div>
+            <ArrowRight className="w-3.5 h-3.5 text-white/30 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+          </Link>
+
+          {/* BLOGS */}
+          <Link
+            href="/blogs"
+            onClick={onClose}
+            className="group flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/[0.03] hover:bg-white/[0.08] hover:border-white/25 transition-all text-white"
+          >
+            <div className="flex items-center gap-3">
+              <BookOpen className="w-4 h-4 text-white/60 group-hover:text-white transition-colors" />
+              <span className="font-display text-sm font-semibold tracking-wide uppercase">
+                BLOGS & JOURNAL
               </span>
             </div>
             <ArrowRight className="w-3.5 h-3.5 text-white/30 group-hover:text-white group-hover:translate-x-0.5 transition-all" />

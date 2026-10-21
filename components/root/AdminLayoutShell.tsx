@@ -27,6 +27,7 @@ import {
   AlertCircle,
   CheckCircle2,
   SlidersHorizontal,
+  BookOpen,
 } from 'lucide-react';
 import {
   clearAdminSession,
@@ -41,9 +42,9 @@ const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 interface AdminLayoutShellProps {
-  activeTab?: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings';
+  activeTab?: 'overview' | 'orders' | 'products' | 'blogs' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings';
   children: React.ReactNode;
-  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings') => void;
+  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'blogs' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings') => void;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
@@ -182,6 +183,7 @@ export function AdminLayoutShell({
     | 'overview'
     | 'orders'
     | 'products'
+    | 'blogs'
     | 'testimonials'
     | 'contact-queries'
     | 'corporate-queries'
@@ -198,6 +200,7 @@ export function AdminLayoutShell({
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
     { id: 'orders', label: 'Orders', icon: Package, href: '/root?tab=orders' },
     { id: 'products', label: 'Catalog', icon: Boxes, href: '/root?tab=products' },
+    { id: 'blogs', label: 'Blogs & Articles', icon: BookOpen, href: '/root?tab=blogs' },
     { id: 'testimonials', label: 'Testimonials', icon: Quote, href: '/root?tab=testimonials' },
     { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail, href: '/root?tab=contact-queries' },
     { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2, href: '/root?tab=corporate-queries' },
@@ -213,6 +216,7 @@ export function AdminLayoutShell({
       | 'overview'
       | 'orders'
       | 'products'
+      | 'blogs'
       | 'testimonials'
       | 'contact-queries'
       | 'corporate-queries'

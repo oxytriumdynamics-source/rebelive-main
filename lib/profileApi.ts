@@ -7,6 +7,8 @@ export interface Address {
   id: string;
   userId?: string;
   label?: string | null;
+  name?: string | null;
+  phone?: string | null;
   line1: string;
   line2?: string | null;
   city: string;
@@ -20,6 +22,8 @@ export interface Address {
 
 export interface CreateAddressInput {
   label?: string;
+  name?: string;
+  phone?: string;
   line1: string;
   line2?: string;
   city: string;
