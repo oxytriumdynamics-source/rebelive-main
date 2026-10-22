@@ -99,22 +99,22 @@ function OrderConfirmationContent() {
       try {
         const raw = sessionStorage.getItem('rebelive_fastrr_items') || localStorage.getItem('rebelive_fastrr_items');
         if (raw) storedItems = JSON.parse(raw);
-      } catch {}
+      } catch { }
 
       try {
         const rawAddr = sessionStorage.getItem('rebelive_fastrr_address') || localStorage.getItem('rebelive_fastrr_address');
         if (rawAddr) storedAddress = JSON.parse(rawAddr);
-      } catch {}
+      } catch { }
 
       try {
         const rawBill = sessionStorage.getItem('rebelive_fastrr_billing_address') || localStorage.getItem('rebelive_fastrr_billing_address');
         if (rawBill) storedBillingAddress = JSON.parse(rawBill);
-      } catch {}
+      } catch { }
 
       try {
         const rawCust = sessionStorage.getItem('rebelive_fastrr_customer') || localStorage.getItem('rebelive_fastrr_customer');
         if (rawCust) storedCustomer = JSON.parse(rawCust);
-      } catch {}
+      } catch { }
     }
 
     // Check searchParams in case Fastrr redirect included address parameters
@@ -404,7 +404,7 @@ function OrderConfirmationContent() {
         <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between text-xs text-white/60 font-mono">
           <div className="flex items-center gap-2">
             <ShieldCheck className="w-4 h-4 text-white" />
-            <span>Anti-Tamper Cold Thermal Seal Included &bull; Zero Sugar Bio-Energy</span>
+            <span>Anti-Tamper Cold Thermal Seal Included &bull; Zero Sugar Energy Drinks</span>
           </div>
           <span className="text-[10px] text-white/30 hidden sm:inline">OFFICIAL REBELIVE FULFILMENT</span>
         </div>

@@ -231,14 +231,17 @@ export async function changePassword(password: string): Promise<boolean> {
 // ─── Address API ─────────────────────────────────────────
 
 export async function fetchAddresses(): Promise<Address[]> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return readLocalAddresses();
+  }
   try {
     const res = await API.get('/users/addresses');
     if (res.data?.data && Array.isArray(res.data.data)) {
       writeLocalAddresses(res.data.data);
       return res.data.data;
     }
-  } catch (err) {
-    console.warn('Backend /users/addresses not reachable, loading local addresses:', err);
+  } catch {
+    // Offline or backend unreachable - serve cached local addresses silently
   }
   return readLocalAddresses();
 }
@@ -335,26 +338,33 @@ export async function setDefaultAddress(id: string): Promise<Address> {
 // ─── Orders API ──────────────────────────────────────────
 
 export async function fetchOrders(): Promise<Order[]> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    return readLocalOrders();
+  }
   try {
     const res = await API.get('/orders');
     if (res.data?.data && Array.isArray(res.data.data)) {
       writeLocalOrders(res.data.data);
       return res.data.data;
     }
-  } catch (err) {
-    console.warn('Backend /orders not reachable, loading local orders:', err);
+  } catch {
+    // Offline or backend unreachable - serve cached local orders silently
   }
   return readLocalOrders();
 }
 
 export async function fetchOrderById(id: string): Promise<Order | null> {
+  if (typeof navigator !== 'undefined' && !navigator.onLine) {
+    const orders = readLocalOrders();
+    return orders.find((o) => o.id === id || o.orderNumber === id) || null;
+  }
   try {
     const res = await API.get(`/orders/${id}`);
     if (res.data?.data) {
       return res.data.data as Order;
     }
-  } catch (err) {
-    console.warn(`Backend /orders/${id} not reachable, searching local cache:`, err);
+  } catch {
+    // Offline or backend unreachable - search cached local orders silently
   }
   const orders = readLocalOrders();
   return orders.find((o) => o.id === id || o.orderNumber === id) || null;

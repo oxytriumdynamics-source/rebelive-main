@@ -10,7 +10,7 @@ export async function GET(req: NextRequest) {
         itemsList = parsed;
       }
     }
-  } catch {}
+  } catch { }
 
   if (itemsList.length === 0) {
     try {
@@ -31,14 +31,14 @@ export async function GET(req: NextRequest) {
           }));
         }
       }
-    } catch {}
+    } catch { }
   }
 
   // Fallback if no items in cookie
   if (itemsList.length === 0) {
     itemsList = [
       {
-        name: 'APEX Clean Bio-Energy',
+        name: 'APEX Clean Energy Drinks',
         flavor: 'Apex',
         packSize: 6,
         quantity: 1,
@@ -59,7 +59,7 @@ export async function GET(req: NextRequest) {
     totalPriceInPaise += linePrice;
 
     const varId = Number(item.variantId) || 102;
-    const title = item.name || 'APEX Clean Bio-Energy';
+    const title = item.name || 'APEX Clean Energy Drinks';
     const packSize = item.packSize || 6;
     const variantTitle = `${packSize}-Pack Case`;
 
@@ -95,7 +95,7 @@ export async function GET(req: NextRequest) {
       requires_shipping: true,
       product_type: 'Energy Drink',
       product_title: title,
-      product_description: 'Clean Bio-Energy Functional Drink',
+      product_description: 'Clean Energy Drinks Functional Drink',
       variant_title: variantTitle,
       variant_options: [variantTitle],
     };

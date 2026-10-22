@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Frequently Asked Questions (FAQ) | Formulas, Shipping & Safety',
+  title: 'Frequently Asked Questions (FAQ)',
   description:
-    'Answers to all questions about REBELIVE clean bio-energy drinks: caffeine content, natural ingredients, zero sugar formulations, certifications, orders, and shipping.',
+    'Answers to all questions about REBELIVE : caffeine content, natural ingredients, zero sugar formulations, certifications, orders, and shipping.',
   alternates: {
     canonical: '/faq',
   },
@@ -40,7 +40,7 @@ const faqSchema = {
       name: 'What is REBELIVE?',
       acceptedAnswer: {
         '@type': 'Answer',
-        text: 'REBELIVE is a next-generation bio-energy drink engineered with functional nootropics, natural caffeine, and zero sugar for sustainable, clean mental and physical performance without the crash.',
+        text: 'REBELIVE is a next-generation Energy Drinks drink engineered with functional nootropics, natural caffeine, and zero sugar for sustainable, clean mental and physical performance without the crash.',
       },
     },
     {

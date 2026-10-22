@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Operator Dossier & Profile',
+  title: 'Profile',
   description: 'Your verified REBELIVE operator profile, order history, addresses, and member pass.',
   robots: {
     index: false,

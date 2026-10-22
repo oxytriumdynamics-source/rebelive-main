@@ -27,11 +27,9 @@ export const metadata: Metadata = {
     template: '%s | REBELIVE',
   },
   description:
-    'Engineered Bio-Energy for relentless focus, physical endurance, and clean vitality. Zero sugar, clean caffeine, functional nootropics. Built without compromise.',
+    'Engineered drinks for relentless focus, physical endurance, and clean vitality. Zero sugar, clean caffeine, functional nootropics. Built without compromise.',
   keywords: [
     'REBELIVE',
-    'clean energy drink',
-    'bio-energy',
     'nootropic energy drink',
     'zero sugar energy drink',
     'natural caffeine',
@@ -51,7 +49,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'REBELIVE | Wake. Fuel. Rebel.',
     description:
-      'Engineered Bio-Energy. Zero Sugar. Clean Functional Nootropics for peak human performance.',
+      'Engineered energy drinks. Zero Sugar. Clean Functional Nootropics for peak human performance.',
     url: 'https://rebelive.com',
     siteName: 'REBELIVE',
     images: [
@@ -59,7 +57,7 @@ export const metadata: Metadata = {
         url: '/brand/APEX.webp',
         width: 1200,
         height: 630,
-        alt: 'REBELIVE Bio-Energy Drink',
+        alt: 'REBELIVE energy Drink',
       },
     ],
     locale: 'en_US',
@@ -68,7 +66,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'REBELIVE | Wake. Fuel. Rebel.',
-    description: 'Engineered Bio-Energy. Zero Sugar. Clean Functional Nootropics.',
+    description: 'Engineered energy drinks. Zero Sugar. Clean Functional Nootropics.',
     images: ['/brand/APEX.webp'],
     creator: '@rebelive',
   },
@@ -130,11 +128,11 @@ export default function RootLayout({
                   "legalName": "Oxytrium Dynamics Private Limited",
                   "url": "https://rebelive.com",
                   "logo": "https://rebelive.com/brand/REBELIVE%20Logo%20Black.webp",
-                  "description": "Next-generation clean bio-energy beverage brand engineered without compromise.",
+                  "description": "Engineered for the relentless. Clean energy drink without compromise.",
                   "sameAs": [
                     "https://www.instagram.com/rebelive.official",
                     "https://www.linkedin.com/company/rebelive/",
-                    "https://www.facebook.com/share/1cjZ7Lqgbe/"
+                    "https://www.facebook.com/share/1cjZqbe/"
                   ]
                 },
                 {

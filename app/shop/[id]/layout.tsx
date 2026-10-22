@@ -17,7 +17,7 @@ export async function generateMetadata({
   if (!product) {
     return {
       title: 'Product Crate | REBELIVE',
-      description: 'Authentic REBELIVE bio-energy formulas engineered without compromise.',
+      description: 'Authentic REBELIVE Energy Drinks formulas engineered without compromise.',
       alternates: { canonical: `/shop/${id}` },
     };
   }
@@ -42,7 +42,7 @@ export async function generateMetadata({
           url: imgUrl,
           width: 1200,
           height: 630,
-          alt: `${product.name} Bio-Energy Can`,
+          alt: `${product.name} Energy Drinks Can`,
         },
       ],
       locale: 'en_US',
@@ -66,27 +66,27 @@ export default async function ProductLayout({
 
   const jsonLd = product
     ? {
-        '@context': 'https://schema.org',
-        '@type': 'Product',
-        name: product.name,
-        image: `https://rebelive.com${product.renderImage || product.image || product.canImage || '/brand/APEX.webp'}`,
-        description: product.description,
-        brand: {
-          '@type': 'Brand',
+      '@context': 'https://schema.org',
+      '@type': 'Product',
+      name: product.name,
+      image: `https://rebelive.com${product.renderImage || product.image || product.canImage || '/brand/APEX.webp'}`,
+      description: product.description,
+      brand: {
+        '@type': 'Brand',
+        name: 'REBELIVE',
+      },
+      offers: {
+        '@type': 'Offer',
+        url: `https://rebelive.com/shop/${product.id}`,
+        priceCurrency: 'INR',
+        price: product.startingPrice || 449,
+        availability: 'https://schema.org/InStock',
+        seller: {
+          '@type': 'Organization',
           name: 'REBELIVE',
         },
-        offers: {
-          '@type': 'Offer',
-          url: `https://rebelive.com/shop/${product.id}`,
-          priceCurrency: 'INR',
-          price: product.startingPrice || 449,
-          availability: 'https://schema.org/InStock',
-          seller: {
-            '@type': 'Organization',
-            name: 'REBELIVE',
-          },
-        },
-      }
+      },
+    }
     : null;
 
   return (

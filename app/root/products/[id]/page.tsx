@@ -407,27 +407,27 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
 
     const nutritionPayload = isTrioProduct
       ? (existingTrioNutrients
-          ? {
-              productName: 'THE REBEL TRIO',
-              servingSize: '250 ml (Each Can)',
-              servingsPerContainer: '3 unique signature flavours per crate (Apex, Aviva, Capella)',
-              trioNutrients: existingTrioNutrients,
-              notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
-            }
-          : undefined)
-      : {
-          productName: name.trim().toUpperCase(),
-          servingSize,
-          servingsPerContainer: `1 serving per container (${servingSize})`,
-          items: nutritionItems,
-          nutrients: nutritionItems.map((it) => ({
-            nutrient: it.key,
-            per100ml: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
-            perServe: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
-            rda: it.dv || '-',
-          })),
+        ? {
+          productName: 'THE REBEL TRIO',
+          servingSize: '250 ml (Each Can)',
+          servingsPerContainer: '3 unique signature flavours per crate (Apex, Aviva, Capella)',
+          trioNutrients: existingTrioNutrients,
           notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
-        };
+        }
+        : undefined)
+      : {
+        productName: name.trim().toUpperCase(),
+        servingSize,
+        servingsPerContainer: `1 serving per container (${servingSize})`,
+        items: nutritionItems,
+        nutrients: nutritionItems.map((it) => ({
+          nutrient: it.key,
+          per100ml: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+          perServe: it.amount ? `${it.amount}${it.unit ? ' ' + it.unit : ''}`.trim() : '-',
+          rda: it.dv || '-',
+        })),
+        notes: ['* Approximate Value', '** Based on 2000 kCal Diet'],
+      };
 
     const payload: any = {
       name: name.trim(),
@@ -544,11 +544,10 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
         {/* ─── Live Feedback Banner ─── */}
         {feedback && (
           <div
-            className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 animate-in fade-in ${
-              feedback.type === 'success'
+            className={`p-3.5 rounded-xl border text-xs flex items-center gap-2 animate-in fade-in ${feedback.type === 'success'
                 ? 'bg-white/10 border-white/20 text-white'
                 : 'bg-white/10 border-white/20 text-white'
-            }`}
+              }`}
           >
             {feedback.type === 'success' ? (
               <CheckCircle2 className="w-4 h-4 shrink-0 text-white" />
@@ -664,7 +663,7 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
                     type="text"
                     value={tagline}
                     onChange={(e) => setTagline(e.target.value)}
-                    placeholder="e.g. Pure Bio-Energy. Zero Crash. Engineered Without Compromise."
+                    placeholder="e.g. Pure Energy Drinks. Zero Crash. Engineered Without Compromise."
                     className="w-full bg-[#141414] border border-white/10 rounded-xl px-3.5 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-white/40"
                   />
                 </div>
@@ -1175,9 +1174,8 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
                       <span className="text-[10px] text-white/40">Primary 3D / can showcase image</span>
                     </div>
                     {canImage ? (
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${
-                        canImage.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
-                      }`}>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${canImage.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
+                        }`}>
                         {canImage.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Custom URL'}
                       </span>
                     ) : (
@@ -1279,9 +1277,8 @@ export default function ProductEditPage({ initialId }: { initialId?: string } = 
                       <span className="text-[10px] text-white/40">Shop listing & pack card thumbnail</span>
                     </div>
                     {image ? (
-                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${
-                        image.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
-                      }`}>
+                      <span className={`text-[9px] px-2 py-0.5 rounded-full uppercase font-bold ${image.includes('cloudinary.com') ? 'bg-cyan-500/20 text-cyan-400' : 'bg-white/10 text-white/60'
+                        }`}>
                         {image.includes('cloudinary.com') ? 'Cloudinary CDN' : 'Custom URL'}
                       </span>
                     ) : (

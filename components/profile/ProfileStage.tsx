@@ -150,12 +150,7 @@ export default function ProfileStage({
           <div className="flex items-center gap-2 mt-1">
             <p className="font-mono text-[10px] text-white/50 uppercase tracking-widest flex items-center gap-1.5 flex-wrap">
               <span>REBEL ID: <strong className="text-white font-bold tracking-wider">{formatRebelId(user.rebelId || user.id)}</strong></span>
-              <span>·</span>
-              {persona ? (
-                <span className="text-emerald-400 font-semibold">{persona.name} ARCHETYPE (LOCKED)</span>
-              ) : (
-                <span className="text-amber-400 font-semibold">ARCHETYPE UNASSIGNED</span>
-              )}
+            
             </p>
             <button
               type="button"

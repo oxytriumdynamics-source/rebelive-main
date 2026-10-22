@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Corporate Gifting & Bulk Dispatch | Fuel High-Performance Teams',
+  title: 'Corporate Gifting & Bulk',
   description:
-    'Fuel your engineering teams, corporate summits, startup incubators, and executive retreats with REBELIVE bio-energy crates. Custom branded corporate packages and priority cold dispatch.',
+    'Fuel your engineering teams, corporate summits, startup incubators, and executive retreats with REBELIVE Energy Drinks crates. Custom branded corporate packages and priority cold dispatch.',
   alternates: {
     canonical: '/corporate',
   },
@@ -27,7 +27,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'Corporate Fueling & Bulk Orders | REBELIVE',
-    description: 'Fuel high-performance teams with clean functional bio-energy.',
+    description: 'Fuel high-performance teams with clean functional Energy Drinks.',
     images: ['/brand/APEX.webp'],
   },
 };

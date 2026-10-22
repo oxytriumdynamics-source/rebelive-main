@@ -53,8 +53,7 @@ export default function BlogPostReaderPage() {
       } else {
         setBlog(null);
       }
-    } catch (err) {
-      console.warn('Failed to load article:', err);
+    } catch {
       setBlog(null);
     } finally {
       setIsLoading(false);
@@ -289,53 +288,24 @@ export default function BlogPostReaderPage() {
           </div>
         )}
 
-        {/* Author Bio Box */}
-        <div className="p-6 sm:p-8 rounded-3xl border border-white/15 bg-neutral-900/60 flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
-          <div className="relative w-16 h-16 rounded-2xl bg-black border border-white/20 overflow-hidden flex items-center justify-center shrink-0">
-            {blog.authorAvatar ? (
-              <Image
-                src={blog.authorAvatar}
-                alt={blog.author}
-                fill
-                sizes="64px"
-                unoptimized={Boolean(blog.authorAvatar.startsWith('http'))}
-                className="object-cover"
-              />
-            ) : (
-              <User className="w-8 h-8 text-white/70" />
-            )}
-          </div>
-          <div className="space-y-1.5 flex-1">
-            <div className="text-xs font-mono uppercase tracking-widest text-neutral-400">
-              DISPATCH AUTHOR
-            </div>
-            <h4 className="text-lg font-bold text-white">{blog.author}</h4>
-            <p className="text-xs text-neutral-400 font-sans leading-relaxed">
-              {blog.authorRole || 'Editorial Contributor at REBELIVE'}. Dedicated to the intersection of
-              cellular bio-chemistry, endurance performance, and unyielding human drive.
-            </p>
-          </div>
-        </div>
-
         {/* ─── Call to Action Banner ─── */}
         <div className="my-12 rounded-3xl border border-white/20 bg-gradient-to-r from-neutral-900 via-neutral-950 to-black p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
           <div className="space-y-2 text-center sm:text-left">
             <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
-              ● PROVEN BIO-ENERGY FORMULATION
+              ● EXPLORE REBELIVE
             </span>
             <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
-              FUEL YOUR VELOCITY WITH REBELIVE
+              YOUR NEXT MOVE STARTS HERE.
             </h3>
             <p className="text-xs text-neutral-400 max-w-lg font-sans">
-              Zero sugar, clean functional caffeine, nootropics, and ionic electrolytes designed for
-              high-performance living.
+              Explore the Rebelive range. Make it yours.
             </p>
           </div>
           <Link
             href="/shop"
             className="px-6 py-3 rounded-xl bg-white text-black font-bold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-all shadow-[0_0_20px_rgba(255,255,255,0.25)] shrink-0 flex items-center gap-2"
           >
-            <span>Explore The Drinks</span>
+            <span>SHOP NOW</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
         </div>

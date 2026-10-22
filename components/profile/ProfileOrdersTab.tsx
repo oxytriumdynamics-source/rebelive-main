@@ -101,7 +101,7 @@ export default function ProfileOrdersTab({
             Order Dossier
           </h2>
           <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-white/50 mt-1">
-            Allocated Bio-Energy Shipments & Live Dispatch Logs
+            Allocated Energy Drinks Shipments & Live Dispatch Logs
           </p>
         </div>
 
@@ -116,11 +116,10 @@ export default function ProfileOrdersTab({
                 onClick={() => {
                   setActiveFilter(f);
                 }}
-                className={`rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-all cursor-pointer ${
-                  isActive
+                className={`rounded-full px-3 py-1.5 font-mono text-[9.5px] uppercase tracking-wider transition-all cursor-pointer ${isActive
                     ? "bg-white text-black font-bold shadow-md"
                     : "border border-white/10 bg-white/[0.04] text-white/60 hover:text-white hover:bg-white/[0.08]"
-                }`}
+                  }`}
               >
                 {f}
               </button>
@@ -211,8 +210,8 @@ export default function ProfileOrdersTab({
                         (item.productName.toLowerCase().includes("apex")
                           ? "/products/apex.webp"
                           : item.productName.toLowerCase().includes("capella")
-                          ? "/products/capella.webp"
-                          : "/products/aviva.webp");
+                            ? "/products/capella.webp"
+                            : "/products/aviva.webp");
 
                       return (
                         <div

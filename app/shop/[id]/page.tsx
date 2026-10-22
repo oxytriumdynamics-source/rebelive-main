@@ -811,7 +811,7 @@ export default function ProductDetailPage() {
                           </span>
                         )}
                         {pricing.discount ? (
-                          <span className="px-2 py-0.5 rounded-full bg-white/10 text-white text-[10px] font-bold tracking-wider uppercase border border-white/15 font-mono">
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 text-[10px] font-bold tracking-wider uppercase border border-emerald-500/30 font-mono">
                             {pricing.discount}
                           </span>
                         ) : null}

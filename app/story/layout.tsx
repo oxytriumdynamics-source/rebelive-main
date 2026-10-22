@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'The Story of REBELIVE | The Spark & Philosophy',
+  title: 'The Story of REBELIVE',
   description:
-    'Read how a question about human potential and relentless momentum sparked the creation of REBELIVE. The journey of formulating zero-compromise bio-energy.',
+    'Read how a question about human potential and relentless momentum sparked the creation of REBELIVE. The journey of formulating zero-compromise Energy Drinks.',
   alternates: {
     canonical: '/story',
   },
@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'The Story of REBELIVE | The Origin Story',
-    description: 'The journey of formulating zero-compromise bio-energy.',
+    description: 'The journey of formulating zero-compromise Energy Drinks.',
     images: ['/brand/APEX.webp'],
   },
 };

@@ -62,12 +62,12 @@ const MONO = "'JetBrains Mono', monospace";
 const SANS = "'Poppins', sans-serif";
 
 const CATEGORY_PRESETS = [
-  'Bio-Energy & Science',
-  'Hydration & Performance',
-  'Optimization & Sleep',
-  'Brand Story & Culture',
-  'Nutrition & Ingredients',
+  'Energy & Science',
+  'Nutrition',
+  'Mind & Focus',
+  'Gut Health',
   'Rebel Mindset',
+  'Inside Rebelive',
 ];
 
 export function RootBlogsTab() {
@@ -210,7 +210,7 @@ export function RootBlogsTab() {
     setAuthor(currentAdmin ? `${currentAdmin.firstName || 'Rebelive'} ${currentAdmin.lastName || 'Editorial'}`.trim() : 'Rebelive Editorial');
     setAuthorRole('Editorial Team');
     setCategory(CATEGORY_PRESETS[0]);
-    setTags(['Bio-Energy', 'Performance']);
+    setTags(['Energy Drinks', 'Performance']);
     setTagInput('');
     setReadTime('4 min read');
     setIsPublished(true);
@@ -389,7 +389,7 @@ export function RootBlogsTab() {
         coverImage: coverImage.trim() || undefined,
         author: author.trim() || 'Rebelive Editorial',
         authorRole: authorRole.trim() || 'Editorial Team',
-        category: category.trim() || 'Bio-Energy & Science',
+        category: category.trim() || 'Energy & Science',
         tags: tags,
         readTime: readTime.trim() || calculateReadTime(content),
         isPublished: publishState,
@@ -531,11 +531,10 @@ export function RootBlogsTab() {
               <button
                 key={st}
                 onClick={() => setStatusFilter(st)}
-                className={`px-3 py-1.5 rounded-lg transition-all ${
-                  statusFilter === st
+                className={`px-3 py-1.5 rounded-lg transition-all ${statusFilter === st
                     ? 'bg-white text-black font-semibold'
                     : 'text-white/60 hover:text-white'
-                }`}
+                  }`}
               >
                 {st === 'ALL' ? 'All' : st === 'PUBLISHED' ? 'Published' : 'Drafts'}
               </button>
@@ -592,7 +591,7 @@ export function RootBlogsTab() {
             <p className="text-xs text-white/50 max-w-sm mb-5">
               {searchQuery
                 ? 'No blog articles match your current search criteria. Try a different keyword.'
-                : 'Start publishing bio-energy science, workout nutrition, and brand stories.'}
+                : 'Start publishing Energy Drinks science, workout nutrition, and brand stories.'}
             </p>
             <button
               onClick={handleOpenNewModal}
@@ -639,16 +638,14 @@ export function RootBlogsTab() {
                     <div className="flex flex-wrap items-center gap-2">
                       {/* Status Pill */}
                       <span
-                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold tracking-wider ${
-                          blog.isPublished
+                        className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold tracking-wider ${blog.isPublished
                             ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
                             : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        }`}
+                          }`}
                       >
                         <span
-                          className={`w-1.5 h-1.5 rounded-full ${
-                            blog.isPublished ? 'bg-emerald-400' : 'bg-amber-400'
-                          }`}
+                          className={`w-1.5 h-1.5 rounded-full ${blog.isPublished ? 'bg-emerald-400' : 'bg-amber-400'
+                            }`}
                         />
                         {blog.isPublished ? 'PUBLISHED' : 'DRAFT'}
                       </span>
@@ -713,11 +710,10 @@ export function RootBlogsTab() {
                   <button
                     onClick={() => handleQuickTogglePublish(blog)}
                     title={blog.isPublished ? 'Unpublish to Draft' : 'Publish to Live'}
-                    className={`p-2.5 rounded-xl border transition-all text-xs font-mono flex items-center gap-1.5 ${
-                      blog.isPublished
+                    className={`p-2.5 rounded-xl border transition-all text-xs font-mono flex items-center gap-1.5 ${blog.isPublished
                         ? 'border-white/10 bg-white/5 text-white/70 hover:text-amber-400 hover:border-amber-500/30'
                         : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                    }`}
+                      }`}
                   >
                     {blog.isPublished ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     <span className="hidden sm:inline">{blog.isPublished ? 'Unpublish' : 'Publish'}</span>
@@ -793,32 +789,29 @@ export function RootBlogsTab() {
                 <div className="flex items-center bg-black/60 border border-white/10 rounded-xl p-1 text-xs font-mono">
                   <button
                     onClick={() => setActiveModalTab('editor')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      activeModalTab === 'editor'
+                    className={`px-3 py-1.5 rounded-lg transition-all ${activeModalTab === 'editor'
                         ? 'bg-white text-black font-semibold'
                         : 'text-white/60 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Editor
                   </button>
                   <button
                     onClick={() => setActiveModalTab('preview')}
-                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${
-                      activeModalTab === 'preview'
+                    className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${activeModalTab === 'preview'
                         ? 'bg-white text-black font-semibold'
                         : 'text-white/60 hover:text-white'
-                    }`}
+                      }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
                     <span>Live Preview</span>
                   </button>
                   <button
                     onClick={() => setActiveModalTab('seo')}
-                    className={`px-3 py-1.5 rounded-lg transition-all ${
-                      activeModalTab === 'seo'
+                    className={`px-3 py-1.5 rounded-lg transition-all ${activeModalTab === 'seo'
                         ? 'bg-white text-black font-semibold'
                         : 'text-white/60 hover:text-white'
-                    }`}
+                      }`}
                   >
                     Settings & SEO
                   </button>
@@ -847,7 +840,7 @@ export function RootBlogsTab() {
                       type="text"
                       value={title}
                       onChange={(e) => handleTitleChange(e.target.value)}
-                      placeholder="e.g. The Science of Bio-Energy: Redefining Cellular Stamina"
+                      placeholder="e.g. The Science of Energy Drinks: Redefining Cellular Stamina"
                       className="w-full bg-[#121212] border border-white/15 rounded-xl px-4 py-3 text-base sm:text-lg font-bold text-white placeholder-white/30 focus:outline-none focus:border-white/50 transition-colors"
                     />
                   </div>
@@ -1143,18 +1136,16 @@ export function RootBlogsTab() {
                         <button
                           type="button"
                           onClick={() => setEditorMode('visual')}
-                          className={`px-2 py-1 rounded transition-colors ${
-                            editorMode === 'visual' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'
-                          }`}
+                          className={`px-2 py-1 rounded transition-colors ${editorMode === 'visual' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'
+                            }`}
                         >
                           Visual
                         </button>
                         <button
                           type="button"
                           onClick={() => setEditorMode('code')}
-                          className={`px-2 py-1 rounded transition-colors ${
-                            editorMode === 'code' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'
-                          }`}
+                          className={`px-2 py-1 rounded transition-colors ${editorMode === 'code' ? 'bg-white text-black font-bold' : 'text-white/60 hover:text-white'
+                            }`}
                         >
                           HTML
                         </button>
@@ -1324,9 +1315,8 @@ export function RootBlogsTab() {
                       <button
                         type="button"
                         onClick={() => setFeatured(!featured)}
-                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
-                          featured ? 'bg-amber-400 text-black' : 'bg-white/10 text-white/40'
-                        }`}
+                        className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${featured ? 'bg-amber-400 text-black' : 'bg-white/10 text-white/40'
+                          }`}
                       >
                         <Star className={`w-4 h-4 ${featured ? 'fill-black' : ''}`} />
                       </button>
@@ -1349,7 +1339,7 @@ export function RootBlogsTab() {
                             handleAddTag();
                           }
                         }}
-                        placeholder="e.g. Bio-Energy, Nootropics, Endurance"
+                        placeholder="e.g. Energy Drinks, Nootropics, Endurance"
                         className="flex-1 bg-[#121212] border border-white/15 rounded-xl px-3.5 py-2 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/40"
                       />
                       <button
@@ -1425,14 +1415,12 @@ export function RootBlogsTab() {
                     <button
                       type="button"
                       onClick={() => setIsPublished(!isPublished)}
-                      className={`relative w-12 h-6 rounded-full transition-colors ${
-                        isPublished ? 'bg-emerald-500' : 'bg-white/20'
-                      }`}
+                      className={`relative w-12 h-6 rounded-full transition-colors ${isPublished ? 'bg-emerald-500' : 'bg-white/20'
+                        }`}
                     >
                       <span
-                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${
-                          isPublished ? 'translate-x-6' : 'translate-x-0'
-                        }`}
+                        className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition-transform ${isPublished ? 'translate-x-6' : 'translate-x-0'
+                          }`}
                       />
                     </button>
                   </div>

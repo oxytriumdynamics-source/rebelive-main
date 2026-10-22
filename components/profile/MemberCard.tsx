@@ -811,16 +811,7 @@ export default function MemberCard({
               className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.22em] transition-opacity hover:opacity-70 disabled:opacity-40 cursor-pointer"
               style={{
                 fontFamily: MONO,
-                color:
-                  shareState === "done"
-                    ? isApex
-                      ? "#d8ac52"
-                      : isCapella
-                        ? "#c8922a"
-                        : "#e8628a"
-                    : isApex
-                      ? "rgba(255,255,255,0.75)"
-                      : "rgba(0,0,0,0.65)",
+                color:"rgba(255,255,255,0.75)",
               }}
             >
               {shareState === "done" ? (

@@ -344,7 +344,7 @@ export default function ShopPage() {
                 <div className="space-y-2.5 mb-6">
                   <div className="flex items-center justify-between text-xs font-mono text-white/50 uppercase">
                     <span>Choose Pack Size:</span>
-                    <span className="text-white/80">{PRICES[modalPack].discount}</span>
+                    <span className="text-emerald-400 font-bold">{PRICES[modalPack].discount}</span>
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">

@@ -1032,14 +1032,14 @@ export default function App() {
       {/* ── Post-Statement Experience (Testimonials & Nutrition SubFooter) ── */}
       <div
         id="home-subfooter"
-        className="relative z-20 w-full min-h-screen flex flex-col items-center justify-start pb-0 sm:pb-2 transition-opacity duration-300 ease-out"
+        className="relative z-20 w-full min-h-screen flex flex-col items-center justify-start pb-6 sm:pb-12 md:pb-16 transition-opacity duration-300 ease-out"
         style={{
           visibility: isSubFooterVisible ? 'visible' : 'hidden',
           opacity: subFooterOpacity,
           pointerEvents: isSubFooterVisible ? 'auto' : 'none',
         }}
       >
-        <TestimonialsSection className="!pb-2 sm:!pb-4" />
+        <TestimonialsSection className="!pb-6 sm:!pb-10 md:!pb-14" />
         <SubFooter />
       </div>
 

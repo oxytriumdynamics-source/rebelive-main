@@ -230,15 +230,15 @@ export default function StoryPage() {
 
   // Transition locking & trackpad inertia absorber refs
   const isAnimatingRef = useRef(false);
-  const isGestureLockedRef = useRef(false);
   const lastScrollTimeRef = useRef(0);
-  const lastWheelTimeRef = useRef(0);
   const accumulatedDeltaRef = useRef(0);
-  const wheelQuietTimerRef = useRef<NodeJS.Timeout | null>(null);
-  const minLockTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const wheelDecayTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const unlockTimerRef = useRef<NodeJS.Timeout | null>(null);
   const touchStartYRef = useRef(0);
   const touchStartXRef = useRef(0);
   const touchTriggeredInSwipeRef = useRef(false);
+
+  const TRANSITION_DURATION = 750;
 
   // Pause Lenis smooth-scroll on desktop so it never fights deck transitions
   useEffect(() => {
@@ -269,26 +269,20 @@ export default function StoryPage() {
       return;
     }
 
-    if (isAnimatingRef.current) return;
     const clamped = Math.max(0, Math.min(targetIdx, SECTIONS.length - 1));
     if (clamped === activeSectionRef.current) return;
 
     isAnimatingRef.current = true;
-    isGestureLockedRef.current = true;
     lastScrollTimeRef.current = Date.now();
+    accumulatedDeltaRef.current = 0;
     activeSectionRef.current = clamped;
     setActiveSection(clamped);
 
-    // Keep strict 850ms animation lock matching CSS transition duration
-    if (minLockTimerRef.current) clearTimeout(minLockTimerRef.current);
-    minLockTimerRef.current = setTimeout(() => {
+    if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
+    unlockTimerRef.current = setTimeout(() => {
       isAnimatingRef.current = false;
-      // Only unlock gesture if trackpad inertia has completely ceased (quiet for > 350ms)
-      if (Date.now() - lastWheelTimeRef.current > 350) {
-        isGestureLockedRef.current = false;
-        accumulatedDeltaRef.current = 0;
-      }
-    }, 850);
+      accumulatedDeltaRef.current = 0;
+    }, TRANSITION_DURATION);
   }, [isMobile]);
 
   const goToNext = useCallback(() => {
@@ -303,7 +297,7 @@ export default function StoryPage() {
     }
   }, [goToSection]);
 
-  // ── Bulletproof Trackpad Inertia & Fast Scroll Absorber (Strict 1-Section Snapping) ──
+  // ── Bulletproof Touchpad & Mouse Wheel Scroll Engine (Strict 1-Section Snapping) ──
   useEffect(() => {
     if (isMobile) return;
 
@@ -312,23 +306,20 @@ export default function StoryPage() {
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
 
       const now = Date.now();
-      lastWheelTimeRef.current = now;
 
       // Check if user is scrolled down into footer
       const isInFooter = window.scrollY > 30;
 
       if (isInFooter) {
-        // If user scrolls up while near top of footer, smoothly return to Manifesto slide:
         if (e.deltaY < -20 && window.scrollY < 120) {
           e.preventDefault();
           e.stopPropagation();
 
-          if (isAnimatingRef.current || isGestureLockedRef.current) return;
-          if (now - lastScrollTimeRef.current < 850) return;
+          if (isAnimatingRef.current || now - lastScrollTimeRef.current < TRANSITION_DURATION) return;
 
           isAnimatingRef.current = true;
-          isGestureLockedRef.current = true;
           lastScrollTimeRef.current = now;
+          accumulatedDeltaRef.current = 0;
 
           window.scrollTo({ top: 0, behavior: 'smooth' });
           activeSectionRef.current = SECTIONS.length - 1;
@@ -336,95 +327,104 @@ export default function StoryPage() {
 
           setTimeout(() => {
             isAnimatingRef.current = false;
-            isGestureLockedRef.current = false;
-          }, 850);
+            accumulatedDeltaRef.current = 0;
+          }, TRANSITION_DURATION);
         }
         return;
       }
 
-      // ── WITHIN STORY DECK: ALWAYS PREVENT DEFAULT ON EVERY SINGLE WHEEL EVENT ──
-      // This is crucial: stops native browser scroll, inertia bleed, and Lenis interference.
+      // ── WITHIN STORY DECK: CONTROL SECTION SCROLL ──
       e.preventDefault();
       e.stopPropagation();
 
-      const delta = e.deltaY;
-
-      // Ignore horizontal trackpad swipes
-      if (Math.abs(e.deltaX) > Math.abs(delta) * 1.5) return;
-
-      // Continuously refresh quiet timer on every single incoming wheel event
-      // regardless of magnitude to detect when the physical gesture/momentum ends.
-      if (wheelQuietTimerRef.current) {
-        clearTimeout(wheelQuietTimerRef.current);
-      }
-      wheelQuietTimerRef.current = setTimeout(() => {
-        // Trackpad momentum has completely stopped
-        if (!isAnimatingRef.current) {
-          isGestureLockedRef.current = false;
-          accumulatedDeltaRef.current = 0;
-        }
-      }, 350);
-
-      // If slide transition is animating OR gesture lock is active:
-      // Completely swallow all kinetic inertia and discard trailing events!
-      if (isAnimatingRef.current || isGestureLockedRef.current) {
+      // While slide transition is actively animating or in cooldown:
+      // discard inertia events and keep accumulator at zero
+      if (isAnimatingRef.current || now - lastScrollTimeRef.current < TRANSITION_DURATION) {
+        accumulatedDeltaRef.current = 0;
         return;
       }
 
-      // Enforce strict 850ms cooldown between section triggers
-      if (now - lastScrollTimeRef.current < 850) {
-        return;
+      // Normalize delta across deltaModes (0 = pixels, 1 = lines, 2 = pages)
+      let delta = e.deltaY;
+      if (e.deltaMode === 1) delta *= 24;
+      else if (e.deltaMode === 2) delta *= 100;
+
+      // Ignore resting finger micro-noise on touchpads (< 1.5px)
+      if (Math.abs(delta) < 1.5) return;
+
+      // Ignore pure horizontal swipe gestures
+      if (Math.abs(e.deltaX) > Math.abs(delta) * 1.8) return;
+
+      // Reset accumulator on significant direction reversal
+      if (
+        (accumulatedDeltaRef.current > 0 && delta < -4) ||
+        (accumulatedDeltaRef.current < 0 && delta > 4)
+      ) {
+        accumulatedDeltaRef.current = 0;
       }
+
+      accumulatedDeltaRef.current += delta;
+
+      // Decay accumulator if user pauses gesture for 140ms
+      if (wheelDecayTimerRef.current) {
+        clearTimeout(wheelDecayTimerRef.current);
+      }
+      wheelDecayTimerRef.current = setTimeout(() => {
+        accumulatedDeltaRef.current = 0;
+      }, 140);
 
       // If at last section (Manifesto) and user deliberately scrolls down:
-      if (activeSectionRef.current === SECTIONS.length - 1 && delta > 30) {
+      if (activeSectionRef.current === SECTIONS.length - 1 && (accumulatedDeltaRef.current > 30 || delta > 25)) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
           isAnimatingRef.current = true;
-          isGestureLockedRef.current = true;
           lastScrollTimeRef.current = now;
+          accumulatedDeltaRef.current = 0;
 
           footerEl.scrollIntoView({ behavior: 'smooth' });
           setTimeout(() => {
             isAnimatingRef.current = false;
-            isGestureLockedRef.current = false;
-          }, 850);
+          }, TRANSITION_DURATION);
         }
         return;
       }
 
-      // Direction check & accumulator reset on reversal
-      if (
-        (accumulatedDeltaRef.current > 0 && delta < 0) ||
-        (accumulatedDeltaRef.current < 0 && delta > 0)
-      ) {
-        accumulatedDeltaRef.current = 0;
-      }
-      accumulatedDeltaRef.current += delta;
-
-      // Sensitivity threshold for deliberate scroll initiation (works smoothly for slow & fast)
-      const THRESHOLD = 24;
+      // Sensitivity threshold for deliberate swipe initiation
+      // 22px is low enough for gentle touchpad swipe, but high enough to prevent accidental drift
+      const THRESHOLD = 22;
       if (Math.abs(accumulatedDeltaRef.current) < THRESHOLD && Math.abs(delta) < THRESHOLD) {
         return;
       }
 
-      // ── TRIGGER STRICTLY 1 SECTION JUMP ──
+      // If at top slide and scrolling up, do nothing and do not lock
       const isDown = accumulatedDeltaRef.current > 0 || delta > 0;
+      if (!isDown && activeSectionRef.current === 0) {
+        accumulatedDeltaRef.current = 0;
+        return;
+      }
+
+      // ── TRIGGER 1 SECTION JUMP ──
       accumulatedDeltaRef.current = 0;
-      isGestureLockedRef.current = true;
+      isAnimatingRef.current = true;
+      lastScrollTimeRef.current = now;
 
       if (isDown) {
         goToNext();
       } else {
         goToPrev();
       }
+
+      setTimeout(() => {
+        isAnimatingRef.current = false;
+        accumulatedDeltaRef.current = 0;
+      }, TRANSITION_DURATION);
     };
 
     window.addEventListener('wheel', handleWheel, { passive: false, capture: true });
     return () => {
       window.removeEventListener('wheel', handleWheel, { capture: true });
-      if (wheelQuietTimerRef.current) clearTimeout(wheelQuietTimerRef.current);
-      if (minLockTimerRef.current) clearTimeout(minLockTimerRef.current);
+      if (wheelDecayTimerRef.current) clearTimeout(wheelDecayTimerRef.current);
+      if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
     };
   }, [isMobile, shopOpen, goToNext, goToPrev]);
 
@@ -470,7 +470,7 @@ export default function StoryPage() {
 
       if (isAnimatingRef.current || touchTriggeredInSwipeRef.current) return;
       const now = Date.now();
-      if (now - lastScrollTimeRef.current < 850) return;
+      if (now - lastScrollTimeRef.current < TRANSITION_DURATION) return;
 
       touchTriggeredInSwipeRef.current = true;
       if (deltaY > 0) {
@@ -545,13 +545,13 @@ export default function StoryPage() {
 
       {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
       <div
-        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[850ms] md:ease-[cubic-bezier(0.16,1,0.3,1)] md:will-change-transform"
+        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[750ms] md:ease-[cubic-bezier(0.16,1,0.3,1)] md:will-change-transform"
         style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
 
         <section
           id="hero"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
+          className="w-full pt-8 pb-4 sm:pt-12 sm:pb-6 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -611,7 +611,7 @@ export default function StoryPage() {
 
         <section
           id="apple-moment"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden text-center"
+          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden text-center"
         >
           <motion.div
             variants={containerVariants}
@@ -654,7 +654,7 @@ export default function StoryPage() {
 
         <section
           id="why-it-fell"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -662,7 +662,7 @@ export default function StoryPage() {
             whileInView={isMobile ? 'visible' : undefined}
             animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
             viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-16 md:pt-20"
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-0 md:pt-20"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
               {/* Left: Apple Fall Illustration */}
@@ -722,7 +722,7 @@ export default function StoryPage() {
 
         <section
           id="realization"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -730,7 +730,7 @@ export default function StoryPage() {
             whileInView={isMobile ? 'visible' : undefined}
             animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
             viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-16 md:pt-20"
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-0 md:pt-20"
           >
             <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
               {/* Left: Idea Lightbulb Illustration */}
@@ -809,7 +809,7 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="identity"
-          className="w-full min-h-screen py-20 px-4 sm:px-6 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 md:px-8 lg:px-12 md:overflow-hidden"
+          className="w-full py-6 sm:py-8 px-4 sm:px-6 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 md:px-8 lg:px-12 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -928,7 +928,7 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="why-i-exist"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -1012,7 +1012,7 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="manifesto"
-          className="w-full min-h-screen py-20 px-4 sm:px-8 flex items-center justify-center relative md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 md:overflow-hidden"
+          className="w-full pt-6 pb-14 sm:py-10 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 md:overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
@@ -1095,6 +1095,29 @@ export default function StoryPage() {
         </section>
       </div>
 
+      {/* Desktop Vertical Navigation Dots */}
+      <div className="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-3">
+        {SECTIONS.map((sec, i) => (
+          <button
+            key={sec.id}
+            onClick={() => goToSection(i)}
+            aria-label={sec.title}
+            className="group relative flex items-center justify-end p-1.5 focus:outline-none cursor-pointer"
+          >
+            {/* Tooltip on hover */}
+            <span className="pointer-events-none absolute right-8 whitespace-nowrap rounded-md bg-black/80 border border-white/15 px-2.5 py-1 font-mono text-[10px] uppercase text-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg">
+              {sec.tag}
+            </span>
+            <span
+              className={`rounded-full transition-all duration-300 ${
+                activeSection === i
+                  ? 'h-6 w-2 bg-white shadow-[0_0_12px_rgba(255,255,255,0.7)]'
+                  : 'h-2 w-2 bg-white/30 group-hover:bg-white/60 group-hover:scale-125'
+              }`}
+            />
+          </button>
+        ))}
+      </div>
 
     </div>
   );

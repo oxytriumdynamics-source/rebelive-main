@@ -96,7 +96,7 @@ export default function ProfileDetailsTab({
       setPasswordSuccess(true);
       setNewPassword("");
       setConfirmPassword("");
-      if (onNotify) onNotify("Security passcode updated.");
+      if (onNotify) onNotify("Security password updated.");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to change password.";
       setPasswordError(msg);
@@ -110,10 +110,10 @@ export default function ProfileDetailsTab({
       {/* Tab Header */}
       <div className="pb-2 border-b border-white/10">
         <h2 className="font-display text-2xl font-bold tracking-tight uppercase text-white">
-          Operator Credentials
+          Your Credentials
         </h2>
         <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-white/50 mt-1">
-          Identity Profile, Contact Channels & Defense Passcodes
+          Identity Profile, Contact Channels & Defense passwords
         </p>
       </div>
 
@@ -121,7 +121,7 @@ export default function ProfileDetailsTab({
         {/* Left Column: Avatar & Identifier */}
         <div className="lg:col-span-1 space-y-6">
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-6 text-center space-y-4">
-           
+
 
             <div className="relative mx-auto h-28 w-28 rounded-full border border-white/20 bg-black/80 p-1 shadow-[0_0_20px_rgba(255,255,255,0.06)] flex items-center justify-center overflow-hidden">
               <Image
@@ -132,7 +132,7 @@ export default function ProfileDetailsTab({
                 unoptimized={Boolean(avatarUrl?.startsWith("http"))}
                 className="object-cover rounded-full"
               />
-            
+
             </div>
 
             <div>
@@ -277,12 +277,12 @@ export default function ProfileDetailsTab({
             </form>
           </div>
 
-          {/* Change Security Passcode Form */}
+          {/* Change Security password Form */}
           <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 sm:p-7 space-y-5">
             <div className="flex items-center gap-2 pb-3 border-b border-white/10">
               <Lock className="h-4 w-4 text-white" />
               <h3 className="font-display text-base font-bold uppercase tracking-tight text-white">
-                Access Passcode & Encryption
+                Change Password 
               </h3>
             </div>
 
@@ -296,7 +296,7 @@ export default function ProfileDetailsTab({
             {passwordSuccess && (
               <div className="flex items-center gap-2 rounded-xl border border-white/20 bg-white/10 p-3 text-xs text-white">
                 <Check className="h-4 w-4 shrink-0 text-white" />
-                <span>Passcode updated successfully.</span>
+                <span>password updated successfully.</span>
               </div>
             )}
 
@@ -304,7 +304,7 @@ export default function ProfileDetailsTab({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
-                    New Security Passcode
+                    New Security password
                   </label>
                   <input
                     type="password"
@@ -318,14 +318,14 @@ export default function ProfileDetailsTab({
 
                 <div>
                   <label className="block font-mono text-[9px] uppercase tracking-[0.2em] text-white/60 mb-1.5">
-                    Confirm Security Passcode
+                    Confirm Security password
                   </label>
                   <input
                     type="password"
                     required
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="Repeat new passcode"
+                    placeholder="Repeat new password"
                     className="w-full rounded-xl border border-white/10 bg-white/[0.04] px-3.5 py-2.5 font-sans text-xs text-white placeholder-white/30 focus:border-white/40 focus:outline-none focus:ring-1 focus:ring-white/40"
                   />
                 </div>
@@ -342,7 +342,7 @@ export default function ProfileDetailsTab({
                   ) : (
                     <Lock className="h-3.5 w-3.5" />
                   )}
-                  <span>Update Passcode</span>
+                  <span>Update password</span>
                 </button>
               </div>
             </form>

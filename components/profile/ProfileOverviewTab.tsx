@@ -26,6 +26,41 @@ interface ProfileOverviewTabProps {
   addressCount?: number;
 }
 
+const InstagramIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg
+    viewBox="0 0 24 24"
+    aria-hidden="true"
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect width="20" height="20" x="2" y="2" rx="5" ry="5" />
+    <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+    <line x1="17.5" x2="17.51" y1="6.5" y2="6.5" />
+  </svg>
+);
+
+const WhatsAppIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M17.472 14.382c-.301-.15-1.782-.88-2.058-.98-.276-.1-.477-.15-.678.15-.2.3-.777.98-.953 1.18-.175.2-.351.226-.652.075-.301-.15-1.272-.469-2.423-1.496-.896-.8-1.501-1.788-1.677-2.089-.175-.301-.019-.464.132-.614.136-.135.301-.351.451-.527.151-.176.2-.301.301-.502.101-.2.05-.376-.025-.526-.075-.15-.678-1.634-.929-2.238-.244-.588-.493-.509-.678-.518l-.578-.01c-.2 0-.527.075-.803.376s-1.054 1.03-1.054 2.511 1.079 2.912 1.23 3.113c.15.2 2.123 3.242 5.143 4.547.718.311 1.279.497 1.716.636.721.23 1.377.197 1.896.12.578-.087 1.782-.728 2.033-1.431.251-.703.251-1.305.176-1.431-.076-.126-.277-.201-.578-.351zM12.004 2C6.48 2 2 6.48 2 12c0 1.944.557 3.76 1.524 5.301L2 22l4.832-1.488C8.307 21.365 10.096 22 12.004 22 17.524 22 22 17.52 22 12s-4.476-10-9.996-10zm0 18.257c-1.684 0-3.245-.516-4.545-1.401l-.326-.222-2.884.888.895-2.809-.244-.344c-.985-1.385-1.508-3.031-1.508-4.769 0-4.662 3.794-8.457 8.612-8.457 4.817 0 8.611 3.795 8.611 8.457 0 4.663-3.794 8.657-8.611 8.657z" />
+  </svg>
+);
+
+const LinkedInIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M19 3a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h14m-.5 15.5v-5.3a3.26 3.26 0 0 0-3.26-3.26c-.85 0-1.84.52-2.28 1.3v-1.11h-2.79v8.37h2.79v-4.93c0-.77.62-1.4 1.39-1.4a1.4 1.4 0 0 1 1.4 1.4v4.93h2.75M6.46 8.76a1.69 1.69 0 1 0-.02-3.38 1.69 1.69 0 0 0 .02 3.38zM5.07 18.5h2.77v-8.37H5.07v8.37z" />
+  </svg>
+);
+
+const FacebookIcon: React.FC<{ className?: string }> = ({ className = 'w-3.5 h-3.5' }) => (
+  <svg viewBox="0 0 24 24" aria-hidden="true" className={className} fill="currentColor">
+    <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+  </svg>
+);
+
 export default function ProfileOverviewTab({
   user,
   persona,
@@ -229,30 +264,42 @@ export default function ProfileOverviewTab({
             <p className="font-mono text-[9px] uppercase tracking-[0.25em] text-white/40 mb-3">
               Official Frequency Channels
             </p>
-            <div className="grid grid-cols-3 gap-2.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
               <a
                 href="https://www.instagram.com/rebelive.official?stkn=aTMyZWJ1N2lqZmht"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
+                className="group flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
               >
-                Instagram
+                <InstagramIcon className="w-3.5 h-3.5 text-white group-hover:text-black transition-colors shrink-0" />
+                <span>Instagram</span>
+              </a>
+              <a
+                href="https://whatsapp.com/channel/0029Vb3HB0Y0G0XdgDS5NL1L"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
+              >
+                <WhatsAppIcon className="w-3.5 h-3.5 text-white group-hover:text-black transition-colors shrink-0" />
+                <span>WhatsApp</span>
               </a>
               <a
                 href="https://www.linkedin.com/company/rebelive/"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
+                className="group flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
               >
-                LinkedIn
+                <LinkedInIcon className="w-3.5 h-3.5 text-white group-hover:text-black transition-colors shrink-0" />
+                <span>LinkedIn</span>
               </a>
               <a
                 href="https://www.facebook.com/share/1cjZ7Lqgbe/?mibextid=wwXIfr"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
+                className="group flex items-center justify-center gap-2 rounded-xl border border-white/10 bg-white/[0.03] py-2.5 px-3 font-mono text-[9.5px] uppercase tracking-wider text-white/70 hover:bg-white hover:text-black transition-all"
               >
-                Facebook
+                <FacebookIcon className="w-3.5 h-3.5 text-white group-hover:text-black transition-colors shrink-0" />
+                <span>Facebook</span>
               </a>
             </div>
           </div>

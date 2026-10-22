@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 export const SubFooter: React.FC = () => {
     return (
-        <section className="relative w-full pt-3 pb-3 sm:pt-5 sm:pb-4 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
+        <section className="relative w-full pt-10 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-28 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
             {/* Subtle atmospheric radial spotlight centered on content */}
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"

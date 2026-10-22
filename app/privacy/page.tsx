@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy | Data Protection & Security',
+  title: 'Privacy Policy',
   description:
     'Privacy Policy for rebelive.com, operated by Oxytrium Dynamics Private Limited. Learn how we collect, store, and protect your personal information.',
   alternates: {

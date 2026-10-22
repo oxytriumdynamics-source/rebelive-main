@@ -26,7 +26,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Shop REBELIVE Bio-Energy Crates',
+    title: 'Shop REBELIVE Energy Drinks Crates',
     description: 'Zero Sugar. Pure Performance. Fast cold dispatch.',
     images: ['/brand/APEX.webp'],
   },

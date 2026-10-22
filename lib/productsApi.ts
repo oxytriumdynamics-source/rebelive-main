@@ -169,7 +169,6 @@ export async function fetchProducts(forceRefresh = false): Promise<Product[]> {
       // If network fails but we have stale stored cache, serve stale cache to avoid crashing UI
       const staleStored = getStoredList(true);
       if (staleStored && staleStored.length > 0) {
-        console.warn('Network failed or timed out; serving cached products list', err);
         return staleStored;
       }
 
