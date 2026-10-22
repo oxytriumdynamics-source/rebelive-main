@@ -190,11 +190,10 @@ export default function BlogsPage() {
         <div className="flex items-center gap-2 overflow-x-auto pb-2 lg:pb-0 [scrollbar-width:none] [-ms-overflow-style:none]">
           <button
             onClick={() => setSelectedCategory('ALL')}
-            className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider shrink-0 transition-all ${
-              selectedCategory === 'ALL'
+            className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider shrink-0 transition-all ${selectedCategory === 'ALL'
                 ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)]'
                 : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border border-white/10'
-            }`}
+              }`}
           >
             All Articles
           </button>
@@ -203,11 +202,10 @@ export default function BlogsPage() {
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider shrink-0 transition-all ${
-                selectedCategory === cat
+              className={`px-4 py-2 rounded-xl text-xs font-mono uppercase tracking-wider shrink-0 transition-all ${selectedCategory === cat
                   ? 'bg-white text-black font-bold shadow-[0_0_15px_rgba(255,255,255,0.3)]'
                   : 'bg-white/5 text-neutral-400 hover:text-white hover:bg-white/10 border border-white/10'
-              }`}
+                }`}
             >
               {cat}
             </button>
@@ -354,8 +352,8 @@ export default function BlogsPage() {
                   {searchQuery
                     ? `Search Results (${filteredBlogs.length})`
                     : selectedCategory === 'ALL'
-                    ? `All Dispatches (${filteredBlogs.length})`
-                    : `${selectedCategory} (${gridBlogs.length})`}
+                      ? `All Dispatches (${filteredBlogs.length})`
+                      : `${selectedCategory} (${gridBlogs.length})`}
                 </h3>
                 <span className="text-xs font-mono text-neutral-500">
                   Sorted by most recent publication
@@ -445,16 +443,19 @@ export default function BlogsPage() {
 
       {/* ─── Newsletter Dispatch Box ─── */}
       <div className="mt-16 sm:mt-24 rounded-3xl border border-white/15 bg-gradient-to-r from-neutral-900 to-black p-8 sm:p-12 relative overflow-hidden">
-        <div className="max-w-2xl mx-auto text-center space-y-4 relative z-10">
-          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-white">
+        <div className="max-w-2xl mx-auto text-center space-y-4 sm:space-y-5 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto text-white mb-1">
             <Mail className="w-5 h-5" />
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">
+          <h3
+            style={{ wordSpacing: '0.18em' }}
+            className="text-2xl sm:text-3xl font-black text-white uppercase tracking-wider leading-snug my-2"
+          >
             JOIN THE REBEL SYNDICATE
           </h3>
 
-          <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-sans max-w-xl mx-auto">
+          <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed font-sans max-w-xl mx-auto pt-1">
             Get first access to new drops, brand stories, and ideas shaping the future of everyday performance. No noise. Just signal.
           </p>
 
@@ -463,7 +464,7 @@ export default function BlogsPage() {
               <CheckCircle2 className="w-4 h-4 shrink-0" />
               <span>
                 {newsletterOfflineNotice
-                  ? "You're subscribed! (Saved offline — will sync when reconnected)."
+                  ? "You're subscribed! (Saved offline - will sync when reconnected)."
                   : "You're subscribed to the syndicate. Welcome to REBELIVE."}
               </span>
             </div>

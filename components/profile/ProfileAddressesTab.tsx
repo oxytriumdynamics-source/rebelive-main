@@ -269,11 +269,10 @@ export default function ProfileAddressesTab({
               <div
                 key={addr.id}
                 id={`address-card-${addr.id}`}
-                className={`group relative rounded-2xl border transition-all p-5 sm:p-6 flex flex-col justify-between gap-4 ${
-                  isDef
+                className={`group relative rounded-2xl border transition-all p-5 sm:p-6 flex flex-col justify-between gap-4 ${isDef
                     ? "border-white/30 bg-white/[0.05] shadow-[0_4px_30px_rgba(255,255,255,0.04)] ring-1 ring-white/20"
                     : "border-white/10 bg-white/[0.02] hover:border-white/25 hover:bg-white/[0.04]"
-                }`}
+                  }`}
               >
                 {/* Header row with Label & Default badge */}
                 <div className="flex items-center justify-between gap-2">
@@ -330,7 +329,7 @@ export default function ProfileAddressesTab({
                     <p className="font-medium text-white">{addr.line1}</p>
                     {addr.line2 && <p className="text-white/60">{addr.line2}</p>}
                     <p className="font-mono text-xs text-white/70 pt-1">
-                      {addr.city}, {addr.state} —{" "}
+                      {addr.city}, {addr.state} -{" "}
                       <strong className="text-white font-bold">{addr.postalCode}</strong>
                     </p>
                     <p className="font-mono text-[10px] text-white/40 uppercase tracking-wider">
@@ -431,11 +430,10 @@ export default function ProfileAddressesTab({
                       key={lbl}
                       type="button"
                       onClick={() => setLabel(lbl)}
-                      className={`px-3 py-1.5 rounded-xl font-mono text-xs uppercase tracking-wider transition-all cursor-pointer ${
-                        label === lbl
+                      className={`px-3 py-1.5 rounded-xl font-mono text-xs uppercase tracking-wider transition-all cursor-pointer ${label === lbl
                           ? "bg-white text-black font-bold ring-1 ring-white"
                           : "border border-white/10 bg-white/[0.03] text-white/60 hover:text-white hover:bg-white/[0.07]"
-                      }`}
+                        }`}
                     >
                       {lbl}
                     </button>

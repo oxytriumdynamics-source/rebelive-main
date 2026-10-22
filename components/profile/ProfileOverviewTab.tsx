@@ -105,7 +105,7 @@ export default function ProfileOverviewTab({
                 Holographic Rebel Pass
               </p>
               <MemberCard persona={persona} memberName={memberName} rebelId={user.rebelId || user.id} />
-              
+
               {/* Permanent Allocation Badge */}
               <div className="mt-3 flex items-center gap-1.5 px-3 py-1 rounded-full border border-emerald-500/30 bg-emerald-500/10 text-emerald-300 font-mono text-[9px] uppercase tracking-wider">
                 <Lock className="w-2.5 h-2.5 text-emerald-400" />
@@ -118,7 +118,7 @@ export default function ProfileOverviewTab({
                 <Sparkles className="w-2.5 h-2.5 text-amber-400" />
                 <span>1 CALIBRATION REMAINING</span>
               </div>
-              
+
               <div className="flex flex-col items-center gap-3 my-auto">
                 <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-white/[0.06] border border-white/10 shadow-inner">
                   <Compass className="h-8 w-8 text-white/80 animate-pulse" />
@@ -152,7 +152,7 @@ export default function ProfileOverviewTab({
                   Active Designation
                 </p>
                 <h3 className="font-display text-xl sm:text-2xl font-bold uppercase tracking-tight text-white">
-                  {persona.name} — {persona.title}
+                  {persona.name} - {persona.title}
                 </h3>
                 <p className="font-sans text-xs sm:text-sm text-white/70 leading-relaxed mt-2">
                   {persona.description}

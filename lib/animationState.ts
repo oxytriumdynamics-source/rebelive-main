@@ -19,7 +19,7 @@ export const animationState = {
   /** Normalized mouse Y position (-1 to 1, bottom to top) */
   mouseY: 0,
 
-  /** Current virtual scroll progress (0 = hero, 1 = footer) — updated by GSAP on every tick */
+  /** Current virtual scroll progress (0 = hero, 1 = footer) - updated by GSAP on every tick */
   scrollProgress: 0,
 
   /** Carousel swipe/click rotation impulse velocity */

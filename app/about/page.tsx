@@ -75,8 +75,8 @@ export default function AboutPage() {
 
    
 
-      {/* ── Continuous, Butter-Smooth Natural Scrolling Flow with Even Spacing ── */}
-      <div className="w-full flex flex-col gap-14 sm:gap-20 lg:gap-24 pt-20 sm:pt-24 pb-16 sm:pb-24">
+      {/* ── Continuous, Butter-Smooth Natural Scrolling Flow with Balanced Spacing ── */}
+      <div className="w-full flex flex-col gap-8 sm:gap-12 lg:gap-14 pt-20 sm:pt-24 pb-14 sm:pb-20">
         {/* ══════════════════════════════════════════════════════════════
             SECTION 0: FOUNDERS SECTION
            ══════════════════════════════════════════════════════════════ */}
@@ -169,7 +169,7 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="rebelive"
-          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-4 pb-8 sm:pb-16 lg:pb-20"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-2 pb-2 sm:pb-4"
         >
           <motion.div
             variants={containerVariants}
@@ -228,9 +228,9 @@ export default function AboutPage() {
           </motion.div>
         </section>
 
-        {/* ── Generous Separation Divider Between Rebelive & Oxytrium Dynamics ── */}
-        <div className="w-full max-w-5xl mx-auto px-6 sm:px-12 my-6 sm:my-10 lg:my-14 select-none pointer-events-none">
-          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
+        {/* ── Separation Divider Between Rebelive & Oxytrium Dynamics ── */}
+        <div className="w-full max-w-5xl mx-auto px-6 sm:px-12 my-1 sm:my-2 select-none pointer-events-none">
+          <div className="h-[1px] w-full bg-gradient-to-r from-transparent via-white/15 to-transparent" />
         </div>
 
         {/* ══════════════════════════════════════════════════════════════
@@ -238,7 +238,7 @@ export default function AboutPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="oxytrium"
-          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-6 sm:pt-14 lg:pt-18 pb-8 sm:pb-16 lg:pb-20"
+          className="w-full flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-2 sm:pt-4 pb-4 sm:pb-8 lg:pb-10"
         >
           <motion.div
             variants={containerVariants}

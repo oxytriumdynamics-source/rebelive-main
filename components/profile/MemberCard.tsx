@@ -792,7 +792,7 @@ export default function MemberCard({
               className="flex items-center gap-1.5 font-mono text-[9.5px] uppercase tracking-[0.22em] transition-opacity hover:opacity-60 cursor-pointer"
               style={{
                 fontFamily: MONO,
-                color: isApex ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)",
+                color:  "rgba(255,255,255,0.55)",
               }}
             >
               <RotateCcw className="h-3 w-3" />

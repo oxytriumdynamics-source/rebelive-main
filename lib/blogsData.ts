@@ -132,7 +132,7 @@ export const FALLBACK_BLOGS: AdminBlog[] = [
     content: `
 <h2>The Crash Dilemma: Deconstructing Old-Guard Energy</h2>
 <p>For more than two decades, the global energy drink market has been dominated by a singular, fundamentally flawed formulation: hyper-concentrated synthetic caffeine dissolved in up to 30 grams of high-fructose corn syrup or refined sugars. While this triggers an immediate surge of blood glucose and epinephrine, the physiological cost is catastrophic.</p>
-<p>When high doses of sugar flood the bloodstream, your pancreas pumps out a massive wave of insulin to clear the excess glucose. The resultant rebound hypoglycemia—colloquially termed the <strong>"2 PM Crash"</strong>—leaves your brain starving for metabolic fuel, causing brain fog, jitteriness, and acute fatigue.</p>
+<p>When high doses of sugar flood the bloodstream, your pancreas pumps out a massive wave of insulin to clear the excess glucose. The resultant rebound hypoglycemia-colloquially termed the <strong>"2 PM Crash"</strong>-leaves your brain starving for metabolic fuel, causing brain fog, jitteriness, and acute fatigue.</p>
 <h2>Enter Precision Energy Drinks: The Nootropic Matrix</h2>
 <p>At <strong>REBELIVE</strong>, we set out to construct an alternative from first principles. Rather than shocking the adrenal glands with synthetic stimulants, our formula utilizes a synergistic ratio of natural caffeine, purified L-Theanine, and functional B-vitamin complexes.</p>
 <ul>
@@ -162,7 +162,7 @@ export const FALLBACK_BLOGS: AdminBlog[] = [
     content: `
 <h2>Why Drinking Plain Water Is Only Half the Equation</h2>
 <p>We are told from childhood to drink eight glasses of water a day. Yet endurance athletes, high-output executives, and relentless creators frequently report afternoon sluggishness and persistent headaches despite guzzling liters of purified water.</p>
-<p>The explanation lies in a physiological reality: <strong>hyponatremic dilution</strong>. When you sweat or expend heavy mental energy, you do not simply lose H2O—you excrete critical electrolytes including sodium ($Na^+$), potassium ($K^+$), and magnesium ($Mg^{2+}$).</p>
+<p>The explanation lies in a physiological reality: <strong>hyponatremic dilution</strong>. When you sweat or expend heavy mental energy, you do not simply lose H2O-you excrete critical electrolytes including sodium ($Na^+$), potassium ($K^+$), and magnesium ($Mg^{2+}$).</p>
 <h3>Key Mineral Co-Factors in REBELIVE:</h3>
 <ul>
   <li><strong>Ionic Sodium:</strong> Regulates extracellular fluid volume and prevents muscle cramps.</li>

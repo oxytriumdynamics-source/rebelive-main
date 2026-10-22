@@ -162,9 +162,7 @@ export function CartDrawer() {
                       <span className="text-xs font-bold text-white">
                         ₹{(item.pricePerUnit * item.quantity).toLocaleString('en-IN')}
                       </span>
-                      <span className="text-[10px] text-white/40 font-mono">
-                        (₹{item.pricePerUnit.toLocaleString('en-IN')}/ea)
-                      </span>
+                
                     </div>
                   </div>
 

@@ -317,7 +317,7 @@ export function RootBlogsTab() {
   <p class="text-white/90 italic font-mono text-sm leading-relaxed">
     "Key formulation takeaway or quote goes here..."
   </p>
-  <span class="block text-xs font-mono text-white/50 mt-2">— REBELIVE Journal</span>
+  <span class="block text-xs font-mono text-white/50 mt-2">- REBELIVE Journal</span>
 </div>
     `.trim();
     insertTextAtCursor(`\n${calloutHtml}\n`);
@@ -532,8 +532,8 @@ export function RootBlogsTab() {
                 key={st}
                 onClick={() => setStatusFilter(st)}
                 className={`px-3 py-1.5 rounded-lg transition-all ${statusFilter === st
-                    ? 'bg-white text-black font-semibold'
-                    : 'text-white/60 hover:text-white'
+                  ? 'bg-white text-black font-semibold'
+                  : 'text-white/60 hover:text-white'
                   }`}
               >
                 {st === 'ALL' ? 'All' : st === 'PUBLISHED' ? 'Published' : 'Drafts'}
@@ -639,8 +639,8 @@ export function RootBlogsTab() {
                       {/* Status Pill */}
                       <span
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-mono font-semibold tracking-wider ${blog.isPublished
-                            ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                            : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                          : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
                           }`}
                       >
                         <span
@@ -711,8 +711,8 @@ export function RootBlogsTab() {
                     onClick={() => handleQuickTogglePublish(blog)}
                     title={blog.isPublished ? 'Unpublish to Draft' : 'Publish to Live'}
                     className={`p-2.5 rounded-xl border transition-all text-xs font-mono flex items-center gap-1.5 ${blog.isPublished
-                        ? 'border-white/10 bg-white/5 text-white/70 hover:text-amber-400 hover:border-amber-500/30'
-                        : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
+                      ? 'border-white/10 bg-white/5 text-white/70 hover:text-amber-400 hover:border-amber-500/30'
+                      : 'border-emerald-500/30 bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
                       }`}
                   >
                     {blog.isPublished ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
@@ -790,8 +790,8 @@ export function RootBlogsTab() {
                   <button
                     onClick={() => setActiveModalTab('editor')}
                     className={`px-3 py-1.5 rounded-lg transition-all ${activeModalTab === 'editor'
-                        ? 'bg-white text-black font-semibold'
-                        : 'text-white/60 hover:text-white'
+                      ? 'bg-white text-black font-semibold'
+                      : 'text-white/60 hover:text-white'
                       }`}
                   >
                     Editor
@@ -799,8 +799,8 @@ export function RootBlogsTab() {
                   <button
                     onClick={() => setActiveModalTab('preview')}
                     className={`px-3 py-1.5 rounded-lg transition-all flex items-center gap-1 ${activeModalTab === 'preview'
-                        ? 'bg-white text-black font-semibold'
-                        : 'text-white/60 hover:text-white'
+                      ? 'bg-white text-black font-semibold'
+                      : 'text-white/60 hover:text-white'
                       }`}
                   >
                     <Eye className="w-3.5 h-3.5" />
@@ -809,8 +809,8 @@ export function RootBlogsTab() {
                   <button
                     onClick={() => setActiveModalTab('seo')}
                     className={`px-3 py-1.5 rounded-lg transition-all ${activeModalTab === 'seo'
-                        ? 'bg-white text-black font-semibold'
-                        : 'text-white/60 hover:text-white'
+                      ? 'bg-white text-black font-semibold'
+                      : 'text-white/60 hover:text-white'
                       }`}
                   >
                     Settings & SEO
@@ -1582,6 +1582,13 @@ export function RootBlogsTab() {
 
       {/* Global CSS for article visual preview / typography */}
       <style jsx global>{`
+        .article-prose {
+          font-family: 'Poppins', sans-serif;
+          text-transform: none;
+        }
+        .article-prose * {
+          text-transform: none;
+        }
         .article-prose h1 {
           font-size: 2rem;
           font-weight: 800;
@@ -1589,6 +1596,7 @@ export function RootBlogsTab() {
           margin-top: 1.5rem;
           margin-bottom: 0.75rem;
           line-height: 1.2;
+          text-transform: none;
         }
         .article-prose h2 {
           font-size: 1.5rem;

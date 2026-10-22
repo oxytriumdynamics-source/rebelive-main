@@ -170,7 +170,7 @@ export default function BlogPostReaderPage() {
           {/* Article Title */}
           <h1
             style={{ fontFamily: SANS }}
-            className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-[1.15] tracking-tight uppercase"
+            className="text-3xl sm:text-4xl md:text-5xl font-black text-white leading-[1.15] tracking-tight"
           >
             {blog.title}
           </h1>
@@ -290,14 +290,17 @@ export default function BlogPostReaderPage() {
 
         {/* ─── Call to Action Banner ─── */}
         <div className="my-12 rounded-3xl border border-white/20 bg-gradient-to-r from-neutral-900 via-neutral-950 to-black p-8 sm:p-10 flex flex-col sm:flex-row items-center justify-between gap-6 shadow-2xl">
-          <div className="space-y-2 text-center sm:text-left">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-emerald-400 font-bold">
+          <div className="space-y-3.5 sm:space-y-4 text-center sm:text-left">
+            <span className="text-[10px] sm:text-xs font-mono uppercase tracking-[0.2em] text-emerald-400 font-bold block">
               ● EXPLORE REBELIVE
             </span>
-            <h3 className="text-xl sm:text-2xl font-black text-white uppercase tracking-tight">
+            <h3
+              style={{ wordSpacing: '0.18em' }}
+              className="text-xl sm:text-2xl font-black text-white uppercase tracking-wider leading-snug"
+            >
               YOUR NEXT MOVE STARTS HERE.
             </h3>
-            <p className="text-xs text-neutral-400 max-w-lg font-sans">
+            <p className="text-xs sm:text-sm text-neutral-400 max-w-lg font-sans leading-relaxed">
               Explore the Rebelive range. Make it yours.
             </p>
           </div>
@@ -371,6 +374,13 @@ export default function BlogPostReaderPage() {
 
       {/* Global typography styling for article prose */}
       <style jsx global>{`
+        .article-prose {
+          font-family: 'Poppins', sans-serif;
+          text-transform: none;
+        }
+        .article-prose * {
+          text-transform: none;
+        }
         .article-prose h1 {
           font-size: 2.25rem;
           font-weight: 900;
@@ -378,7 +388,7 @@ export default function BlogPostReaderPage() {
           margin-top: 2rem;
           margin-bottom: 1rem;
           line-height: 1.2;
-          text-transform: uppercase;
+          text-transform: none;
           letter-spacing: -0.02em;
         }
         .article-prose h2 {
@@ -390,7 +400,7 @@ export default function BlogPostReaderPage() {
           line-height: 1.25;
           border-bottom: 1px solid rgba(255, 255, 255, 0.12);
           padding-bottom: 0.5rem;
-          text-transform: uppercase;
+          text-transform: none;
           letter-spacing: -0.01em;
         }
         .article-prose h3 {
@@ -400,12 +410,14 @@ export default function BlogPostReaderPage() {
           margin-top: 2rem;
           margin-bottom: 0.75rem;
           line-height: 1.3;
+          text-transform: none;
         }
         .article-prose p {
           color: rgba(255, 255, 255, 0.85);
           font-size: 1.05rem;
           line-height: 1.85;
           margin-bottom: 1.25rem;
+          text-transform: none;
         }
         .article-prose strong {
           color: #ffffff;
