@@ -267,7 +267,7 @@ export async function launchFastrrCheckout(
   const existingHeadless = document.getElementById('headless-container');
   if (existingHeadless) existingHeadless.remove();
   const existingPreloader = document.getElementById('fastrr-pre-loader');
-  if (existingPreloader) existingPreloader.remove();
+  if (existingPreloader) existingPreloader.style.display = 'none';
   document.body.style.overflow = '';
 
   const fallbackUrl = `${window.location.origin}/order-confirmation`;
@@ -410,7 +410,7 @@ export async function launchFastrrCheckout(
       const headless = document.getElementById('headless-container');
       if (headless) headless.remove();
       const preloader = document.getElementById('fastrr-pre-loader');
-      if (preloader) preloader.remove();
+      if (preloader) preloader.style.display = 'none';
       document.body.style.overflow = '';
       window.removeEventListener('message', handleFastrrMessage);
     }
@@ -438,7 +438,9 @@ export async function launchFastrrCheckout(
           const preloader = document.getElementById('fastrr-pre-loader');
           if (preloader) {
             preloader.style.opacity = '0';
-            setTimeout(() => preloader.remove(), 200);
+            setTimeout(() => {
+              if (preloader) preloader.style.display = 'none';
+            }, 200);
           }
         });
         clearInterval(checkIframe);
@@ -451,7 +453,9 @@ export async function launchFastrrCheckout(
       const preloader = document.getElementById('fastrr-pre-loader');
       if (preloader) {
         preloader.style.opacity = '0';
-        setTimeout(() => preloader.remove(), 200);
+        setTimeout(() => {
+          if (preloader) preloader.style.display = 'none';
+        }, 200);
       }
     }, 2500);
 
