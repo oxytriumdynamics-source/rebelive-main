@@ -21,26 +21,30 @@ import { CartDrawer } from "@/components/shop/CartDrawer";
 import { AppShell } from "@/components/layout/AppShell";
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://rebelive.com'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rebelive.com'),
   title: {
     default: 'REBELIVE | Wake. Fuel. Rebel.',
     template: '%s | REBELIVE',
   },
   description:
-    'Engineered drinks for relentless focus, physical endurance, and clean vitality. Zero sugar, clean caffeine, functional nootropics. Built without compromise.',
+    'Discover Rebelive, functional beverages (nutraceuticals) designed to support energy, focus, gut health, and stress management.',
   keywords: [
     'REBELIVE',
-    'nootropic energy drink',
-    'zero sugar energy drink',
-    'natural caffeine',
+    'functional beverages',
+    'nutraceuticals',
+    'Nutrition as a Lifestyle',
+    'energy',
+    'focus',
+    'gut health',
+    'stress management',
+    'clean caffeine',
+    'zero sugar',
+    'nootropics',
     'apex energy drink',
     'capella energy drink',
     'aviva energy drink',
-    'functional energy drink',
-    'focus drink',
-    'fitness energy drink',
   ],
-  authors: [{ name: 'REBELIVE Labs', url: 'https://rebelive.com' }],
+  authors: [{ name: 'REBELIVE', url: 'https://www.rebelive.com' }],
   creator: 'REBELIVE',
   publisher: 'Oxytrium Dynamics Private Limited',
   alternates: {
@@ -49,15 +53,15 @@ export const metadata: Metadata = {
   openGraph: {
     title: 'REBELIVE | Wake. Fuel. Rebel.',
     description:
-      'Engineered energy drinks. Zero Sugar. Clean Functional Nootropics for peak human performance.',
-    url: 'https://rebelive.com',
+      'Discover Rebelive, functional beverages (nutraceuticals) designed to support energy, focus, gut health, and stress management.',
+    url: 'https://www.rebelive.com',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'REBELIVE energy Drink',
+        alt: 'REBELIVE | Wake. Fuel. Rebel.',
       },
     ],
     locale: 'en_US',
@@ -66,8 +70,9 @@ export const metadata: Metadata = {
   twitter: {
     card: 'summary_large_image',
     title: 'REBELIVE | Wake. Fuel. Rebel.',
-    description: 'Engineered energy drinks. Zero Sugar. Clean Functional Nootropics.',
-    images: ['/brand/APEX.webp'],
+    description:
+      'Discover Rebelive, functional beverages (nutraceuticals) designed to support energy, focus, gut health, and stress management.',
+    images: ['/brand/rebelive-og.png'],
     creator: '@rebelive',
   },
   icons: {
@@ -123,12 +128,13 @@ export default function RootLayout({
               "@graph": [
                 {
                   "@type": "Organization",
-                  "@id": "https://rebelive.com/#organization",
+                  "@id": "https://www.rebelive.com/#organization",
                   "name": "REBELIVE",
                   "legalName": "Oxytrium Dynamics Private Limited",
-                  "url": "https://rebelive.com",
-                  "logo": "https://rebelive.com/brand/REBELIVE%20Logo%20Black.webp",
-                  "description": "Engineered for the relentless. Clean energy drink without compromise.",
+                  "url": "https://www.rebelive.com",
+                  "logo": "https://www.rebelive.com/brand/rebelive-insignia.png",
+                  "description": "Discover Rebelive, functional beverages (nutraceuticals) designed to support energy, focus, gut health, and stress management.",
+                  "slogan": "Nutrition as a Lifestyle.",
                   "sameAs": [
                     "https://www.instagram.com/rebelive.official",
                     "https://www.linkedin.com/company/rebelive/",
@@ -137,13 +143,14 @@ export default function RootLayout({
                 },
                 {
                   "@type": "WebSite",
-                  "@id": "https://rebelive.com/#website",
-                  "url": "https://rebelive.com",
+                  "@id": "https://www.rebelive.com/#website",
+                  "url": "https://www.rebelive.com",
                   "name": "REBELIVE",
-                  "publisher": { "@id": "https://rebelive.com/#organization" },
+                  "description": "Discover Rebelive, functional beverages (nutraceuticals) designed to support energy, focus, gut health, and stress management.",
+                  "publisher": { "@id": "https://www.rebelive.com/#organization" },
                   "potentialAction": {
                     "@type": "SearchAction",
-                    "target": "https://rebelive.com/shop?q={search_term_string}",
+                    "target": "https://www.rebelive.com/shop?q={search_term_string}",
                     "query-input": "required name=search_term_string"
                   }
                 }

@@ -1,24 +1,26 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About Us',
+  title: {
+    absolute: 'About REBELIVE | The Thinking Behind the Brand',
+  },
   description:
-    'Discover the origin of REBELIVE by Oxytrium Dynamics. Engineered for relentless operators, athletes, and builders seeking clean, uncompromised performance energy.',
+    'Meet Rebelive, a nutraceutical brand built around supporting grueling modern workstyles, and a premium upgrade to your daily momentum.',
   alternates: {
     canonical: '/about',
   },
   openGraph: {
-    title: 'About Us',
+    title: 'About REBELIVE | The Thinking Behind the Brand',
     description:
-      'Engineered energy drink by Oxytrium Dynamics. Built for focus, grit, and visionary creators.',
-    url: 'https://rebelive.com/about',
+      'Meet Rebelive, a nutraceutical brand built around supporting grueling modern workstyles, and a premium upgrade to your daily momentum.',
+    url: 'https://www.rebelive.com/about',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'About REBELIVE Energy Drink',
+        alt: 'About REBELIVE | The Thinking Behind the Brand',
       },
     ],
     locale: 'en_US',
@@ -26,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'About REBELIVE | Our Founders & Philosophy',
-    description: 'Engineered energy drink. Built for visionary operators.',
-    images: ['/brand/APEX.webp'],
+    title: 'About REBELIVE | The Thinking Behind the Brand',
+    description:
+      'Meet Rebelive, a nutraceutical brand built around supporting grueling modern workstyles, and a premium upgrade to your daily momentum.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

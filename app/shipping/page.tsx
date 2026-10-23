@@ -3,17 +3,37 @@ import Link from 'next/link';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Shipping Policy | Domestic Cold Chain Delivery in India',
+  title: {
+    absolute: 'Shipping & Delivery Policy | REBELIVE',
+  },
   description:
-    'Shipping & Delivery Policy for domestic orders across India on rebelive.com, operated by Oxytrium Dynamics Private Limited. Express dispatch within 24-48 hours.',
+    'Find information about shipping coverage, order processing, delivery timelines, tracking, and the terms applicable to Rebelive orders.',
   alternates: {
     canonical: '/shipping',
   },
   openGraph: {
     title: 'Shipping & Delivery Policy | REBELIVE',
-    description: 'Express shipping covering 26,000+ pin codes in India with live tracking.',
-    url: 'https://rebelive.com/shipping',
+    description:
+      'Find information about shipping coverage, order processing, delivery timelines, tracking, and the terms applicable to Rebelive orders.',
+    url: 'https://www.rebelive.com/shipping',
     siteName: 'REBELIVE',
+    images: [
+      {
+        url: '/brand/rebelive-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Shipping & Delivery Policy | REBELIVE',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Shipping & Delivery Policy | REBELIVE',
+    description:
+      'Find information about shipping coverage, order processing, delivery timelines, tracking, and the terms applicable to Rebelive orders.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

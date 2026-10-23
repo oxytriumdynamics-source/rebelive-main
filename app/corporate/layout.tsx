@@ -1,24 +1,26 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Corporate Gifting & Bulk',
+  title: {
+    absolute: 'Corporate & Bulk Orders | REBELIVE',
+  },
   description:
-    'Fuel your engineering teams, corporate summits, startup incubators, and executive retreats with REBELIVE Energy Drinks crates. Custom branded corporate packages and priority cold dispatch.',
+    'Explore bulk purchases, corporate gifting, team orders, and business partnerships with Rebelive. Contact us to discuss your requirements.',
   alternates: {
     canonical: '/corporate',
   },
   openGraph: {
-    title: 'Corporate Fueling & Bulk Orders | REBELIVE',
+    title: 'Corporate & Bulk Orders | REBELIVE',
     description:
-      'High-performance clean energy for modern teams. Bulk dispatch and corporate gifting.',
-    url: 'https://rebelive.com/corporate',
+      'Explore bulk purchases, corporate gifting, team orders, and business partnerships with Rebelive. Contact us to discuss your requirements.',
+    url: 'https://www.rebelive.com/corporate',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'REBELIVE Corporate Gifting',
+        alt: 'Corporate & Bulk Orders | REBELIVE',
       },
     ],
     locale: 'en_US',
@@ -26,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Corporate Fueling & Bulk Orders | REBELIVE',
-    description: 'Fuel high-performance teams with clean functional Energy Drinks.',
-    images: ['/brand/APEX.webp'],
+    title: 'Corporate & Bulk Orders | REBELIVE',
+    description:
+      'Explore bulk purchases, corporate gifting, team orders, and business partnerships with Rebelive. Contact us to discuss your requirements.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

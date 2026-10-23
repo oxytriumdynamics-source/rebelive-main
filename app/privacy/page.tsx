@@ -2,17 +2,37 @@ import type { Metadata } from 'next';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Privacy Policy',
+  title: {
+    absolute: 'Privacy Policy | REBELIVE',
+  },
   description:
-    'Privacy Policy for rebelive.com, operated by Oxytrium Dynamics Private Limited. Learn how we collect, store, and protect your personal information.',
+    'Learn how Rebelive collects, uses, stores, and protects personal information when you browse the website, take the quiz, or place an order.',
   alternates: {
     canonical: '/privacy',
   },
   openGraph: {
     title: 'Privacy Policy | REBELIVE',
-    description: 'Privacy Policy for rebelive.com by Oxytrium Dynamics Private Limited.',
-    url: 'https://rebelive.com/privacy',
+    description:
+      'Learn how Rebelive collects, uses, stores, and protects personal information when you browse the website, take the quiz, or place an order.',
+    url: 'https://www.rebelive.com/privacy',
     siteName: 'REBELIVE',
+    images: [
+      {
+        url: '/brand/rebelive-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Privacy Policy | REBELIVE',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Privacy Policy | REBELIVE',
+    description:
+      'Learn how Rebelive collects, uses, stores, and protects personal information when you browse the website, take the quiz, or place an order.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

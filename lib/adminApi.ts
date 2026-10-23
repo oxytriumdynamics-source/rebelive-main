@@ -606,11 +606,12 @@ export async function fetchAdminUsers(params?: {
   try {
     const res = await adminClient.get('/users', { params });
     if (res.data?.status === 'success' && Array.isArray(res.data?.data)) {
+      const p = res.data.pagination;
       return {
         data: res.data.data,
-        total: res.data.total || res.data.data.length,
-        page: res.data.page || 1,
-        totalPages: res.data.totalPages || 1,
+        total: typeof p?.total === 'number' ? p.total : typeof res.data.total === 'number' ? res.data.total : res.data.data.length,
+        page: typeof p?.page === 'number' ? p.page : typeof res.data.page === 'number' ? res.data.page : 1,
+        totalPages: typeof p?.totalPages === 'number' ? p.totalPages : typeof res.data.totalPages === 'number' ? res.data.totalPages : 1,
       };
     }
   } catch (err) {

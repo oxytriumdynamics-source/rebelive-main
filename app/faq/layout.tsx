@@ -1,23 +1,26 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Frequently Asked Questions (FAQ)',
+  title: {
+    absolute: 'FAQs | REBELIVE Ingredients, Products & Orders',
+  },
   description:
-    'Answers to all questions about REBELIVE : caffeine content, natural ingredients, zero sugar formulations, certifications, orders, and shipping.',
+    'Get answers to frequently asked questions about Rebelive.',
   alternates: {
     canonical: '/faq',
   },
   openGraph: {
-    title: 'Frequently Asked Questions | REBELIVE',
-    description: 'Learn about REBELIVE ingredients, science, formulation, and cold delivery.',
-    url: 'https://rebelive.com/faq',
+    title: 'FAQs | REBELIVE Ingredients, Products & Orders',
+    description:
+      'Get answers to frequently asked questions about Rebelive.',
+    url: 'https://www.rebelive.com/faq',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'REBELIVE FAQ',
+        alt: 'FAQs | REBELIVE Ingredients, Products & Orders',
       },
     ],
     locale: 'en_US',
@@ -25,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Frequently Asked Questions | REBELIVE',
-    description: 'Ingredients, science, caffeine dosage, and cold dispatch FAQs.',
-    images: ['/brand/APEX.webp'],
+    title: 'FAQs | REBELIVE Ingredients, Products & Orders',
+    description:
+      'Get answers to frequently asked questions about Rebelive.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

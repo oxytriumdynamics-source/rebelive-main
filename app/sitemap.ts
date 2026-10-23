@@ -2,7 +2,7 @@ import type { MetadataRoute } from 'next';
 import { fetchProducts } from '@/lib/productsApi';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://rebelive.com';
+  const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rebelive.com';
   const now = new Date();
 
   // Public marketing & informational routes (strictly excluding /root)

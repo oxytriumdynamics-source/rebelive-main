@@ -14,6 +14,11 @@ import {
   X,
   CreditCard,
   ShoppingBag,
+  ChevronLeft,
+  ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
+  Filter,
 } from 'lucide-react';
 import {
   fetchAdminUsers,
@@ -27,21 +32,64 @@ import { showAdminToast } from '@/components/root/AdminToaster';
 
 const MONO = "'JetBrains Mono', monospace";
 
+function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, i) => i + 1);
+  }
+
+  const pages: (number | 'ellipsis')[] = [1];
+
+  if (currentPage > 3) {
+    pages.push('ellipsis');
+  }
+
+  const start = Math.max(2, currentPage - 1);
+  const end = Math.min(totalPages - 1, currentPage + 1);
+
+  for (let i = start; i <= end; i++) {
+    pages.push(i);
+  }
+
+  if (currentPage < totalPages - 2) {
+    pages.push('ellipsis');
+  }
+
+  pages.push(totalPages);
+  return pages;
+}
+
 export function RootUsersTab() {
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [total, setTotal] = useState(0);
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [limit, setLimit] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN'>('ALL');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [feedback, setFeedback] = useState('');
   const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
 
-  const loadUsers = async () => {
+  const loadUsers = async (
+    targetPage = page,
+    targetSearch = search,
+    targetRole = roleFilter,
+    targetLimit = limit
+  ) => {
     setIsLoading(true);
     try {
-      const res = await fetchAdminUsers({ search: search || undefined });
+      const res = await fetchAdminUsers({
+        search: targetSearch.trim() || undefined,
+        role: targetRole === 'ALL' ? undefined : targetRole,
+        page: targetPage,
+        limit: targetLimit,
+      });
       setUsers(res.data);
       setTotal(res.total);
+      setPage(res.page || targetPage);
+      const calculatedPages = Math.max(1, Math.ceil(res.total / targetLimit));
+      setTotalPages(res.totalPages || calculatedPages);
     } catch (err) {
       console.error('Error fetching admin users:', err);
     } finally {
@@ -51,12 +99,37 @@ export function RootUsersTab() {
 
   useEffect(() => {
     setCurrentAdmin(getStoredAdminUser());
-    loadUsers();
+    loadUsers(1, '', 'ALL', 15);
   }, []);
+
+  const handlePageChange = (newPage: number) => {
+    if (newPage < 1 || newPage > totalPages || newPage === page || isLoading) return;
+    setPage(newPage);
+    loadUsers(newPage, search, roleFilter, limit);
+  };
 
   const handleSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    loadUsers();
+    setPage(1);
+    loadUsers(1, search, roleFilter, limit);
+  };
+
+  const handleClearSearch = () => {
+    setSearch('');
+    setPage(1);
+    loadUsers(1, '', roleFilter, limit);
+  };
+
+  const handleRoleFilterChange = (newRole: 'ALL' | 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN') => {
+    setRoleFilter(newRole);
+    setPage(1);
+    loadUsers(1, search, newRole, limit);
+  };
+
+  const handleLimitChange = (newLimit: number) => {
+    setLimit(newLimit);
+    setPage(1);
+    loadUsers(1, search, roleFilter, newLimit);
   };
 
   const handleToggleRestrict = async (userId: string, currentRestricted: boolean) => {
@@ -115,26 +188,65 @@ export function RootUsersTab() {
   return (
     <div className="space-y-6 animate-in fade-in duration-200">
       {/* Top Search & Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold uppercase tracking-wider text-white">
-            USER ACCOUNTS & CUSTOMER DIRECTORY
+            USER ACCOUNTS &amp; CUSTOMER DIRECTORY
           </h2>
           <p className="text-xs text-white/50 font-mono">
             {total} registered operators and verified customer accounts
+            {search && <span className="text-white/70 ml-1">· matching &quot;{search}&quot;</span>}
           </p>
         </div>
 
-        <form onSubmit={handleSearchSubmit} className="relative flex-1 max-w-sm">
-          <Search className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-          <input
-            type="text"
-            placeholder="Search Name, Email, Phone..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-[#0f0f0f] border border-white/10 rounded-xl py-2.5 pl-10 pr-4 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
-          />
-        </form>
+        <div className="flex flex-wrap items-center gap-2.5">
+          {/* Role Filter */}
+          <div className="relative">
+            <select
+              value={roleFilter}
+              onChange={(e) => handleRoleFilterChange(e.target.value as any)}
+              className="bg-[#0f0f0f] border border-white/10 rounded-xl py-2.5 px-3 text-xs text-white/80 font-mono focus:outline-none focus:border-white/30 cursor-pointer appearance-none pr-8"
+            >
+              <option value="ALL">All Roles</option>
+              <option value="CUSTOMER">Customer</option>
+              <option value="ADMIN">Admin</option>
+              <option value="SUPERADMIN">Super Admin</option>
+            </select>
+            <Filter className="w-3.5 h-3.5 text-white/40 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
+
+          {/* Search Input */}
+          <form onSubmit={handleSearchSubmit} className="relative flex-1 sm:w-72">
+            <Search className="w-4 h-4 text-white/40 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              type="text"
+              placeholder="Search Name, Email, Phone..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full bg-[#0f0f0f] border border-white/10 rounded-xl py-2.5 pl-10 pr-9 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white/30 font-mono"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={handleClearSearch}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-white/40 hover:text-white transition-colors cursor-pointer"
+                title="Clear Search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </form>
+
+          {/* Refresh Button */}
+          <button
+            onClick={() => loadUsers(page, search, roleFilter, limit)}
+            disabled={isLoading}
+            title="Refresh Directory"
+            className="p-2.5 rounded-xl border border-white/10 bg-[#0f0f0f] hover:bg-white/5 text-white/70 hover:text-white transition-colors cursor-pointer disabled:opacity-40"
+          >
+            <RefreshCw className={`w-4 h-4 ${isLoading ? 'animate-spin text-white' : ''}`} />
+          </button>
+        </div>
       </div>
 
       {feedback && (
@@ -151,7 +263,7 @@ export function RootUsersTab() {
               <tr>
                 <th className="py-3.5 px-4 sm:px-6">USER IDENTITY</th>
                 <th className="py-3.5 px-4">ROLE</th>
-                <th className="py-3.5 px-4">PHONE & CONTACT</th>
+                <th className="py-3.5 px-4">PHONE &amp; CONTACT</th>
                 <th className="py-3.5 px-4">ORDERS</th>
                 <th className="py-3.5 px-4">TOTAL SPENT</th>
                 <th className="py-3.5 px-4">REGISTERED</th>
@@ -244,6 +356,98 @@ export function RootUsersTab() {
               )}
             </tbody>
           </table>
+        </div>
+
+        {/* Pagination Bar */}
+        <div className="border-t border-white/10 bg-white/[0.02] px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 font-mono text-xs">
+          <div className="flex flex-wrap items-center gap-3 text-white/60 text-[11px]">
+            <span>
+              Showing{' '}
+              <strong className="text-white">
+                {total === 0 ? 0 : (page - 1) * limit + 1}
+              </strong>
+              –
+              <strong className="text-white">
+                {Math.min(page * limit, total)}
+              </strong>{' '}
+              of <strong className="text-white">{total}</strong> users
+            </span>
+            <span className="text-white/20">|</span>
+            <div className="flex items-center gap-1.5">
+              <span className="text-white/40">Per page:</span>
+              <select
+                value={limit}
+                onChange={(e) => handleLimitChange(Number(e.target.value))}
+                className="bg-black/60 border border-white/15 rounded-lg px-2 py-1 text-white text-[11px] focus:outline-none focus:border-white/40 cursor-pointer"
+              >
+                <option value={15}>15</option>
+                <option value={30}>30</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-1.5">
+            <button
+              onClick={() => handlePageChange(1)}
+              disabled={page <= 1 || isLoading}
+              title="First Page"
+              className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            >
+              <ChevronsLeft className="w-4 h-4" />
+            </button>
+            <button
+              onClick={() => handlePageChange(page - 1)}
+              disabled={page <= 1 || isLoading}
+              title="Previous Page"
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+              <span className="text-[11px] hidden sm:inline">Prev</span>
+            </button>
+
+            <div className="flex items-center gap-1 mx-1">
+              {getPageNumbers(page, totalPages).map((p, idx) =>
+                p === 'ellipsis' ? (
+                  <span key={`ellipsis-${idx}`} className="px-1.5 text-white/30 text-[11px]">
+                    …
+                  </span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => handlePageChange(p)}
+                    disabled={isLoading}
+                    className={`min-w-[30px] h-7 px-2 rounded-lg text-[11px] font-mono transition-all cursor-pointer ${
+                      p === page
+                        ? 'bg-white text-black font-bold shadow-[0_0_12px_rgba(255,255,255,0.3)]'
+                        : 'border border-white/10 bg-white/5 text-white/70 hover:bg-white/15 hover:text-white'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
+            </div>
+
+            <button
+              onClick={() => handlePageChange(page + 1)}
+              disabled={page >= totalPages || isLoading}
+              title="Next Page"
+              className="px-2.5 py-1.5 rounded-lg border border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer flex items-center gap-1"
+            >
+              <span className="text-[11px] hidden sm:inline">Next</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={() => handlePageChange(totalPages)}
+              disabled={page >= totalPages || isLoading}
+              title="Last Page"
+              className="p-1.5 rounded-lg border border-white/10 bg-white/5 text-white/70 hover:text-white hover:bg-white/15 disabled:opacity-30 disabled:pointer-events-none transition-colors cursor-pointer"
+            >
+              <ChevronsRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
       </div>
 

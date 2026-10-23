@@ -1,23 +1,26 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Rebel Archetype Quiz | Claim Your Rebel ID',
+  title: {
+    absolute: 'Discover Your Rebel Persona | REBELIVE Quiz',
+  },
   description:
-    'Calibrate your inner operator archetype: APEX, CAPELLA, or AVIVA. Complete the quiz to unlock your customized Holographic Rebel Pass and unique Rebel ID.',
+    'Answer five questions to discover your REBEL persona, and claim your digital Rebel ID.',
   alternates: {
     canonical: '/persona',
   },
   openGraph: {
-    title: 'Claim Your Rebel ID | Operator Calibration Quiz',
-    description: 'Find your archetype and claim your verifiable Rebel ID pass.',
-    url: 'https://rebelive.com/persona',
+    title: 'Discover Your Rebel Persona | REBELIVE Quiz',
+    description:
+      'Answer five questions to discover your REBEL persona, and claim your digital Rebel ID.',
+    url: 'https://www.rebelive.com/persona',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'Rebel Archetype Calibration Quiz',
+        alt: 'Discover Your Rebel Persona | REBELIVE Quiz',
       },
     ],
     locale: 'en_US',
@@ -25,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Claim Your Rebel ID | Operator Calibration Quiz',
-    description: 'Calibrate your inner operator archetype.',
-    images: ['/brand/APEX.webp'],
+    title: 'Discover Your Rebel Persona | REBELIVE Quiz',
+    description:
+      'Answer five questions to discover your REBEL persona, and claim your digital Rebel ID.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

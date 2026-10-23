@@ -3,17 +3,37 @@ import Link from 'next/link';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Terms of Service | User Agreement & Legal Notice',
+  title: {
+    absolute: 'Terms and Conditions | REBELIVE',
+  },
   description:
-    'Terms and Conditions for rebelive.com, operated by Oxytrium Dynamics Private Limited. Covers orders, subscriptions, intellectual property, and user terms.',
+    'Read the terms governing access to and use of the Rebelive website, purchases, payments, and related services provided by Oxytrium Dynamics Private Limited.',
   alternates: {
     canonical: '/terms',
   },
   openGraph: {
-    title: 'Terms of Service | REBELIVE',
-    description: 'Terms and Conditions for rebelive.com by Oxytrium Dynamics Private Limited.',
-    url: 'https://rebelive.com/terms',
+    title: 'Terms and Conditions | REBELIVE',
+    description:
+      'Read the terms governing access to and use of the Rebelive website, purchases, payments, and related services provided by Oxytrium Dynamics Private Limited.',
+    url: 'https://www.rebelive.com/terms',
     siteName: 'REBELIVE',
+    images: [
+      {
+        url: '/brand/rebelive-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Terms and Conditions | REBELIVE',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Terms and Conditions | REBELIVE',
+    description:
+      'Read the terms governing access to and use of the Rebelive website, purchases, payments, and related services provided by Oxytrium Dynamics Private Limited.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

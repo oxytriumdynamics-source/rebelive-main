@@ -2,17 +2,37 @@ import type { Metadata } from 'next';
 import SubpageShell from '@/components/layout/SubpageShell';
 
 export const metadata: Metadata = {
-  title: 'Refund & Replacement Policy | Quality Guarantee',
+  title: {
+    absolute: 'Return & Refund Policy | REBELIVE',
+  },
   description:
-    'Return & Refund Policy for REBELIVE, operated by Oxytrium Dynamics Private Limited. Learn how we handle damaged shipments, replacements, and refunds.',
+    'Learn how Rebelive handles returns and refunds for customer orders.',
   alternates: {
     canonical: '/refund',
   },
   openGraph: {
-    title: 'Refund & Replacement Policy | REBELIVE',
-    description: 'Learn how we handle returns, replacements, and refunds for REBELIVE orders.',
-    url: 'https://rebelive.com/refund',
+    title: 'Return & Refund Policy | REBELIVE',
+    description:
+      'Learn how Rebelive handles returns and refunds for customer orders.',
+    url: 'https://www.rebelive.com/refund',
     siteName: 'REBELIVE',
+    images: [
+      {
+        url: '/brand/rebelive-og.png',
+        width: 1200,
+        height: 630,
+        alt: 'Return & Refund Policy | REBELIVE',
+      },
+    ],
+    locale: 'en_US',
+    type: 'website',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Return & Refund Policy | REBELIVE',
+    description:
+      'Learn how Rebelive handles returns and refunds for customer orders.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

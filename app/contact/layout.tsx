@@ -1,23 +1,26 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Contact Us | Inquiries & Support',
+  title: {
+    absolute: 'Contact REBELIVE | Customer Support',
+  },
   description:
-    'Reach out to REBELIVE headquarters. Inquiries for distribution, wholesale orders, retail stocking, athlete sponsorships, or customer support.',
+    'Contact the Rebelive team for product enquiries, order queries, and feedback.',
   alternates: {
     canonical: '/contact',
   },
   openGraph: {
-    title: 'Contact REBELIVE Headquarters',
-    description: 'Direct inquiries for distribution, wholesale, retail partnerships, and support.',
-    url: 'https://rebelive.com/contact',
+    title: 'Contact REBELIVE | Customer Support',
+    description:
+      'Contact the Rebelive team for product enquiries, order queries, and feedback.',
+    url: 'https://www.rebelive.com/contact',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'Contact REBELIVE',
+        alt: 'Contact REBELIVE | Customer Support',
       },
     ],
     locale: 'en_US',
@@ -25,9 +28,10 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact REBELIVE Headquarters',
-    description: 'Get in touch with the REBELIVE command team.',
-    images: ['/brand/APEX.webp'],
+    title: 'Contact REBELIVE | Customer Support',
+    description:
+      'Contact the Rebelive team for product enquiries, order queries, and feedback.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 

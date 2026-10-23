@@ -1,33 +1,37 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'The Story of REBELIVE',
+  title: {
+    absolute: 'Our Story | The Origin of REBELIVE',
+  },
   description:
-    'Read how a question about human potential and relentless momentum sparked the creation of REBELIVE. The journey of formulating zero-compromise Energy Drinks.',
+    'Discover the idea that sparked Rebelive, and the thinking behind the brand.',
   alternates: {
     canonical: '/story',
   },
   openGraph: {
-    title: 'The Story of REBELIVE | The Origin Story',
-    description: 'Why did the apple fall? Discover the realization that launched REBELIVE.',
-    url: 'https://rebelive.com/story',
+    title: 'Our Story | The Origin of REBELIVE',
+    description:
+      'Discover the idea that sparked Rebelive, and the thinking behind the brand.',
+    url: 'https://www.rebelive.com/story',
     siteName: 'REBELIVE',
     images: [
       {
-        url: '/brand/APEX.webp',
+        url: '/brand/rebelive-og.png',
         width: 1200,
         height: 630,
-        alt: 'The Story of REBELIVE',
+        alt: 'Our Story | The Origin of REBELIVE',
       },
     ],
     locale: 'en_US',
-    type: 'article',
+    type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'The Story of REBELIVE | The Origin Story',
-    description: 'The journey of formulating zero-compromise Energy Drinks.',
-    images: ['/brand/APEX.webp'],
+    title: 'Our Story | The Origin of REBELIVE',
+    description:
+      'Discover the idea that sparked Rebelive, and the thinking behind the brand.',
+    images: ['/brand/rebelive-og.png'],
   },
 };
 
