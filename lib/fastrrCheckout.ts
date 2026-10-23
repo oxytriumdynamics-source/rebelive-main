@@ -360,11 +360,46 @@ export async function launchFastrrCheckout(
     throw new Error('Could not initiate Fastrr checkout. Please check your network and try again.');
   }
 
-  // 3. Setup window postMessage listener for exit/close events from Fastrr
+  // 3. Setup window postMessage listener for exit/close and redirect events from Fastrr
   const handleFastrrMessage = (e: MessageEvent) => {
     if (e.data) {
       extractAndStoreFastrrData(e.data);
     }
+
+    // Handle payment redirects (e.g. UPI, NetBanking, 3DS authentication)
+    if (e.data?.trigger === 'headless-redirect' && e.data?.actions?.[0]?.data?.url) {
+      window.location.href = e.data.actions[0].data.url;
+      return;
+    }
+    if (e.data?.trigger === 'headless-redirect-post' && e.data?.data) {
+      try {
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = e.data.data;
+        form.target = '_parent';
+        document.body.appendChild(form);
+        form.submit();
+      } catch (err) {
+        console.warn('Fastrr form redirect error:', err);
+      }
+      return;
+    }
+
+    // Handle order completion
+    if (
+      e.data?.trigger === 'order-success' ||
+      e.data?.trigger === 'payment-success' ||
+      e.data?.event === 'order_placed'
+    ) {
+      const orderId = e.data?.order_id || e.data?.data?.order_id || e.data?.orderId;
+      if (orderId) {
+        sessionStorage.setItem('rebelive_last_order_id', String(orderId));
+        localStorage.setItem('rebelive_last_order_id', String(orderId));
+      }
+      window.location.href = fallbackUrl;
+      return;
+    }
+
     if (
       e.data?.trigger === 'close-checkout' ||
       e.data?.trigger === 'exit-checkout' ||
@@ -386,10 +421,19 @@ export async function launchFastrrCheckout(
   if (window.HeadlessCheckout && typeof window.HeadlessCheckout.addToCart === 'function') {
     const nativeEvent = event?.nativeEvent || event || new MouseEvent('click');
 
-    // Dismiss preloader once iframe loads
+    // Upgrade iframe permissions (payment, camera for UPI QR, clipboard, web-share)
     const checkIframe = setInterval(() => {
       const iframe = document.getElementById('headless-iframe') as HTMLIFrameElement | null;
       if (iframe) {
+        try {
+          const currentAllow = iframe.getAttribute('allow') || '';
+          const needed = ['payment', 'camera', 'clipboard-read', 'clipboard-write', 'web-share', 'geolocation'];
+          const missing = needed.filter((p) => !currentAllow.includes(p));
+          if (missing.length > 0) {
+            iframe.setAttribute('allow', `${currentAllow}; ${missing.join('; ')}`.trim().replace(/^;\s*/, ''));
+          }
+        } catch {}
+
         iframe.addEventListener('load', () => {
           const preloader = document.getElementById('fastrr-pre-loader');
           if (preloader) {
@@ -416,7 +460,7 @@ export async function launchFastrrCheckout(
       token,
       {
         fallbackUrl,
-        isInitiatedFromApp: true,
+        isInitiatedFromApp: false, // Production web checkout: false ensures web UPI, QR code & gateway flows
       },
       (callbackData: any) => {
         if (callbackData) {
