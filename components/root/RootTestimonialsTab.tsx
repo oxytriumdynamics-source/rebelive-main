@@ -34,7 +34,7 @@ import {
 import { compressImage, formatFileSize } from '@/lib/imageCompression';
 import { showAdminToast } from './AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 function getInitials(name: string): string {
   if (!name) return 'R';

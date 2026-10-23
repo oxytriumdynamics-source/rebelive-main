@@ -28,7 +28,7 @@ export default function DoneStage({
       <div className="relative z-10 flex w-full items-center justify-end px-6 pt-4 sm:px-10 sm:pt-6">
         <span
           className="font-mono text-[10px] uppercase tracking-[0.25em] text-ash font-medium"
-          style={{ fontFamily: "JetBrains Mono, Courier New, monospace" }}
+          style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
         >
           Reward Unlocked
         </span>
@@ -69,13 +69,13 @@ export default function DoneStage({
         >
           <span
             className="font-mono text-[10px] uppercase tracking-[0.3em] text-ash"
-            style={{ fontFamily: "JetBrains Mono, Courier New, monospace" }}
+            style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
           >
             Rebel Certified
           </span>
           <h1
             className="font-display mt-2 text-[clamp(1.8rem,6vw,3rem)] leading-tight text-ink"
-            style={{ fontFamily: "Anton, Arial Narrow, sans-serif" }}
+            style={{ fontFamily: "'Code Next', sans-serif" }}
           >
             Welcome to the pack, {name}.
           </h1>
@@ -86,10 +86,10 @@ export default function DoneStage({
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.5 }}
           className="max-w-sm text-[13px] leading-relaxed text-ash"
-          style={{ fontFamily: "Inter, -apple-system, sans-serif" }}
+          style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
         >
           Your Rebel ID is now stamped{" "}
-          <span className="font-display text-ink" style={{ fontFamily: "Anton, Arial Narrow, sans-serif" }}>
+          <span className="font-display text-ink" style={{ fontFamily: "'Code Next', sans-serif" }}>
             {persona.name}
           </span>
           . Keep an eye on your inbox - this year&rsquo;s completely unpredictable Rebelive
@@ -101,7 +101,7 @@ export default function DoneStage({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.65 }}
           className="group flex items-center gap-2 bg-ink px-7 py-4 font-mono text-[11px] uppercase tracking-[0.2em] text-paper transition-all duration-200 hover:bg-ink/85"
-          style={{ fontFamily: "JetBrains Mono, Courier New, monospace" }}
+          style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
         >
           VIEW YOUR REBEL ID
           <ArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
@@ -113,13 +113,13 @@ export default function DoneStage({
         <button
           onClick={onRestart}
           className="flex items-center gap-2 font-mono text-[10px] uppercase tracking-[0.2em] text-ash transition-colors hover:text-ink"
-          style={{ fontFamily: "JetBrains Mono, Courier New, monospace" }}
+          style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
         >
           <RotateCcw className="h-3 w-3" /> Run again
         </button>
         <span
           className="font-mono text-[9px] uppercase tracking-[0.3em] text-ash"
-          style={{ fontFamily: "JetBrains Mono, Courier New, monospace" }}
+          style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
         >
           WAKE · FUEL · REBEL
         </span>

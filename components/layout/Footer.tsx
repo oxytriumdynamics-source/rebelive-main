@@ -201,10 +201,10 @@ export const Footer: React.FC<FooterProps> = ({
           />
         </div>
 
-        <div className="relative text-center px-2 sm:px-4 max-w-full mx-auto flex flex-col items-center">
+        <div className="relative text-center px-1 sm:px-2 md:px-3 w-full max-w-full mx-auto flex flex-col items-center overflow-hidden">
           <p
             ref={headingRef}
-            className="text-[11.2vw] sm:text-[9.5vw] md:text-[10.5vw] lg:text-[11vw] xl:text-[11.6vw] 2xl:text-[12.2vw] font-tall font-semibold tracking-normal sm:tracking-wide md:tracking-wider uppercase leading-[0.88] select-none text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400 drop-shadow-[0_20px_45px_rgba(255,255,255,0.22)] whitespace-nowrap transition-transform duration-500 hover:scale-[1.01] flex items-center justify-center gap-1.5 sm:gap-3 md:gap-5 lg:gap-6"
+            className="w-full text-center text-[12.2vw] sm:text-[12.6vw] md:text-[13vw] lg:text-[13.4vw] xl:text-[13.6vw] font-tall font-black tracking-normal uppercase leading-[0.82] select-none text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400  whitespace-nowrap transition-transform duration-500 hover:scale-[1.01] flex items-center justify-center gap-1.5 sm:gap-2.5 md:gap-4 lg:gap-5"
           >
             <span>WAKE .</span>
 

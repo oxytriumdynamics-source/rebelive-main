@@ -28,8 +28,8 @@ import ProfileOrdersTab from "./ProfileOrdersTab";
 import ProfileDetailsTab from "./ProfileDetailsTab";
 import ProfileAddressesTab from "./ProfileAddressesTab";
 
-const MONO = "JetBrains Mono, Courier New, monospace";
-const DISPLAY = "'Code Next', Anton, 'Arial Narrow', sans-serif";
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
+const DISPLAY = "'Code Next', sans-serif";
 
 const SLUG_TO_PERSONA: Record<string, keyof typeof PERSONAS> = {
   apex: "APEX",

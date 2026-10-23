@@ -315,7 +315,7 @@ export default function ShopPage() {
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ duration: 0.2, ease: 'easeOut' }}
-                className="relative w-full max-w-md bg-[#0a0a0ae5] border border-white/15 rounded-3xl p-6 sm:p-7 shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden text-white z-10"
+                className="relative w-full max-w-lg sm:max-w-xl bg-[#0a0a0ae5] border border-white/15 rounded-3xl p-6 sm:p-7 shadow-[0_25px_60px_rgba(0,0,0,0.95)] overflow-hidden text-white z-10"
               >
                 {/* Specular hairline top glow */}
                 <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/40 to-transparent pointer-events-none" />
@@ -341,13 +341,13 @@ export default function ShopPage() {
                 </div>
 
                 {/* Pack Selection (3, 6, 9, 12) */}
-                <div className="space-y-2.5 mb-6">
+                <div className="space-y-3 mb-6">
                   <div className="flex items-center justify-between text-xs font-mono text-white/50 uppercase">
                     <span>Choose Pack Size:</span>
                     <span className="text-emerald-400 font-bold">{PRICES[modalPack].discount}</span>
                   </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
                     {([3, 6, 9, 12] as PackSize[]).map((size) => {
                       const isSelected = modalPack === size;
                       const varMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
@@ -371,21 +371,21 @@ export default function ShopPage() {
                           onClick={() => {
                             setModalPack(size);
                           }}
-                          className={`p-3.5 rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between ${
+                          className={`py-4 px-2.5 sm:px-3 sm:py-5 min-h-[105px] sm:min-h-[116px] rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between items-center ${
                             isSelected
-                              ? 'bg-white text-black font-bold shadow-[0_0_20px_rgba(255,255,255,0.3)] ring-2 ring-white scale-[1.02]'
+                              ? 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
                               : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white border border-white/10'
                           }`}
                         >
-                          <div className="font-mono text-xs font-bold uppercase">
+                          <div className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider">
                             Pack of {size}
                           </div>
-                          <div className="my-1.5">
-                            <span className="font-mono text-base font-black">
+                          <div className="my-auto py-1 flex flex-col items-center justify-center">
+                            <span className="font-mono text-base sm:text-lg font-black leading-none">
                               ₹{displayPrice}
                             </span>
                             {displayMrp && displayMrp > displayPrice && (
-                              <span className={`text-[10px] line-through ml-1 font-mono ${isSelected ? 'text-black/50' : 'text-white/40'}`}>
+                              <span className={`text-[10px] sm:text-[11px] line-through font-mono mt-1 ${isSelected ? 'text-black/60 font-medium' : 'text-white/45'}`}>
                                 ₹{displayMrp}
                               </span>
                             )}
@@ -397,7 +397,7 @@ export default function ShopPage() {
                 </div>
 
                 {/* Confirm Add to Cart and Instant Checkout Buttons */}
-                <div className="grid grid-cols-2 gap-2 mt-4">
+                <div className="grid grid-cols-2 gap-3 mt-5">
                   <button
                     type="button"
                     onClick={handleConfirmAddToCart}

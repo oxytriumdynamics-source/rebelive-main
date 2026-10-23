@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-const MONO = "JetBrains Mono, Courier New, monospace";
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
 
 interface SiteFooterProps {
   borderColor?: string;

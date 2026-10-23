@@ -10,7 +10,7 @@ import EverestPattern from './EverestPattern';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { claimPersona } from '@/store/slices/authslice';
 
-const MONO = 'JetBrains Mono, Courier New, monospace';
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
 
 export default function ResultStage({
   result,

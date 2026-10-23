@@ -456,7 +456,7 @@ export default function MemberCard({
                     <>
                       <p
                         className={`${compact ? "text-[14px]" : "text-[18px]"} font-semibold leading-snug text-white/80`}
-                        style={{ fontFamily: "Inter, -apple-system, sans-serif", maxWidth: "10rem" }}
+                        style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif", maxWidth: "10rem" }}
                       >
                         {memberName.split(" ")[0]}
                         <br />
@@ -481,7 +481,7 @@ export default function MemberCard({
                     <>
                       <p
                         className={`${compact ? "text-[13px]" : "text-[15px]"} font-medium leading-snug text-black/70`}
-                        style={{ fontFamily: "Inter, -apple-system, sans-serif", maxWidth: "9rem" }}
+                        style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif", maxWidth: "9rem" }}
                       >
                         {memberName.split(" ")[0]}
                         <br />
@@ -505,7 +505,7 @@ export default function MemberCard({
                     <>
                       <p
                         className={`${compact ? "text-[13px]" : "text-[15px]"} font-medium leading-snug text-black/70`}
-                        style={{ fontFamily: "Inter, -apple-system, sans-serif", maxWidth: "9rem" }}
+                        style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif", maxWidth: "9rem" }}
                       >
                         {memberName.split(" ")[0]}
                         <br />

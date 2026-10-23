@@ -27,12 +27,12 @@ function getFlavorHeadingStyles(productId: string) {
       };
     case 'capella':
       return {
-        fontFamily: 'var(--font-capella)',
+        fontFamily: "'Nasalization', 'Nasalization Rg', var(--font-capella), sans-serif",
         className: 'text-xl sm:text-2xl md:text-3xl lg:text-[2.6rem] tracking-[0.18em] font-extrabold text-white',
       };
     case 'aviva':
       return {
-        fontFamily: 'var(--font-aviva)',
+        fontFamily: "var(--font-protest-revolution), 'Protest Revolution', var(--font-aviva), cursive, sans-serif",
         className: 'text-2xl sm:text-3xl md:text-4xl lg:text-[3.1rem] tracking-normal font-bold text-white',
       };
     default:

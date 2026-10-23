@@ -35,9 +35,9 @@ import {
   getMe,
 } from "@/store/slices/authslice";
 
-const MONO = "JetBrains Mono, Courier New, monospace";
-const DISPLAY = "Anton, Arial Narrow, sans-serif";
-const SANS = "Inter, -apple-system, sans-serif";
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
+const DISPLAY = "'Code Next', sans-serif";
+const SANS = "var(--font-poppins), 'Poppins', sans-serif";
 
 // ── Stage types ──────────────────────────────────────────
 type Mode = "signup" | "login" | "forgot";

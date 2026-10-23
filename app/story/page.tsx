@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import { ArrowRight, ChevronDown, Sparkles, Zap, Shield, Heart, X, ArrowUp } from 'lucide-react';
 
-const MONO = "'JetBrains Mono', 'Poppins', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 const SECTIONS = [
@@ -880,7 +880,7 @@ export default function StoryPage() {
                           {hasTwoIdiots ? (
                             <>
                               Yep. That’s me. I exist because my founders were{' '}
-                              <span className="font-['Permanent_Marker'] font-normal text-amber-300 text-xs sm:text-base md:text-lg tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/35 inline-block rotate-[-2deg] mx-1 shadow-[0_0_20px_rgba(251,191,36,0.2)] select-none">
+                              <span className="font-semibold text-amber-300 text-xs sm:text-base md:text-lg tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/35 inline-block rotate-[-2deg] mx-1 shadow-[0_0_20px_rgba(251,191,36,0.2)] select-none">
                                 two absolute idiots
                               </span>{' '}
                               who couldn’t keep their own shit together.

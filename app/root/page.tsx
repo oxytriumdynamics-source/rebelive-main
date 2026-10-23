@@ -40,7 +40,7 @@ import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
 import { RootSettingsTab } from '@/components/root/RootSettingsTab';
 import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 export default function AdminRootPage() {

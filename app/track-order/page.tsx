@@ -27,7 +27,7 @@ import {
 } from '@/store/slices/shippingSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 function TrackOrderContent() {

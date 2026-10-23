@@ -9,7 +9,7 @@ interface RootAuthGatewayProps {
   onAuthenticated: (user: AdminUser, token: string) => void;
 }
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 export function RootAuthGateway({ onAuthenticated }: RootAuthGatewayProps) {

@@ -27,8 +27,8 @@ import {
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import { AuthUser } from "@/store/slices/authslice";
 
-const MONO = "JetBrains Mono, Courier New, monospace";
-const DISPLAY = "'Code Next', Anton, 'Arial Narrow', sans-serif";
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
+const DISPLAY = "'Code Next', sans-serif";
 
 interface ProfileAddressesTabProps {
   user?: AuthUser | null;

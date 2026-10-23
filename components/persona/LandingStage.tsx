@@ -6,8 +6,8 @@ import { ArrowRight, Lock, Sparkles } from 'lucide-react';
 import { useAppSelector } from '@/store/hooks';
 import { useRouter } from 'next/navigation';
 
-const MONO = 'JetBrains Mono, Courier New, monospace';
-const DISPLAY = 'Anton, Arial Narrow, sans-serif';
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
+const DISPLAY = "'Code Next', sans-serif";
 
 export default function LandingStage({
   onStart,

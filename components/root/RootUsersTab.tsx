@@ -30,7 +30,7 @@ import {
 import { formatRebelId } from '@/lib/auth';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 function getPageNumbers(currentPage: number, totalPages: number): (number | 'ellipsis')[] {
   if (totalPages <= 7) {

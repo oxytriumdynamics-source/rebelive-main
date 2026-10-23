@@ -25,7 +25,7 @@ import { fetchPublicBlogBySlug } from '@/lib/blogsApi';
 import { AdminBlog } from '@/lib/adminApi';
 
 const SANS = "'Poppins', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 export default function BlogPostReaderPage() {
   const params = useParams();
@@ -477,7 +477,7 @@ export default function BlogPostReaderPage() {
           margin: 2rem 0;
         }
         .article-prose figcaption {
-          font-family: 'JetBrains Mono', monospace;
+          font-family: 'Poppins', sans-serif;
           font-size: 0.75rem;
           text-align: center;
           color: rgba(255, 255, 255, 0.5);

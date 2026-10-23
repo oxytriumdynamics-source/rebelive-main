@@ -33,7 +33,7 @@ import {
 } from '@/lib/adminApi';
 import { showAdminToast } from './AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 const STATUS_CONFIG: Record<

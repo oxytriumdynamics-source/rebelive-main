@@ -25,7 +25,7 @@ import {
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 export function RootShiprocketTab() {
   const dispatch = useAppDispatch();

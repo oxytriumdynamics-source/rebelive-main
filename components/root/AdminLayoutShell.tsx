@@ -38,7 +38,7 @@ import {
 import { RootAuthGateway } from '@/components/root/RootAuthGateway';
 import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 interface AdminLayoutShellProps {

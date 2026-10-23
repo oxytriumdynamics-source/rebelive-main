@@ -32,7 +32,7 @@ import {
 } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 export default function OrderDetailsPage() {
   const params = useParams();

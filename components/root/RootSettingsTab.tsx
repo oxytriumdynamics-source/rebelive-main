@@ -28,7 +28,7 @@ import {
 import { formatRebelId } from '@/lib/auth';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
 interface RootSettingsTabProps {

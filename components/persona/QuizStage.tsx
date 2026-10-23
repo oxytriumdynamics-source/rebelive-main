@@ -8,7 +8,7 @@ import { Persona } from '@/data/questions';
 import { ArrowUpRight } from 'lucide-react';
 
 const TAGS = ['A', 'B', 'C'];
-const MONO = 'JetBrains Mono, Courier New, monospace';
+const MONO = "var(--font-poppins), 'Poppins', sans-serif";
 
 export default function QuizStage({
   question,
@@ -87,7 +87,7 @@ export default function QuizStage({
             <h2
               className="text-white select-none leading-[1.1] mb-6 font-bold"
               style={{
-                fontFamily: 'Inter, -apple-system, sans-serif',
+                fontFamily: "'Code Next', sans-serif",
                 fontSize: 'clamp(1.4rem, 2.8vw, 2.1rem)',
                 letterSpacing: '-0.02em',
               }}
@@ -118,7 +118,7 @@ export default function QuizStage({
                     </span>
                     <span
                       className="text-[13px] leading-snug text-white/80 transition-colors group-hover:text-white font-light"
-                      style={{ fontFamily: 'Inter, -apple-system, sans-serif' }}
+                      style={{ fontFamily: "var(--font-poppins), 'Poppins', sans-serif" }}
                     >
                       {opt.text}
                     </span>

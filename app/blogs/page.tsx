@@ -28,7 +28,7 @@ import { AdminBlog } from '@/lib/adminApi';
 import { BLOG_CATEGORIES, isCategoryMatch, FALLBACK_BLOGS } from '@/lib/blogsData';
 
 const SANS = "'Poppins', sans-serif";
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 export default function BlogsPage() {
   const [blogs, setBlogs] = useState<AdminBlog[]>([]);

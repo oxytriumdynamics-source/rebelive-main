@@ -359,7 +359,7 @@ export default function ProductDetailPage() {
   }, [currentProductFromRedux, productsListFromRedux, productId]);
 
   const allProductsList = productsListFromRedux;
-  const isLoading = reduxLoading && !product;
+  const isLoading = (reduxLoading || !product) && !reduxError;
   const isError = Boolean(reduxError) && !product;
 
   // Dispatch Redux thunks to fetch product by slug and list from MongoDB
@@ -847,15 +847,15 @@ export default function ProductDetailPage() {
                             onClick={() => {
                               setPackSize(size);
                             }}
-                            className={`p-2.5 sm:p-3 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden ${isSelected
-                              ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)]'
+                            className={`p-3 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden min-h-[74px] sm:min-h-[82px] flex flex-col justify-between ${isSelected
+                              ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]'
                               : 'bg-white/[0.04] text-white/80 border-white/10 hover:border-white/25 hover:bg-white/[0.07]'
                               }`}
                           >
                             <div className="font-bold text-xs uppercase tracking-wider">
                               Pack of {size}
                             </div>
-                            <div className="text-[11px] mt-1 font-semibold opacity-90 font-mono">
+                            <div className="text-xs mt-1 font-bold opacity-90 font-mono">
                               ₹{sizePrice.toLocaleString('en-IN')}
                             </div>
                         
@@ -1312,7 +1312,7 @@ export default function ProductDetailPage() {
               <div className="w-32 sm:w-64 md:w-96 h-[1.5px] bg-gradient-to-r from-transparent via-white/90 to-transparent mx-auto mb-5 sm:mb-7 shadow-[0_0_16px_rgba(255,255,255,0.95)]" />
 
               {/* Main Heading */}
-              <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-tight">
+              <h2 className="text-2xl xs:text-3xl  sm:text-4xl md:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-tight">
                 And we&apos;re{' '}
                 <span className="relative inline-block text-white">
                   science-backed

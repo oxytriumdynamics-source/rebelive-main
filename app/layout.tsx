@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-import { Poppins, JetBrains_Mono, Barlow_Condensed, Protest_Revolution } from "next/font/google";
+import { Poppins, Protest_Revolution, Barlow_Condensed, Bebas_Neue } from "next/font/google";
 import "./globals.css";
 
 const poppins = Poppins({
@@ -10,24 +10,24 @@ const poppins = Poppins({
   display: "swap",
 });
 
-const jetbrainsMono = JetBrains_Mono({
+const protestRevolution = Protest_Revolution({
   subsets: ["latin"],
-  weight: ["400", "500"],
-  variable: "--font-jetbrains-mono",
+  weight: ["400"],
+  variable: "--font-protest-revolution",
   display: "swap",
 });
 
 const barlowCondensed = Barlow_Condensed({
   subsets: ["latin"],
-  weight: ["600", "700", "800"],
+  weight: ["700", "800", "900"],
   variable: "--font-barlow-condensed",
   display: "swap",
 });
 
-const protestRevolution = Protest_Revolution({
+const bebasNeue = Bebas_Neue({
   subsets: ["latin"],
   weight: ["400"],
-  variable: "--font-protest-revolution",
+  variable: "--font-bebas-neue",
   display: "swap",
 });
 
@@ -191,7 +191,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${poppins.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable} ${protestRevolution.variable} h-full antialiased bg-black text-white`}
+      className={`${poppins.variable} ${protestRevolution.variable} ${barlowCondensed.variable} ${bebasNeue.variable} h-full antialiased bg-black text-white`}
       suppressHydrationWarning
     >
       <head>

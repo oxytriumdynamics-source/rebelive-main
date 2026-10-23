@@ -37,7 +37,7 @@ import {
 } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'JetBrains Mono', monospace";
+const MONO = "'Poppins', sans-serif";
 
 export function RootProductsTab() {
   const [products, setProducts] = useState<AdminProduct[]>([]);

@@ -17,7 +17,7 @@ const LoadingSpinner = () => (
       justifyContent: "center",
       gap: "16px",
       color: "rgba(255,255,255,0.5)",
-      fontFamily: "JetBrains Mono, Courier New, monospace",
+      fontFamily: "var(--font-poppins), 'Poppins', sans-serif",
       fontSize: "11px",
       letterSpacing: "0.2em",
       textTransform: "uppercase",
