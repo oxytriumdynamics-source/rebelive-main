@@ -351,6 +351,12 @@ export const Footer: React.FC<FooterProps> = ({
                   <li>
                     <Link
                       href="/story"
+                      onClick={(e) => {
+                        if (pathname === '/story') {
+                          e.preventDefault();
+                          window.scrollTo({ top: 0, behavior: 'smooth' });
+                        }
+                      }}
                       className="text-neutral-400 hover:text-white transition-colors block cursor-pointer"
                     >
                       Our Story

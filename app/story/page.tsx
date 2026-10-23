@@ -240,9 +240,8 @@ export default function StoryPage() {
 
   const TRANSITION_DURATION = 750;
 
-  // Pause Lenis smooth-scroll on desktop so it never fights deck transitions
+  // Pause Lenis smooth-scroll so it never fights deck transitions
   useEffect(() => {
-    if (isMobile) return;
     const lenis = (window as any).__lenis;
     if (lenis && typeof lenis.stop === 'function') {
       lenis.stop();
@@ -255,18 +254,20 @@ export default function StoryPage() {
         len.start();
       }
     };
-  }, [isMobile]);
+  }, []);
+
+  // Keep documentElement scrollable on story page without Lenis overflow:clip interference
+  useEffect(() => {
+    document.documentElement.classList.add('story-page-active');
+    return () => {
+      document.documentElement.classList.remove('story-page-active');
+    };
+  }, []);
 
   const goToSection = useCallback((targetIdx: number) => {
-    if (isMobile) {
-      const targetSec = SECTIONS[targetIdx];
-      if (targetSec) {
-        const el = document.getElementById(targetSec.id);
-        if (el) {
-          el.scrollIntoView({ behavior: 'smooth' });
-        }
-      }
-      return;
+    // If currently scrolled down into footer, always scroll window smoothly back to top!
+    if (window.scrollY > 10) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
     const clamped = Math.max(0, Math.min(targetIdx, SECTIONS.length - 1));
@@ -283,7 +284,7 @@ export default function StoryPage() {
       isAnimatingRef.current = false;
       accumulatedDeltaRef.current = 0;
     }, TRANSITION_DURATION);
-  }, [isMobile]);
+  }, []);
 
   const goToNext = useCallback(() => {
     if (activeSectionRef.current < SECTIONS.length - 1) {
@@ -297,52 +298,13 @@ export default function StoryPage() {
     }
   }, [goToSection]);
 
-  // ── Bulletproof Touchpad & Mouse Wheel Scroll Engine (Strict 1-Section Snapping) ──
+  // ── Bulletproof Touchpad & Mouse Wheel Scroll Engine (Strict 1-Section Snapping + Seamless Footer Return) ──
   useEffect(() => {
-    if (isMobile) return;
-
     const handleWheel = (e: WheelEvent) => {
       if (shopOpen) return;
       if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
 
       const now = Date.now();
-
-      // Check if user is scrolled down into footer
-      const isInFooter = window.scrollY > 30;
-
-      if (isInFooter) {
-        if (e.deltaY < -20 && window.scrollY < 120) {
-          e.preventDefault();
-          e.stopPropagation();
-
-          if (isAnimatingRef.current || now - lastScrollTimeRef.current < TRANSITION_DURATION) return;
-
-          isAnimatingRef.current = true;
-          lastScrollTimeRef.current = now;
-          accumulatedDeltaRef.current = 0;
-
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-          activeSectionRef.current = SECTIONS.length - 1;
-          setActiveSection(SECTIONS.length - 1);
-
-          setTimeout(() => {
-            isAnimatingRef.current = false;
-            accumulatedDeltaRef.current = 0;
-          }, TRANSITION_DURATION);
-        }
-        return;
-      }
-
-      // ── WITHIN STORY DECK: CONTROL SECTION SCROLL ──
-      e.preventDefault();
-      e.stopPropagation();
-
-      // While slide transition is actively animating or in cooldown:
-      // discard inertia events and keep accumulator at zero
-      if (isAnimatingRef.current || now - lastScrollTimeRef.current < TRANSITION_DURATION) {
-        accumulatedDeltaRef.current = 0;
-        return;
-      }
 
       // Normalize delta across deltaModes (0 = pixels, 1 = lines, 2 = pages)
       let delta = e.deltaY;
@@ -373,8 +335,49 @@ export default function StoryPage() {
         accumulatedDeltaRef.current = 0;
       }, 140);
 
+      // ── CHECK IF USER IS SCROLLED DOWN INTO FOOTER ──
+      const isInFooter = window.scrollY > 20;
+
+      if (isInFooter) {
+        // When user scrolls UP while in footer: smoothly transition back up to Manifesto (Slide 6)
+        if (delta < -12 || accumulatedDeltaRef.current < -18) {
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (isAnimatingRef.current || now - lastScrollTimeRef.current < 350) {
+            accumulatedDeltaRef.current = 0;
+            return;
+          }
+
+          isAnimatingRef.current = true;
+          lastScrollTimeRef.current = now;
+          accumulatedDeltaRef.current = 0;
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          activeSectionRef.current = SECTIONS.length - 1;
+          setActiveSection(SECTIONS.length - 1);
+
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+            accumulatedDeltaRef.current = 0;
+          }, TRANSITION_DURATION);
+        }
+        return;
+      }
+
+      // ── WITHIN STORY DECK: CONTROL SECTION SCROLL ──
+      e.preventDefault();
+      e.stopPropagation();
+
+      // While slide transition is actively animating or in cooldown:
+      // discard inertia events and keep accumulator at zero
+      if (isAnimatingRef.current || now - lastScrollTimeRef.current < TRANSITION_DURATION) {
+        accumulatedDeltaRef.current = 0;
+        return;
+      }
+
       // If at last section (Manifesto) and user deliberately scrolls down:
-      if (activeSectionRef.current === SECTIONS.length - 1 && (accumulatedDeltaRef.current > 30 || delta > 25)) {
+      if (activeSectionRef.current === SECTIONS.length - 1 && (accumulatedDeltaRef.current > 24 || delta > 20)) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
           isAnimatingRef.current = true;
@@ -384,13 +387,13 @@ export default function StoryPage() {
           footerEl.scrollIntoView({ behavior: 'smooth' });
           setTimeout(() => {
             isAnimatingRef.current = false;
+            accumulatedDeltaRef.current = 0;
           }, TRANSITION_DURATION);
         }
         return;
       }
 
       // Sensitivity threshold for deliberate swipe initiation
-      // 22px is low enough for gentle touchpad swipe, but high enough to prevent accidental drift
       const THRESHOLD = 22;
       if (Math.abs(accumulatedDeltaRef.current) < THRESHOLD && Math.abs(delta) < THRESHOLD) {
         return;
@@ -426,12 +429,10 @@ export default function StoryPage() {
       if (wheelDecayTimerRef.current) clearTimeout(wheelDecayTimerRef.current);
       if (unlockTimerRef.current) clearTimeout(unlockTimerRef.current);
     };
-  }, [isMobile, shopOpen, goToNext, goToPrev]);
+  }, [shopOpen, goToNext, goToPrev]);
 
-  // ── Touch Swipe Gestures (Desktop/Tablet Touch Only - Mobile uses natural scroll) ──
+  // ── Touch Swipe Gestures (Mobile, Tablet, and Desktop Touch) ──
   useEffect(() => {
-    if (isMobile) return;
-
     const handleTouchStart = (e: TouchEvent) => {
       if (e.touches.length !== 1) return;
       touchStartYRef.current = e.touches[0].clientY;
@@ -442,25 +443,68 @@ export default function StoryPage() {
     const handleTouchMove = (e: TouchEvent) => {
       if (shopOpen) return;
       if (e.touches.length !== 1) return;
-      if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
+
+      const target = e.target as HTMLElement;
+      // Allow natural scrolling inside elements with data-prevent-slide
+      const scrollable = target?.closest?.('[data-prevent-slide]') as HTMLElement | null;
+      if (scrollable) {
+        const deltaY = touchStartYRef.current - e.touches[0].clientY;
+        const canScrollDown = scrollable.scrollTop + scrollable.clientHeight < scrollable.scrollHeight - 4;
+        const canScrollUp = scrollable.scrollTop > 4;
+        if ((deltaY > 0 && canScrollDown) || (deltaY < 0 && canScrollUp)) {
+          return;
+        }
+      }
 
       const deltaY = touchStartYRef.current - e.touches[0].clientY;
       const deltaX = touchStartXRef.current - e.touches[0].clientX;
 
-      // Ignore horizontal swipes
-      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.5) return;
+      // Ignore predominantly horizontal swipes
+      if (Math.abs(deltaX) > Math.abs(deltaY) * 1.3) return;
 
-      // In Footer zone: allow normal touch scrolling
-      if (window.scrollY > 15) {
+      // In Footer zone: swiping downwards (finger moves down = scrolling up) returns to deck
+      if (window.scrollY > 20) {
+        if (deltaY < -20) {
+          e.preventDefault();
+          if (isAnimatingRef.current || touchTriggeredInSwipeRef.current) return;
+          const now = Date.now();
+          if (now - lastScrollTimeRef.current < 400) return;
+
+          touchTriggeredInSwipeRef.current = true;
+          isAnimatingRef.current = true;
+          lastScrollTimeRef.current = now;
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          activeSectionRef.current = SECTIONS.length - 1;
+          setActiveSection(SECTIONS.length - 1);
+
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, TRANSITION_DURATION);
+        }
         return;
       }
 
-      // At Manifesto slide: swiping down scrolls to footer
+      // At Manifesto slide: swiping up (finger moves up, deltaY > 0) scrolls to footer
       if (activeSectionRef.current === SECTIONS.length - 1 && deltaY > 30) {
         const footerEl = document.querySelector('footer');
         if (footerEl) {
+          e.preventDefault();
+          if (isAnimatingRef.current || touchTriggeredInSwipeRef.current) return;
+          touchTriggeredInSwipeRef.current = true;
+          isAnimatingRef.current = true;
+          lastScrollTimeRef.current = Date.now();
+
           footerEl.scrollIntoView({ behavior: 'smooth' });
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, TRANSITION_DURATION);
         }
+        return;
+      }
+
+      // If at top slide and swiping down, do nothing
+      if (activeSectionRef.current === 0 && deltaY < 0) {
         return;
       }
 
@@ -492,18 +536,35 @@ export default function StoryPage() {
       window.removeEventListener('touchmove', handleTouchMove);
       window.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [isMobile, shopOpen, goToNext, goToPrev]);
+  }, [shopOpen, goToNext, goToPrev]);
 
   // ── Keyboard Navigation (Arrow Keys / Page Keys / Space) ──
   useEffect(() => {
-    if (isMobile) return;
-
     const handleKeyDown = (e: KeyboardEvent) => {
       if (shopOpen) return;
       if (['input', 'textarea', 'select'].includes((e.target as HTMLElement)?.tagName?.toLowerCase() || '')) return;
 
-      if (window.scrollY > 15) {
-        return; // Normal scroll in footer
+      // In Footer zone: allow ArrowUp / PageUp / Shift+Space / Home to scroll back to deck
+      if (window.scrollY > 20) {
+        if (e.key === 'ArrowUp' || e.key === 'PageUp' || (e.key === ' ' && e.shiftKey)) {
+          e.preventDefault();
+          if (isAnimatingRef.current) return;
+          isAnimatingRef.current = true;
+          lastScrollTimeRef.current = Date.now();
+
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          activeSectionRef.current = SECTIONS.length - 1;
+          setActiveSection(SECTIONS.length - 1);
+
+          setTimeout(() => {
+            isAnimatingRef.current = false;
+          }, TRANSITION_DURATION);
+        } else if (e.key === 'Home') {
+          e.preventDefault();
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+          goToSection(0);
+        }
+        return;
       }
 
       if (e.key === 'ArrowDown' || e.key === 'PageDown' || (e.key === ' ' && !e.shiftKey)) {
@@ -530,44 +591,43 @@ export default function StoryPage() {
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [isMobile, shopOpen, goToNext, goToPrev, goToSection]);
+  }, [shopOpen, goToNext, goToPrev, goToSection]);
 
   return (
     <div
       id="story-deck"
       style={{ fontFamily: SANS }}
-      className="relative w-full min-h-screen text-white bg-black select-none md:w-screen md:h-screen md:overflow-hidden"
+      className="relative w-full h-[100dvh] w-screen text-white bg-black select-none overflow-hidden"
     >
       {/* Large Ghost Background Watermark */}
-      <div className="fixed top-28 left-1/2 -translate-x-1/2 select-none pointer-events-none text-[16vw] font-black uppercase text-white/[0.015] whitespace-nowrap tracking-tighter -z-10 leading-none">
+      <div className="fixed top-24 sm:top-28 left-1/2 -translate-x-1/2 select-none pointer-events-none text-[18vw] sm:text-[16vw] font-black uppercase text-white/[0.015] whitespace-nowrap tracking-tighter -z-10 leading-none">
         REBELIVE
       </div>
 
-      {/* ── Slides Track: Continuous vertical stack on mobile, Discrete 60fps GPU Track on desktop ── */}
+      {/* ── Slides Track: Discrete 60fps GPU Track on both Mobile and Desktop ── */}
       <div
-        className="w-full flex flex-col md:h-full md:transition-transform md:duration-[750ms] md:ease-[cubic-bezier(0.16,1,0.3,1)] md:will-change-transform"
-        style={isMobile ? undefined : { transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
+        className="w-full h-full flex flex-col transition-transform duration-[700ms] ease-[cubic-bezier(0.16,1,0.3,1)] will-change-transform"
+        style={{ transform: `translate3d(0, -${activeSection * 100}%, 0)` }}
       >
 
+        {/* ══════════════════════════════════════════════════════════════
+            SLIDE 0: HERO (ORIGIN)
+           ══════════════════════════════════════════════════════════════ */}
         <section
           id="hero"
-          className="w-full pt-8 pb-4 sm:pt-12 sm:pb-6 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-16 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 lg:px-16 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 0 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center justify-between"
+            animate={activeSection === 0 ? 'visible' : 'hidden'}
+            className="w-full max-w-7xl mx-auto flex flex-col lg:grid lg:grid-cols-12 gap-4 sm:gap-8 lg:gap-14 items-center justify-center text-center lg:text-left"
           >
-            {/* Left Column: Heading and Narrative */}
-            <div className="lg:col-span-7 flex flex-col justify-center items-start text-left order-2 lg:order-1">
-
-
+            {/* Heading and Narrative */}
+            <div className="lg:col-span-7 flex flex-col justify-center items-center lg:items-start text-center lg:text-left order-2 lg:order-1">
               <motion.h1
                 variants={fadeUpSlow}
-                className="text-4xl sm:text-6xl md:text-7xl lg:text-[5rem] xl:text-[5.8rem] font-black tracking-tight uppercase text-white leading-[0.92] text-left"
+                className="text-3xl sm:text-6xl md:text-7xl lg:text-[5rem] xl:text-[5.8rem] font-black tracking-tight uppercase text-white leading-[0.92]"
               >
                 THE STORY OF <br />
                 <span className="text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400 drop-shadow-[0_15px_30px_rgba(255,255,255,0.2)]">
@@ -577,53 +637,56 @@ export default function StoryPage() {
 
               <motion.p
                 variants={fadeUpItem}
-                className="mt-5 sm:mt-7 text-base sm:text-lg md:text-xl text-white/70 font-light max-w-xl leading-relaxed text-left"
+                className="mt-3 sm:mt-7 text-xs sm:text-base md:text-xl text-white/70 font-light max-w-xs sm:max-w-xl leading-relaxed"
               >
                 Born from two people who couldn’t keep their own life balanced. Built for everyone
                 else who lives in the real world.
               </motion.p>
-
-
             </div>
 
-            {/* Right Column: 8137 Founders Image at Top */}
+            {/* Founders Image (8137) */}
             <motion.div
               variants={visualReveal}
               className="lg:col-span-5 flex items-center justify-center order-1 lg:order-2"
             >
-              <div className="relative w-full max-w-[300px] sm:max-w-[340px] lg:max-w-[390px] aspect-[2/3] max-h-[48vh] sm:max-h-[55vh] lg:max-h-[64vh] rounded-3xl overflow-hidden border border-white/15 bg-neutral-950/80 shadow-[0_30px_70px_rgba(0,0,0,0.9)] group">
+              <div className="relative w-full max-w-[150px] sm:max-w-[280px] lg:max-w-[390px] aspect-[2/3] max-h-[26vh] sm:max-h-[50vh] lg:max-h-[64vh] rounded-2xl sm:rounded-3xl overflow-hidden border border-white/15 bg-neutral-950/80 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group">
                 <div className="absolute -inset-1 rounded-3xl bg-white/[0.05] blur-2xl pointer-events-none group-hover:bg-white/[0.1] transition-colors" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-transparent to-transparent z-10 pointer-events-none" />
                 <Image
                   src="/brand/founders-8137.webp"
                   alt="Rebelive Founders (8137)"
                   fill
-                  sizes="(max-width: 768px) 340px, (max-width: 1200px) 400px, 440px"
+                  sizes="(max-width: 768px) 180px, (max-width: 1200px) 400px, 440px"
                   className="object-cover object-top group-hover:scale-105 transition-transform duration-700"
                   priority
                 />
-
               </div>
             </motion.div>
           </motion.div>
+
+          {/* Subtle Mobile Swipe Cue */}
+          <div className="sm:hidden absolute bottom-3 left-1/2 -translate-x-1/2 flex flex-col items-center gap-0.5 text-white/40 pointer-events-none">
+            <span className="font-mono text-[8px] uppercase tracking-widest">SWIPE UP</span>
+            <ChevronDown className="w-3.5 h-3.5 animate-bounce" />
+          </div>
         </section>
 
-
+        {/* ══════════════════════════════════════════════════════════════
+            SLIDE 1: APPLE MOMENT
+           ══════════════════════════════════════════════════════════════ */}
         <section
           id="apple-moment"
-          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 md:overflow-hidden text-center"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 pt-12 sm:pt-0 overflow-hidden text-center"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 1 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-7xl mx-auto flex flex-col items-center justify-center space-y-6 sm:space-y-8 relative z-10"
+            animate={activeSection === 1 ? 'visible' : 'hidden'}
+            className="w-full max-w-[96vw] 2xl:max-w-7xl mx-auto flex flex-col items-center justify-center space-y-4 sm:space-y-8 relative z-10"
           >
             <motion.h2
               variants={fadeUpSlow}
-              className="w-full text-4xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.8rem] 2xl:text-[7.5rem] font-black tracking-tight text-white uppercase leading-[0.92] select-none"
+              className="w-full text-3xl sm:text-6xl md:text-7xl lg:text-[5.5rem] xl:text-[6.8rem] 2xl:text-[7.5rem] font-black tracking-tight text-white uppercase leading-[0.92] select-none"
             >
               <div>IT ALL STARTED</div>
               <div>WITH AN APPLE.</div>
@@ -631,11 +694,11 @@ export default function StoryPage() {
 
             <motion.div
               variants={fadeUpItem}
-              className="w-20 sm:w-28 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto my-1"
+              className="w-16 sm:w-28 h-[2px] bg-gradient-to-r from-transparent via-white/40 to-transparent mx-auto my-1"
             />
 
-            <motion.div variants={fadeUpItem} className="max-w-3xl lg:max-w-4xl mx-auto px-4">
-              <p className="text-xl sm:text-2xl md:text-3xl lg:text-4xl text-white/85 font-light leading-relaxed">
+            <motion.div variants={fadeUpItem} className="max-w-xs sm:max-w-3xl lg:max-w-4xl mx-auto px-2 sm:px-4">
+              <p className="text-sm sm:text-2xl md:text-3xl lg:text-4xl text-white/85 font-light leading-relaxed">
                 There's a story about Newton sitting under a tree when an apple fell on his head.
                 Instead of brushing it off, he asked a simple question:
               </p>
@@ -644,7 +707,7 @@ export default function StoryPage() {
             <motion.button
               variants={fadeUpItem}
               onClick={() => goToSection(2)}
-              className="mt-4 px-5 py-2.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 text-white/80 hover:text-white font-mono text-xs uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer flex items-center gap-2"
+              className="mt-2 sm:mt-4 px-4 sm:px-5 py-2 sm:py-2.5 rounded-full bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 text-white/80 hover:text-white font-mono text-xs uppercase tracking-wider backdrop-blur-md transition-all cursor-pointer flex items-center gap-2"
             >
               <span>NEXT: WHY DID IT FALL?</span>
               <ChevronDown className="w-3.5 h-3.5" />
@@ -652,67 +715,68 @@ export default function StoryPage() {
           </motion.div>
         </section>
 
+        {/* ══════════════════════════════════════════════════════════════
+            SLIDE 2: WHY IT FELL
+           ══════════════════════════════════════════════════════════════ */}
         <section
           id="why-it-fell"
-          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 lg:px-14 xl:px-18 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 2 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-0 md:pt-20"
+            animate={activeSection === 2 ? 'visible' : 'hidden'}
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center"
           >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
-              {/* Left: Apple Fall Illustration */}
+            <div className="flex flex-col md:grid md:grid-cols-12 gap-3 sm:gap-8 md:gap-12 lg:gap-16 items-center w-full">
+              {/* Apple Fall Illustration */}
               <motion.div variants={visualReveal} className="md:col-span-5 flex items-center justify-center">
-                <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96 select-none flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
+                <div className="relative w-24 h-24 sm:w-48 sm:h-48 md:w-72 md:h-72 lg:w-80 lg:h-80 select-none flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-2xl pointer-events-none" />
                   <Image
                     src="/brand/why-did-it-fall.png"
                     alt="Why did it fall - Apple moment illustration"
                     fill
-                    sizes="(max-width: 768px) 240px, (max-width: 1200px) 350px, 420px"
-                    className="object-contain mix-blend-screen "
+                    sizes="(max-width: 768px) 140px, (max-width: 1200px) 350px, 420px"
+                    className="object-contain mix-blend-screen"
                     priority
                   />
                 </div>
               </motion.div>
 
-              {/* Right: Narrative */}
-              <div className="md:col-span-7 flex flex-col justify-center space-y-3.5 sm:space-y-4 pr-2">
+              {/* Narrative */}
+              <div className="md:col-span-7 flex flex-col justify-center space-y-2 sm:space-y-4 pr-0 md:pr-2 text-center md:text-left">
                 <motion.h3
                   variants={fadeUpSlow}
-                  className="text-2xl sm:text-4xl md:text-4xl lg:text-5xl font-black uppercase text-white tracking-tight leading-[1.0]"
+                  className="text-xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase text-white tracking-tight leading-[1.0]"
                 >
                   Why did it fall?
                 </motion.h3>
 
                 <motion.div
                   variants={fadeUpItem}
-                  className="space-y-3 text-sm sm:text-base md:text-lg text-white/80 leading-relaxed font-light"
+                  className="space-y-2 sm:space-y-3 text-xs sm:text-base md:text-lg text-white/80 leading-relaxed font-light"
                 >
-                  <p className="text-white font-semibold text-base sm:text-lg md:text-xl">
+                  <p className="text-white font-semibold text-xs sm:text-lg md:text-xl">
                     That question led to something much bigger.
                   </p>
-                  <p>We weren't Newton. We were probably the seventeenth copy.</p>
-                  <p className="text-white/70">Our apple moment was just a little less… scientific.</p>
+                  <p className="text-white/70 text-[11px] sm:text-sm md:text-base">
+                    We weren't Newton. We were probably the seventeenth copy. Our apple moment was just a little less… scientific.
+                  </p>
 
                   <motion.div
                     variants={cardPop}
-                    className="p-4 sm:p-5 rounded-2xl bg-white/[0.04] border border-white/15 shadow-2xl backdrop-blur-md"
+                    className="p-2.5 sm:p-5 rounded-xl sm:rounded-2xl bg-white/[0.04] border border-white/15 shadow-xl backdrop-blur-md text-left"
                   >
-                    <p className="text-white font-normal text-xs sm:text-sm md:text-base leading-relaxed">
+                    <p className="text-white font-normal text-[11px] sm:text-sm md:text-base leading-relaxed">
                       It started with two people realizing that somewhere between ambition,
                       responsibilities and everyday life, taking care of ourselves had somehow become
                       optional.
                     </p>
                   </motion.div>
 
-                  <p className="text-white/70 text-xs sm:text-sm md:text-base">
-                    Meals were all over the place. Sleep was inconsistent. Energy was unpredictable.
-                    And whenever life got busy, our own wellbeing was the first thing to get pushed aside.
+                  <p className="text-white/70 text-[11px] sm:text-xs md:text-base">
+                    Meals were all over the place. Sleep was inconsistent. Energy was unpredictable. And whenever life got busy, our own wellbeing was the first thing to get pushed aside.
                   </p>
                 </motion.div>
               </div>
@@ -720,59 +784,53 @@ export default function StoryPage() {
           </motion.div>
         </section>
 
+        {/* ══════════════════════════════════════════════════════════════
+            SLIDE 3: REALIZATION
+           ══════════════════════════════════════════════════════════════ */}
         <section
           id="realization"
-          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 lg:px-14 xl:px-18 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 3 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center md:h-full pt-0 md:pt-20"
+            animate={activeSection === 3 ? 'visible' : 'hidden'}
+            className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto flex flex-col justify-center"
           >
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 items-center w-full">
-              {/* Left: Idea Lightbulb Illustration */}
+            <div className="flex flex-col md:grid md:grid-cols-12 gap-3 sm:gap-8 md:gap-12 lg:gap-16 items-center w-full">
+              {/* Lightbulb Illustration */}
               <motion.div variants={visualReveal} className="md:col-span-5 flex items-center justify-center">
-                <div className="relative w-48 h-48 sm:w-60 sm:h-60 md:w-72 md:h-72 lg:w-80 lg:h-80 xl:w-96 xl:h-96 select-none flex items-center justify-center">
-                  <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
+                <div className="relative w-20 h-20 sm:w-48 sm:h-48 md:w-72 md:h-72 lg:w-80 lg:h-80 select-none flex items-center justify-center">
+                  <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-2xl pointer-events-none" />
                   <Image
                     src="/brand/why-the-hell.png"
-                    alt="Why the hell is taking care of yourself so difficult - Idea revelation illustration"
+                    alt="Why the hell is taking care of yourself so difficult"
                     fill
-                    sizes="(max-width: 768px) 240px, (max-width: 1200px) 350px, 420px"
-                    className="object-contain mix-blend-screen "
+                    sizes="(max-width: 768px) 140px, (max-width: 1200px) 350px, 420px"
+                    className="object-contain mix-blend-screen"
                     priority
                   />
                 </div>
               </motion.div>
 
-              {/* Right: Stage 2 Narrative */}
-              <div className="md:col-span-7 flex flex-col justify-center space-y-3 sm:space-y-3.5 pr-2">
+              {/* Narrative */}
+              <div className="md:col-span-7 flex flex-col justify-center space-y-2 sm:space-y-3.5 pr-0 md:pr-2 text-center md:text-left">
                 <motion.h3
                   variants={fadeUpSlow}
-                  className="text-xl sm:text-2xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase text-white tracking-tight leading-[1.1]"
+                  className="text-base sm:text-2xl md:text-2xl lg:text-3xl xl:text-4xl font-black uppercase text-white tracking-tight leading-snug"
                 >
-                  Why the hell is taking care of yourself so difficult when life is already this
-                  demanding?
+                  Why the hell is taking care of yourself so difficult when life is already this demanding?
                 </motion.h3>
 
                 <motion.div
                   variants={fadeUpItem}
-                  className="space-y-2.5 text-xs sm:text-sm md:text-base text-white/80 leading-relaxed font-light"
+                  className="space-y-2 sm:space-y-2.5 text-[11px] sm:text-sm md:text-base text-white/80 leading-relaxed font-light text-left"
                 >
-                  <p>
-                    And once we started looking around, we realized we weren't the only ones. A lot
-                    of people were living on packed schedules, random meals, broken sleep and sheer
-                    determination.
+                  <p className="text-white/80 text-[11px] sm:text-sm">
+                    A lot of people were living on packed schedules, random meals, broken sleep and sheer determination.
                   </p>
 
-                  <p className="text-white font-semibold text-xs sm:text-sm md:text-base">
-                    So we started looking for an answer.
-                  </p>
-
-                  <div className="space-y-2 my-1.5">
+                  <div className="space-y-1.5 sm:space-y-2 my-1">
                     {[
                       'What if something could fit into real life instead of asking people to completely change it?',
                       'What if supporting your everyday wellbeing could be simpler?',
@@ -781,23 +839,17 @@ export default function StoryPage() {
                       <motion.div
                         key={i}
                         variants={cardPop}
-                        className="px-3.5 py-2.5 rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors backdrop-blur-md flex items-start gap-2.5"
+                        className="px-2.5 py-1.5 sm:px-3.5 sm:py-2.5 rounded-lg sm:rounded-xl bg-white/[0.04] border border-white/10 hover:border-white/20 transition-colors backdrop-blur-md flex items-start gap-2"
                       >
-                        <span className="w-1.5 h-1.5 rounded-full bg-white/60 mt-1.5 flex-shrink-0" />
-                        <p className="text-xs sm:text-sm text-white font-normal leading-snug">{q}</p>
+                        <span className="w-1.5 h-1.5 rounded-full bg-white/60 mt-1 flex-shrink-0" />
+                        <p className="text-[11px] sm:text-sm text-white font-normal leading-snug">{q}</p>
                       </motion.div>
                     ))}
                   </div>
 
-                  <p className="text-white/70 text-xs sm:text-sm">
-                    We kept asking. Experimenting. Getting things wrong. Starting again.
+                  <p className="text-white font-black text-xs sm:text-base md:text-lg pt-0.5">
+                    And eventually, Rebelive happened.
                   </p>
-
-                  <div className="pt-1">
-                    <p className="text-white font-black text-sm sm:text-base md:text-lg">
-                      And eventually, Rebelive happened.
-                    </p>
-                  </div>
                 </motion.div>
               </div>
             </div>
@@ -809,43 +861,57 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="identity"
-          className="w-full py-6 sm:py-8 px-4 sm:px-6 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 md:px-8 lg:px-12 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-3 sm:px-6 md:px-8 lg:px-12 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 4 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
+            animate={activeSection === 4 ? 'visible' : 'hidden'}
             className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
           >
-            <div className="w-full rounded-2xl sm:rounded-3xl p-5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] md:max-h-[86vh] md:overflow-y-auto no-scrollbar">
-              {/* RED: Replace REBELIVE. text with Rebelive Logo */}
-              <motion.h2
-                variants={fadeUpSlow}
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight mb-3 sm:mb-5 flex flex-nowrap items-baseline gap-2.5 sm:gap-4 leading-none whitespace-nowrap"
-              >
-                <span className="leading-none">HI. I’M</span>
-                <span
-                  className="relative inline-block flex-shrink-0 self-baseline"
-                  style={{ height: '0.92em', width: '3.89em' }}
+            <div
+              data-prevent-slide
+              className="w-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain no-scrollbar"
+            >
+              {/* Header: Title and small mobile badge */}
+              <div className="flex items-center justify-between gap-3 mb-2 sm:mb-5">
+                <motion.h2
+                  variants={fadeUpSlow}
+                  className="text-xl sm:text-4xl md:text-5xl lg:text-6xl font-black uppercase text-white tracking-tight flex flex-nowrap items-baseline gap-2 sm:gap-4 leading-none whitespace-nowrap"
                 >
-                  <Image
-                    src="/brand/rebelive-white.webp"
-                    alt="REBELIVE"
-                    fill
-                    sizes="(max-width: 768px) 240px, 400px"
-                    className="object-contain object-left-bottom drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
-                    priority
-                  />
-                </span>
-              </motion.h2>
+                  <span className="leading-none">HI. I’M</span>
+                  <span
+                    className="relative inline-block flex-shrink-0 self-baseline"
+                    style={{ height: '0.92em', width: '3.89em' }}
+                  >
+                    <Image
+                      src="/brand/rebelive-white.webp"
+                      alt="REBELIVE"
+                      fill
+                      sizes="(max-width: 768px) 180px, 400px"
+                      className="object-contain object-left-bottom drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
+                      priority
+                    />
+                  </span>
+                </motion.h2>
 
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-10 items-start">
-                {/* Left: Narrative copy */}
+                {/* Small mobile badge photo */}
+                <div className="lg:hidden relative w-11 h-14 sm:w-16 sm:h-20 rounded-xl overflow-hidden border border-white/20 shrink-0">
+                  <Image
+                    src="/brand/founders-8117.webp"
+                    alt="Rebelive Founders (8117)"
+                    fill
+                    sizes="80px"
+                    className="object-cover object-top"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 lg:gap-10 items-start">
+                {/* Narrative copy */}
                 <motion.div
                   variants={fadeUpItem}
-                  className="lg:col-span-7 space-y-2.5 sm:space-y-3 md:space-y-3.5 text-xs sm:text-sm md:text-[15px] xl:text-base text-white/85 leading-relaxed font-light"
+                  className="lg:col-span-7 space-y-2 sm:space-y-3 text-[11px] sm:text-sm md:text-[15px] xl:text-base text-white/85 leading-relaxed font-light"
                 >
                   {SECTION_5_PARAGRAPHS.map((para, idx) => {
                     const isCallout =
@@ -862,24 +928,23 @@ export default function StoryPage() {
                         key={idx}
                         className={
                           isCallout
-                            ? 'border-l-2 border-white pl-4 sm:pl-5 py-1.5 my-2.5 bg-white/[0.03] rounded-r-xl'
+                            ? 'border-l-2 border-white pl-3 sm:pl-5 py-1 my-1.5 sm:my-2.5 bg-white/[0.03] rounded-r-xl'
                             : ''
                         }
                       >
                         <p
                           className={
                             isCallout
-                              ? 'text-white font-bold text-sm sm:text-base md:text-lg'
+                              ? 'text-white font-bold text-xs sm:text-base md:text-lg'
                               : isPunchy
-                                ? 'text-white font-medium text-xs sm:text-sm md:text-[15px] xl:text-base'
+                                ? 'text-white font-medium text-[11px] sm:text-sm md:text-[15px] xl:text-base'
                                 : ''
                           }
                         >
-                          {/* ORANGE: Informal highlighted styling for 'two absolute idiots' */}
                           {hasTwoIdiots ? (
                             <>
                               Yep. That’s me. I exist because my founders were{' '}
-                              <span className="font-['Permanent_Marker'] font-normal text-amber-300 text-sm sm:text-base md:text-lg tracking-wider px-2 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/35 inline-block rotate-[-2deg] mx-1 shadow-[0_0_20px_rgba(251,191,36,0.2)] select-none">
+                              <span className="font-['Permanent_Marker'] font-normal text-amber-300 text-xs sm:text-base md:text-lg tracking-wider px-1.5 py-0.5 rounded-md bg-amber-400/15 border border-amber-400/35 inline-block rotate-[-2deg] mx-1 shadow-[0_0_20px_rgba(251,191,36,0.2)] select-none">
                                 two absolute idiots
                               </span>{' '}
                               who couldn’t keep their own shit together.
@@ -893,13 +958,13 @@ export default function StoryPage() {
                   })}
                 </motion.div>
 
-                {/* GREEN: Founders 8117 Portrait Photo - balanced size and positioned up */}
+                {/* Desktop Founders 8117 Portrait Photo */}
                 <motion.div
                   variants={visualReveal}
-                  className="lg:col-span-5 flex flex-col items-center lg:items-center justify-start py-2 lg:py-0 w-full"
+                  className="hidden lg:flex lg:col-span-5 flex-col items-center justify-start py-0 w-full"
                 >
                   <div
-                    className="relative rounded-2xl sm:rounded-3xl overflow-hidden border border-white/20 bg-neutral-900 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group lg:-mt-1"
+                    className="relative rounded-3xl overflow-hidden border border-white/20 bg-neutral-900 shadow-[0_20px_50px_rgba(0,0,0,0.9)] group"
                     style={{
                       height: 'min(490px, calc(100dvh - 190px), 65vh)',
                       width: 'calc(min(490px, calc(100dvh - 190px), 69vh) * 2 / 3)',
@@ -912,7 +977,7 @@ export default function StoryPage() {
                       src="/brand/founders-8117.webp"
                       alt="Rebelive Founders (8117)"
                       fill
-                      sizes="(max-width: 768px) 300px, (max-width: 1200px) 360px, 420px"
+                      sizes="360px"
                       className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                       priority
                     />
@@ -928,77 +993,63 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="why-i-exist"
-          className="w-full py-6 sm:py-8 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 xl:px-18 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 lg:px-14 xl:px-18 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 5 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="grid grid-cols-1 md:grid-cols-12 gap-8 md:gap-12 lg:gap-16 xl:gap-20 items-center w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
+            animate={activeSection === 5 ? 'visible' : 'hidden'}
+            className="flex flex-col md:grid md:grid-cols-12 gap-3 sm:gap-8 md:gap-12 lg:gap-16 xl:gap-20 items-center w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
           >
-            {/* Left: Content */}
-            <div className="md:col-span-7 space-y-3.5 sm:space-y-4 order-2 md:order-1">
+            {/* Content */}
+            <div className="md:col-span-7 space-y-2 sm:space-y-4 order-2 md:order-1 text-center md:text-left">
               <motion.h3
                 variants={fadeUpSlow}
-                className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl xl:text-7xl font-black uppercase text-white tracking-tight leading-[0.98]"
+                className="text-xl sm:text-3xl md:text-5xl lg:text-6xl xl:text-7xl font-black uppercase text-white tracking-tight leading-[0.98]"
               >
                 WHY I EXIST
               </motion.h3>
 
               <motion.div
                 variants={fadeUpItem}
-                className="space-y-3 text-sm sm:text-base md:text-lg text-white/80 leading-relaxed font-light"
+                className="space-y-2 sm:space-y-3 text-xs sm:text-base md:text-lg text-white/80 leading-relaxed font-light text-left"
               >
-                <p className="text-white font-medium text-base sm:text-lg md:text-xl">
+                <p className="text-white font-medium text-xs sm:text-lg md:text-xl">
                   Because my founders lived it. And they're definitely not the only ones.
                 </p>
-                <p>
-                  People are building careers, businesses, relationships, ideas and futures while
-                  navigating inconsistent meals, disrupted sleep and days that rarely go exactly as
-                  planned.
-                </p>
-                <p className="italic text-white/90">
-                  You don't need another person telling you to drink more water, sleep eight hours and
-                  meditate every morning. You need things that actually work with the life you're already
-                  living.
+                <p className="text-white/70 text-[11px] sm:text-sm md:text-base">
+                  People are building careers, businesses, relationships, ideas and futures while navigating inconsistent meals, disrupted sleep and unpredictable days.
                 </p>
 
                 <motion.div
                   variants={cardPop}
-                  className="p-4 sm:p-5 rounded-2xl bg-white/[0.03] border border-white/15 my-3 space-y-2 backdrop-blur-md"
+                  className="p-3 sm:p-5 rounded-xl sm:rounded-2xl bg-white/[0.03] border border-white/15 my-1.5 sm:my-3 space-y-1 sm:space-y-2 backdrop-blur-md"
                 >
-                  <p className="text-lg sm:text-xl md:text-2xl font-black uppercase text-white">
+                  <p className="text-sm sm:text-xl md:text-2xl font-black uppercase text-white">
                     That's why I exist.
                   </p>
-                  <p className="text-white/70 text-xs sm:text-sm">
-                    Not to replace real food. Not to replace sleep. Not to replace taking care of
-                    yourself.
+                  <p className="text-white/70 text-[11px] sm:text-sm">
+                    Not to replace real food. Not to replace sleep. Not to replace taking care of yourself.
                   </p>
-                  <p className="text-white font-bold text-sm sm:text-base pt-1 border-t border-white/10">
+                  <p className="text-white font-bold text-xs sm:text-base pt-1 border-t border-white/10">
                     But to become a functional part of the chaos.
-                  </p>
-                  <p className="text-white/80 text-xs sm:text-sm">
-                    Something that fits into your day. Something that shows up when you need a little
-                    more from yourself.
                   </p>
                 </motion.div>
               </motion.div>
             </div>
 
-            {/* Right: Panther Logo */}
+            {/* Panther Logo */}
             <motion.div
               variants={visualReveal}
               className="md:col-span-5 flex items-center justify-center order-1 md:order-2"
             >
-              <div className="relative w-36 h-36 sm:w-48 sm:h-48 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 flex items-center justify-center select-none">
-                <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-3xl pointer-events-none" />
+              <div className="relative w-20 h-20 sm:w-44 sm:h-44 md:w-60 md:h-60 lg:w-72 lg:h-72 xl:w-80 xl:h-80 flex items-center justify-center select-none">
+                <div className="absolute inset-0 rounded-full bg-white/[0.04] blur-2xl pointer-events-none" />
                 <Image
                   src="/brand/panther_white_icon-transparent.webp"
                   alt="Rebelive Panther"
                   fill
-                  sizes="(max-width: 768px) 200px, (max-width: 1200px) 300px, 350px"
+                  sizes="(max-width: 768px) 140px, (max-width: 1200px) 300px, 350px"
                   className="object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.08)]"
                   priority
                 />
@@ -1012,19 +1063,17 @@ export default function StoryPage() {
            ══════════════════════════════════════════════════════════════ */}
         <section
           id="manifesto"
-          className="w-full pt-6 pb-14 sm:py-10 px-4 sm:px-8 flex items-center justify-center relative md:min-h-screen md:h-screen md:flex-shrink-0 md:py-0 lg:px-14 md:overflow-hidden"
+          className="w-full h-[100dvh] min-h-[100dvh] flex-shrink-0 flex items-center justify-center relative px-4 sm:px-8 lg:px-14 pt-12 sm:pt-0 overflow-hidden"
         >
           <motion.div
             variants={containerVariants}
             initial="hidden"
-            whileInView={isMobile ? 'visible' : undefined}
-            animate={isMobile ? undefined : (activeSection === 6 ? 'visible' : 'hidden')}
-            viewport={{ once: true, amount: 0.15 }}
-            className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-4 sm:space-y-6 relative z-10"
+            animate={activeSection === 6 ? 'visible' : 'hidden'}
+            className="max-w-5xl 2xl:max-w-6xl mx-auto w-full space-y-2.5 sm:space-y-6 relative z-10 text-center md:text-left"
           >
             <motion.h2
               variants={fadeUpSlow}
-              className="text-2xl sm:text-4xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black uppercase text-white tracking-tight leading-[0.95]"
+              className="text-xl sm:text-3xl md:text-5xl lg:text-6xl 2xl:text-7xl font-black uppercase text-white tracking-tight leading-[0.95]"
             >
               BUILT BY TWO. <br />
               MADE FOR EVERYONE.
@@ -1032,47 +1081,35 @@ export default function StoryPage() {
 
             <motion.div
               variants={fadeUpItem}
-              className="space-y-3 text-xs sm:text-sm md:text-base text-white/80 leading-relaxed font-light"
+              className="space-y-1.5 sm:space-y-3 text-[11px] sm:text-sm md:text-base text-white/80 leading-relaxed font-light text-left"
             >
               <p>
-                We're still figuring things out. Still building. Still learning. Still occasionally
-                wondering why we decided building a company was a good idea.
-              </p>
-              <p>
-                But somewhere along the way, two ambitious people who weren't exactly experts at taking
-                care of themselves decided to build something that could help others do it a little
-                better.
+                We're still figuring things out. Still building. Still learning. Somewhere along the way, two ambitious people who weren't experts at taking care of themselves decided to build something that could help others do it a little better.
               </p>
               <p className="text-white font-medium">
-                And now, whenever we forget to take care of ourselves, there's a little reminder sitting
-                right there. Me. Rebelive.
+                And now, whenever we forget to take care of ourselves, there's a little reminder sitting right there. Me. Rebelive.
               </p>
             </motion.div>
 
             {/* Monumental Statement Glass Card */}
-            <motion.div variants={cardPop} className="relative mt-6 sm:mt-8">
-              <div className="absolute -inset-1 rounded-[32px] bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-white/[0.08] blur-xl opacity-70 pointer-events-none" />
+            <motion.div variants={cardPop} className="relative mt-2 sm:mt-6">
+              <div className="absolute -inset-1 rounded-2xl sm:rounded-[32px] bg-gradient-to-r from-white/[0.08] via-white/[0.03] to-white/[0.08] blur-xl opacity-70 pointer-events-none" />
 
-              <div className="relative p-6 sm:p-10 md:p-12 rounded-3xl border border-white/20 bg-neutral-950/70 backdrop-blur-2xl text-white text-center shadow-[0_30px_100px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] overflow-hidden">
+              <div className="relative p-4 sm:p-8 md:p-12 rounded-2xl sm:rounded-3xl border border-white/20 bg-neutral-950/70 backdrop-blur-2xl text-white text-center shadow-[0_30px_100px_rgba(0,0,0,0.85),inset_0_1px_1px_rgba(255,255,255,0.25)] overflow-hidden">
                 <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/50 to-transparent pointer-events-none" />
-                <div className="absolute inset-0 bg-gradient-to-br from-white/[0.08] via-transparent to-white/[0.02] pointer-events-none" />
 
-                <h3 className="relative z-10 text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-tight mb-4 text-white drop-shadow-[0_2px_20px_rgba(255,255,255,0.15)]">
+                <h3 className="relative z-10 text-base sm:text-2xl md:text-4xl lg:text-5xl font-black uppercase tracking-tight leading-tight mb-3 text-white drop-shadow-[0_2px_20px_rgba(255,255,255,0.15)]">
                   You live your life. <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-white via-neutral-200 to-neutral-400">
                     I'll help take care of the rest.
                   </span>
                 </h3>
 
-
-                <div className="relative z-10 mt-6 flex flex-wrap items-center justify-center gap-3 sm:gap-4">
+                <div className="relative z-10 mt-3 sm:mt-6 flex flex-wrap items-center justify-center gap-2 sm:gap-4">
                   <Link href='/shop'>
-                    <button
-
-                      className="px-6 sm:px-8 py-3.5 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-200 cursor-pointer shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 inline-flex items-center gap-2"
-                    >
+                    <button className="px-5 sm:px-8 py-2.5 sm:py-3.5 bg-white hover:bg-neutral-200 text-black font-mono text-xs font-bold uppercase tracking-wider rounded-full transition-all duration-200 cursor-pointer shadow-[0_0_35px_rgba(255,255,255,0.3)] hover:scale-105 active:scale-95 inline-flex items-center gap-2">
                       <span>EXPLORE THE FLAVORS</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <ArrowRight className="w-3.5 h-3.5" />
                     </button>
                   </Link>
 
@@ -1081,13 +1118,11 @@ export default function StoryPage() {
                       goToSection(0);
                       window.scrollTo({ top: 0, behavior: 'smooth' });
                     }}
-                    className="px-5 py-3 bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-white/50 text-white font-mono text-xs uppercase tracking-wider rounded-full backdrop-blur-md transition-all duration-200 cursor-pointer shadow-[inset_0_1px_0_rgba(255,255,255,0.15)] flex items-center gap-2"
+                    className="px-4 sm:px-5 py-2 sm:py-3 bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-white/50 text-white font-mono text-xs uppercase tracking-wider rounded-full backdrop-blur-md transition-all duration-200 cursor-pointer flex items-center gap-2"
                   >
                     <span>READ FROM TOP</span>
                     <ArrowUp className="w-3.5 h-3.5" />
                   </button>
-
-
                 </div>
               </div>
             </motion.div>
@@ -1095,8 +1130,8 @@ export default function StoryPage() {
         </section>
       </div>
 
-      {/* Desktop Vertical Navigation Dots */}
-      <div className="hidden md:flex fixed right-6 top-1/2 -translate-y-1/2 z-40 flex-col items-center gap-3">
+      {/* Navigation Dots (Desktop & Mobile) */}
+      <div className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 sm:gap-3 pointer-events-auto">
         {SECTIONS.map((sec, i) => (
           <button
             key={sec.id}
@@ -1104,15 +1139,15 @@ export default function StoryPage() {
             aria-label={sec.title}
             className="group relative flex items-center justify-end p-1.5 focus:outline-none cursor-pointer"
           >
-            {/* Tooltip on hover */}
-            <span className="pointer-events-none absolute right-8 whitespace-nowrap rounded-md bg-black/80 border border-white/15 px-2.5 py-1 font-mono text-[10px] uppercase text-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg">
+            {/* Tooltip on hover (desktop only) */}
+            <span className="hidden md:block pointer-events-none absolute right-8 whitespace-nowrap rounded-md bg-black/80 border border-white/15 px-2.5 py-1 font-mono text-[10px] uppercase text-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg">
               {sec.tag}
             </span>
             <span
               className={`rounded-full transition-all duration-300 ${
                 activeSection === i
-                  ? 'h-6 w-2 bg-white shadow-[0_0_12px_rgba(255,255,255,0.7)]'
-                  : 'h-2 w-2 bg-white/30 group-hover:bg-white/60 group-hover:scale-125'
+                  ? 'h-5 sm:h-6 w-1.5 sm:w-2 bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]'
+                  : 'h-1.5 sm:h-2 w-1.5 sm:w-2 bg-white/30 hover:bg-white/60 active:scale-125'
               }`}
             />
           </button>

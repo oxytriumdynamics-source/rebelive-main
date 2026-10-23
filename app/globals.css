@@ -795,3 +795,10 @@ html.lenis body {
   align-items: center !important;
   justify-content: center !important;
 }
+
+/* Allow smooth scrolling on Story Page deck & footer without overflow:clip freeze */
+html.story-page-active,
+html.story-page-active body {
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+}

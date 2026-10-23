@@ -2,17 +2,33 @@ import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
   title: {
-    absolute: 'Contact REBELIVE | Customer Support',
+    absolute: 'Contact REBELIVE | Customer Support & Business Enquiries',
   },
   description:
-    'Contact the Rebelive team for product enquiries, order queries, and feedback.',
+    'Contact REBELIVE for customer support, order assistance, distribution partnerships, retail stockist enquiries, and institutional orders across India.',
+  keywords: [
+    'contact REBELIVE',
+    'REBELIVE business enquiries',
+    'REBELIVE distribution partnership',
+    'REBELIVE retail partnership',
+    'REBELIVE become a distributor',
+    'REBELIVE institutional orders',
+    'functional beverage distributors India',
+    'beverage distributors for new brands',
+    'beverage dealership opportunities',
+    'beverage sampling partnerships',
+    'functional drink wholesale suppliers',
+    'REBELIVE customer support',
+    'REBELIVE contact details',
+    'REBELIVE drinks head office',
+  ],
   alternates: {
     canonical: '/contact',
   },
   openGraph: {
-    title: 'Contact REBELIVE | Customer Support',
+    title: 'Contact REBELIVE | Customer Support & Business Enquiries',
     description:
-      'Contact the Rebelive team for product enquiries, order queries, and feedback.',
+      'Contact REBELIVE for customer support, order assistance, distribution partnerships, retail stockist enquiries, and institutional orders across India.',
     url: 'https://www.rebelive.com/contact',
     siteName: 'REBELIVE',
     images: [
@@ -28,9 +44,9 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Contact REBELIVE | Customer Support',
+    title: 'Contact REBELIVE | Customer Support & Business Enquiries',
     description:
-      'Contact the Rebelive team for product enquiries, order queries, and feedback.',
+      'Contact REBELIVE for customer support, order assistance, distribution partnerships, retail stockist enquiries, and institutional orders across India.',
     images: ['/brand/rebelive-og.png'],
   },
 };

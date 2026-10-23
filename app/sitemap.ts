@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { fetchProducts } from '@/lib/productsApi';
+import { FALLBACK_BLOGS } from '@/lib/blogsData';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.rebelive.com';
@@ -119,5 +120,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.9,
   }));
 
-  return [...staticRoutes, ...productRoutes];
+  const blogRoutes: MetadataRoute.Sitemap = FALLBACK_BLOGS.map((b) => ({
+    url: `${baseUrl}/blogs/${b.slug}`,
+    lastModified: now,
+    changeFrequency: 'weekly',
+    priority: 0.8,
+  }));
+
+  return [...staticRoutes, ...productRoutes, ...blogRoutes];
 }
