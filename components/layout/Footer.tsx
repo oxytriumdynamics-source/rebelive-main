@@ -52,7 +52,7 @@ export const Footer: React.FC<FooterProps> = ({
   const isHomePage = pathname === '/';
   const [isHomeFooterVisible, setIsHomeFooterVisible] = useState(!isHomePage);
   const containerRef = useRef<HTMLElement>(null);
-  const headingRef = useRef<HTMLHeadingElement>(null);
+  const headingRef = useRef<HTMLParagraphElement>(null);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [h1Height, setH1Height] = useState(150);
   const [isCorporateModalOpen, setIsCorporateModalOpen] = useState(false);
@@ -159,7 +159,7 @@ export const Footer: React.FC<FooterProps> = ({
     >
       {/* ── "WAKE. FUEL. REBEL." SECTION (Replaces white logo) ── */}
       {/* Initially 100% full, uncovered and animated; covered 30% by lower footer on full bottom scroll */}
-      <div className="relative w-full flex flex-col items-center justify-center pt-6 pb-0 sm:pt-10 sm:pb-0 md:pt-14 z-10 select-none overflow-visible">
+      <div className="relative w-full flex flex-col items-center justify-center pt-1 pb-0 sm:pt-2 sm:pb-0 md:pt-3 z-10 select-none overflow-visible">
         {/* ── Ultra-Smooth Premium White Ambient Backlight Glow System ── */}
         <div className="absolute inset-0 pointer-events-none -z-10 overflow-visible">
           {/* Core luminous soft aura behind WAKE. FUEL. REBEL. */}
@@ -187,7 +187,7 @@ export const Footer: React.FC<FooterProps> = ({
         </div>
 
         <div className="relative text-center px-2 sm:px-4 max-w-full mx-auto flex flex-col items-center">
-          <h1
+          <p
             ref={headingRef}
             className="text-[11.2vw] sm:text-[9.5vw] md:text-[10.5vw] lg:text-[11vw] xl:text-[11.6vw] 2xl:text-[12.2vw] font-tall font-semibold tracking-normal sm:tracking-wide md:tracking-wider uppercase leading-[0.88] select-none text-transparent bg-clip-text bg-gradient-to-b from-white via-neutral-100 to-neutral-400 drop-shadow-[0_20px_45px_rgba(255,255,255,0.22)] whitespace-nowrap transition-transform duration-500 hover:scale-[1.01] flex items-center justify-center gap-1.5 sm:gap-3 md:gap-5 lg:gap-6"
           >
@@ -196,7 +196,7 @@ export const Footer: React.FC<FooterProps> = ({
             <span>FUEL .</span>
 
             <span>REBEL</span>
-          </h1>
+          </p>
         </div>
       </div>
 
@@ -295,9 +295,9 @@ export const Footer: React.FC<FooterProps> = ({
             <div className="grid grid-cols-2 md:grid-cols-4 gap-8 sm:gap-12 py-14 sm:py-16 border-b border-white/10">
               {/* Column 1: SHOP */}
               <div>
-                <h4 className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
+                <p className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
                   SHOP
-                </h4>
+                </p>
                 <ul className="space-y-3 font-sans text-sm">
                   <li>
                     <Link
@@ -336,9 +336,9 @@ export const Footer: React.FC<FooterProps> = ({
 
               {/* Column 2: REBELIVE */}
               <div>
-                <h4 className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
+                <p className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
                   REBELIVE
-                </h4>
+                </p>
                 <ul className="space-y-3 font-sans text-sm">
                   <li>
                     <Link
@@ -383,9 +383,9 @@ export const Footer: React.FC<FooterProps> = ({
 
               {/* Column 3: SUPPORT */}
               <div>
-                <h4 className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
+                <p className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
                   SUPPORT
-                </h4>
+                </p>
                 <ul className="space-y-3 font-sans text-sm">
                   <li>
                     <Link
@@ -425,9 +425,9 @@ export const Footer: React.FC<FooterProps> = ({
 
               {/* Column 4: LEGAL */}
               <div>
-                <h4 className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
+                <p className="text-[11px] font-sans font-semibold tracking-[0.2em] text-neutral-500 uppercase mb-5">
                   LEGAL
-                </h4>
+                </p>
                 <ul className="space-y-3 font-sans text-sm">
                   <li>
                     <Link

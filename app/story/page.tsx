@@ -127,80 +127,7 @@ const FLAVORS = [
   },
 ];
 
-function FlavorDrawer({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
-  if (!isOpen) return null;
 
-  return (
-    <div
-      data-prevent-slide
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xl animate-in fade-in duration-200"
-    >
-      <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-[#0a0a0a] border border-white/20 rounded-3xl p-6 sm:p-10 shadow-[0_0_80px_rgba(255,255,255,0.15)]">
-        {/* Header */}
-        <div className="flex items-center justify-between pb-6 border-b border-white/10 mb-8">
-          <div>
-            <span className="font-mono text-xs uppercase tracking-widest text-white/50">
-              REBELIVE LINEUP
-            </span>
-            <h3 className="text-2xl sm:text-3xl font-black uppercase text-white mt-1">
-              THE FUNCTIONAL FORMULAS
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Flavors Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6">
-          {FLAVORS.map((item, idx) => {
-            const Icon = item.icon;
-            return (
-              <div
-                key={idx}
-                className={`p-6 rounded-2xl bg-gradient-to-br ${item.color} border ${item.border} flex flex-col justify-between hover:scale-[1.01] transition-transform`}
-              >
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-mono text-[11px] uppercase tracking-wider text-white/60">
-                      FORMULA 0{idx + 1}
-                    </span>
-                    <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-white">
-                      <Icon className="w-4 h-4" />
-                    </div>
-                  </div>
-                  <h4 className="text-xl font-black uppercase text-white mb-1">{item.name}</h4>
-                  <p className="font-mono text-xs text-white/80 mb-3">{item.tagline}</p>
-                  <p className="text-sm text-white/70 font-light leading-relaxed">{item.desc}</p>
-                </div>
-
-                <div className="mt-6 pt-4 border-t border-white/10 flex items-center justify-between">
-                  <span className="text-xs font-mono text-white/50">ZERO SUGAR • ADAPTOGENS</span>
-                  <button
-                    onClick={onClose}
-                    className="px-4 py-1.5 rounded-full bg-white text-black font-semibold text-xs uppercase tracking-wider hover:bg-neutral-200 transition-colors cursor-pointer"
-                  >
-                    SELECT
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Bottom Notice */}
-        <div className="mt-8 p-4 rounded-xl bg-white/[0.03] border border-white/10 text-center">
-          <p className="text-xs font-mono text-white/60">
-            Crafted for modern chaos. Clean ingredients, scientifically dosed, 100% transparent label.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-}
 
 const SECTION_5_PARAGRAPHS = [
   "Yep. That’s me. I exist because my founders were two absolute idiots who couldn’t keep their own shit together.",
@@ -302,7 +229,17 @@ export default function StoryPage() {
   useEffect(() => {
     const handleWheel = (e: WheelEvent) => {
       if (shopOpen) return;
-      if ((e.target as HTMLElement)?.closest?.('[data-prevent-slide]')) return;
+
+      // Allow natural scrolling inside scrollable containers (like modals or overflow cards)
+      // until reaching the boundary, then seamlessly transition to next/previous slide
+      const scrollable = (e.target as HTMLElement)?.closest?.('[data-prevent-slide]') as HTMLElement | null;
+      if (scrollable) {
+        const canScrollDown = e.deltaY > 0 && (scrollable.scrollTop + scrollable.clientHeight < scrollable.scrollHeight - 6);
+        const canScrollUp = e.deltaY < 0 && (scrollable.scrollTop > 6);
+        if (canScrollDown || canScrollUp) {
+          return;
+        }
+      }
 
       const now = Date.now();
 
@@ -739,7 +676,6 @@ export default function StoryPage() {
                     fill
                     sizes="(max-width: 768px) 140px, (max-width: 1200px) 350px, 420px"
                     className="object-contain mix-blend-screen"
-                    priority
                   />
                 </div>
               </motion.div>
@@ -778,6 +714,7 @@ export default function StoryPage() {
                   <p className="text-white/70 text-[11px] sm:text-xs md:text-base">
                     Meals were all over the place. Sleep was inconsistent. Energy was unpredictable. And whenever life got busy, our own wellbeing was the first thing to get pushed aside.
                   </p>
+
                 </motion.div>
               </div>
             </div>
@@ -808,7 +745,6 @@ export default function StoryPage() {
                     fill
                     sizes="(max-width: 768px) 140px, (max-width: 1200px) 350px, 420px"
                     className="object-contain mix-blend-screen"
-                    priority
                   />
                 </div>
               </motion.div>
@@ -850,6 +786,8 @@ export default function StoryPage() {
                   <p className="text-white font-black text-xs sm:text-base md:text-lg pt-0.5">
                     And eventually, Rebelive happened.
                   </p>
+
+           
                 </motion.div>
               </div>
             </div>
@@ -870,8 +808,7 @@ export default function StoryPage() {
             className="w-full max-w-[96vw] 2xl:max-w-[92vw] mx-auto relative z-10"
           >
             <div
-              data-prevent-slide
-              className="w-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] max-h-[calc(100dvh-5.5rem)] overflow-y-auto overscroll-contain no-scrollbar"
+              className="w-full rounded-2xl sm:rounded-3xl p-3.5 sm:p-7 md:p-8 lg:p-10 relative shadow-[0_-20px_60px_rgba(0,0,0,0.95)] max-h-[calc(100dvh-5.5rem)] lg:max-h-none overflow-y-auto lg:overflow-visible overscroll-contain no-scrollbar"
             >
               {/* Header: Title and small mobile badge */}
               <div className="flex items-center justify-between gap-3 mb-2 sm:mb-5">
@@ -890,7 +827,6 @@ export default function StoryPage() {
                       fill
                       sizes="(max-width: 768px) 180px, 400px"
                       className="object-contain object-left-bottom drop-shadow-[0_2px_18px_rgba(255,255,255,0.3)]"
-                      priority
                     />
                   </span>
                 </motion.h2>
@@ -956,6 +892,8 @@ export default function StoryPage() {
                       </div>
                     );
                   })}
+
+            
                 </motion.div>
 
                 {/* Desktop Founders 8117 Portrait Photo */}
@@ -979,7 +917,6 @@ export default function StoryPage() {
                       fill
                       sizes="360px"
                       className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
-                      priority
                     />
                   </div>
                 </motion.div>
@@ -1035,6 +972,8 @@ export default function StoryPage() {
                     But to become a functional part of the chaos.
                   </p>
                 </motion.div>
+
+            
               </motion.div>
             </div>
 
@@ -1051,7 +990,6 @@ export default function StoryPage() {
                   fill
                   sizes="(max-width: 768px) 140px, (max-width: 1200px) 300px, 350px"
                   className="object-contain drop-shadow-[0_0_40px_rgba(255,255,255,0.08)]"
-                  priority
                 />
               </div>
             </motion.div>
@@ -1130,29 +1068,6 @@ export default function StoryPage() {
         </section>
       </div>
 
-      {/* Navigation Dots (Desktop & Mobile) */}
-      <div className="fixed right-2 sm:right-6 top-1/2 -translate-y-1/2 z-40 flex flex-col items-center gap-2 sm:gap-3 pointer-events-auto">
-        {SECTIONS.map((sec, i) => (
-          <button
-            key={sec.id}
-            onClick={() => goToSection(i)}
-            aria-label={sec.title}
-            className="group relative flex items-center justify-end p-1.5 focus:outline-none cursor-pointer"
-          >
-            {/* Tooltip on hover (desktop only) */}
-            <span className="hidden md:block pointer-events-none absolute right-8 whitespace-nowrap rounded-md bg-black/80 border border-white/15 px-2.5 py-1 font-mono text-[10px] uppercase text-white/90 backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-200 shadow-lg">
-              {sec.tag}
-            </span>
-            <span
-              className={`rounded-full transition-all duration-300 ${
-                activeSection === i
-                  ? 'h-5 sm:h-6 w-1.5 sm:w-2 bg-white shadow-[0_0_12px_rgba(255,255,255,0.8)]'
-                  : 'h-1.5 sm:h-2 w-1.5 sm:w-2 bg-white/30 hover:bg-white/60 active:scale-125'
-              }`}
-            />
-          </button>
-        ))}
-      </div>
 
     </div>
   );

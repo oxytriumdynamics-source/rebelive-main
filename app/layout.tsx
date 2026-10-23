@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import Script from "next/script";
 /* Poppins - body font (self-hosted via @fontsource, zero CDN latency) */
 import "@fontsource/poppins/300.css";
 import "@fontsource/poppins/400.css";
@@ -153,13 +154,11 @@ export const metadata: Metadata = {
     },
   },
   category: 'beverage',
-};
+}; 
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
   viewportFit: "cover",
   themeColor: "#000000",
 };
@@ -172,11 +171,18 @@ export default function RootLayout({
   return (
     <html lang="en" className="h-full antialiased bg-black text-white" suppressHydrationWarning>
       <head>
-        <link rel="preload" href="/models/soda-can1.glb" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/draco/gltf/draco_decoder.wasm" as="fetch" crossOrigin="anonymous" />
-        <link rel="preload" href="/brand/podup.webp" as="image" type="image/webp" />
-        <link rel="preload" href="/brand/poddown.webp" as="image" type="image/webp" />
-        <link rel="preload" href="/products/apex.webp" as="image" type="image/webp" />
+        {/* Preconnect to critical third-party origins */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="preload"
+          as="style"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Oswald:wght@600;700&family=Teko:wght@600;700&family=Bebas+Neue&family=Protest+Revolution&family=Orbitron:wght@600;700;800;900&family=Syne:wght@700;800&family=Permanent+Marker&family=Caveat:wght@700&display=swap"
+        />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Oswald:wght@600;700&family=Teko:wght@600;700&family=Bebas+Neue&family=Protest+Revolution&family=Orbitron:wght@600;700;800;900&family=Syne:wght@700;800&family=Permanent+Marker&family=Caveat:wght@700&display=swap"
+        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{
@@ -215,14 +221,10 @@ export default function RootLayout({
             }).replace(/</g, '\\u003c'),
           }}
         />
-        {/* Shiprocket Checkout (SRC / Fastrr) Stylesheet & Script (PRODUCTION) */}
-        <link
-          rel="stylesheet"
-          href="https://checkout-ui.shiprocket.com/assets/styles/shopify.css"
-        />
-        <script
+        {/* Shiprocket Checkout (SRC / Fastrr) Lazy Script - dynamic CSS is loaded on checkout invocation */}
+        <Script
           src="https://checkout-ui.shiprocket.com/assets/js/channels/shopify.js"
-          async
+          strategy="lazyOnload"
         />
       </head>
       <body className="min-h-full flex flex-col antialiased bg-black text-white" suppressHydrationWarning>

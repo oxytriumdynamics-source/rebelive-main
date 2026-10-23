@@ -53,6 +53,11 @@ const nextConfig: NextConfig = {
       '@react-three/fiber',
       '@react-three/drei',
       'three',
+      '@reduxjs/toolkit',
+      'react-redux',
+      'clsx',
+      'tailwind-merge',
+      'axios',
     ],
   },
   headers: async () => [
@@ -104,7 +109,7 @@ const nextConfig: NextConfig = {
       ],
     },
     {
-      source: '/:all*(svg|jpg|jpeg|png|webp|avif|ico|woff2|woff|ttf|otf)',
+      source: '/fonts/:path*',
       headers: [
         {
           key: 'Cache-Control',
@@ -113,7 +118,25 @@ const nextConfig: NextConfig = {
       ],
     },
     {
-      source: '/:all*(glb|gltf|bin|wasm)',
+      source: '/brand/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/products/:path*',
+      headers: [
+        {
+          key: 'Cache-Control',
+          value: 'public, max-age=31536000, immutable',
+        },
+      ],
+    },
+    {
+      source: '/models/:path*',
       headers: [
         {
           key: 'Cache-Control',
@@ -126,7 +149,7 @@ const nextConfig: NextConfig = {
       ],
     },
     {
-      source: '/:all*(mp3|wav|ogg)',
+      source: '/aud/:path*',
       headers: [
         {
           key: 'Cache-Control',

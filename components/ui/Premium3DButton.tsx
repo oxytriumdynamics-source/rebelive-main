@@ -272,7 +272,7 @@ export const Premium3DButton: React.FC<Premium3DButtonProps> = ({
 
   if (href) {
     return (
-      <Link href={href} onClick={onClick} title={title} className={sharedClassName}>
+      <Link href={href} onClick={onClick} title={title || text} aria-label={title || text} className={sharedClassName}>
         {innerElements}
       </Link>
     );
@@ -283,7 +283,8 @@ export const Premium3DButton: React.FC<Premium3DButtonProps> = ({
       type={type}
       onClick={onClick}
       disabled={disabled}
-      title={title}
+      title={title || text}
+      aria-label={title || text}
       className={sharedClassName}
     >
       {innerElements}

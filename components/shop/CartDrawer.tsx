@@ -71,7 +71,12 @@ export function CartDrawer() {
       />
 
       {/* Slide-out drawer */}
-      <div className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#0e0e0ee5] backdrop-blur-xl border-l border-white/10 text-white p-6 sm:p-7 flex flex-col justify-between shadow-[0_0_50px_rgba(0,0,0,0.9)] z-10 animate-in slide-in-from-right duration-300">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Shopping Cart"
+        className="absolute right-0 top-0 bottom-0 w-full max-w-md bg-[#0e0e0ee5] backdrop-blur-xl border-l border-white/10 text-white p-6 sm:p-7 flex flex-col justify-between shadow-[0_0_50px_rgba(0,0,0,0.9)] z-10 animate-in slide-in-from-right duration-300"
+      >
         <div>
           {/* Header */}
           <div className="flex items-center justify-between pb-4 border-b border-white/10">

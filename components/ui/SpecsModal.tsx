@@ -15,7 +15,12 @@ export const SpecsModal: React.FC<SpecsModalProps> = ({ isOpen, onClose, product
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 select-none">
       <div className="absolute inset-0 bg-black/85 backdrop-blur-xl" onClick={onClose} />
 
-      <div className="relative w-full max-w-xl bg-[#09090b] border border-white/20 p-6 md:p-8 rounded-2xl shadow-2xl z-10 text-white max-h-[90vh] overflow-y-auto">
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-label={`Laboratory Analysis for ${product.name}`}
+        className="relative w-full max-w-xl bg-[#09090b] border border-white/20 p-6 md:p-8 rounded-2xl shadow-2xl z-10 text-white max-h-[90vh] overflow-y-auto"
+      >
         <div className="flex items-center justify-between pb-4 border-b border-white/10 mb-6">
           <div className="flex items-center gap-2">
             <FileText className="w-4 h-4 text-white/60" />
@@ -25,6 +30,7 @@ export const SpecsModal: React.FC<SpecsModalProps> = ({ isOpen, onClose, product
           </div>
           <button
             onClick={onClose}
+            aria-label="Close specifications modal"
             className="p-1 rounded-full text-white/50 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />

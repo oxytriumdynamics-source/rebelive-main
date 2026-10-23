@@ -6,17 +6,59 @@ import { ArrowUpRight } from 'lucide-react';
 import { Product } from '@/data/products';
 import { fetchProducts, selectProducts } from '@/store/slices/productSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import { ProductScene } from '@/components/product/ProductScene';
+import Image from 'next/image';
+import dynamic from 'next/dynamic';
 import { FlavorCarouselOverlay } from '@/components/hero/FlavorCarouselOverlay';
 import { PodiumOverlays } from '@/components/hero/PodiumOverlays';
-import { ProductDetails } from '@/components/product/ProductDetails';
-import { StatementSection, StatementBackdrop } from '@/components/sections/StatementSection';
-import { TestimonialsSection } from '@/components/sections/TestimonialsSection';
-import { SubFooter } from '@/components/sections/SubFooter';
 import { FlavorNavigation } from '@/components/product/FlavorNavigation';
 import { AtmosphericBackground } from '@/components/effects/AtmosphericBackground';
 import { animationState, updateScrollProgress } from '@/lib/animationState';
-import dynamic from 'next/dynamic';
+
+const ProductScene = dynamic(
+  () => import('@/components/product/ProductScene').then((m) => m.ProductScene),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
+        <div className="relative w-36 sm:w-44 md:w-52 h-64 sm:h-72 md:h-[320px] opacity-95">
+          <Image
+            src="/brand/APEX.webp"
+            alt="REBELIVE Apex"
+            fill
+            priority
+            sizes="(max-width: 768px) 240px, 320px"
+            className="object-contain filter drop-shadow-[0_25px_45px_rgba(0,0,0,0.85)]"
+          />
+        </div>
+      </div>
+    ),
+  }
+);
+
+const ProductDetails = dynamic(
+  () => import('@/components/product/ProductDetails').then((m) => m.ProductDetails),
+  { ssr: false }
+);
+
+const StatementSection = dynamic(
+  () => import('@/components/sections/StatementSection').then((m) => m.StatementSection),
+  { ssr: false }
+);
+
+const StatementBackdrop = dynamic(
+  () => import('@/components/sections/StatementSection').then((m) => m.StatementBackdrop),
+  { ssr: false }
+);
+
+const TestimonialsSection = dynamic(
+  () => import('@/components/sections/TestimonialsSection').then((m) => m.TestimonialsSection),
+  { ssr: false }
+);
+
+const SubFooter = dynamic(
+  () => import('@/components/sections/SubFooter').then((m) => m.SubFooter),
+  { ssr: false }
+);
 
 const LoadingScreen = dynamic(() => import('@/components/ui/LoadingScreen').then((m) => m.LoadingScreen), {
   ssr: false,
@@ -473,40 +515,35 @@ export default function App() {
       }
 
       // ── IN SUBFOOTER & FOOTER ZONE (Sections 7 and 8) ──
-      if (activeSectionRef.current >= 7) {
-        // If at Section 8 (Footer) and scrolling down: let it rest at bottom
-        if (activeSectionRef.current === 8 && delta > 0) {
-          return;
-        }
+      const subfooterEl = document.getElementById('home-subfooter');
+      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
+      const isSettledInSubFooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
+      const isInSubFooterZone = activeSectionRef.current >= 7 && isSettledInSubFooter;
 
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (hasTriggeredInGestureRef.current) return;
-        if (now - lastScrollTimeRef.current < 750) return;
-
+      if (isInSubFooterZone) {
         if (delta > 0) {
-          // Section 7 ➔ Section 8
-          if (activeSectionRef.current === 7) {
-            hasTriggeredInGestureRef.current = true;
-            lastScrollTimeRef.current = now;
-            goToSection(8);
-          }
+          // Scrolling down: allow Lenis & browser to scroll smoothly and naturally
+          // through Testimonials, through SubFooter ("Nutrition as a Lifestyle"), and into the Footer!
+          return;
         } else {
           // Scrolling UP:
-          if (activeSectionRef.current === 8) {
-            // Section 8 ➔ Section 7
-            hasTriggeredInGestureRef.current = true;
-            lastScrollTimeRef.current = now;
-            goToSection(7);
-          } else if (activeSectionRef.current === 7) {
-            // Section 7 ➔ Section 6 (Statement 2)
-            hasTriggeredInGestureRef.current = true;
-            lastScrollTimeRef.current = now;
-            goToSection(6);
+          // If still scrolled down within testimonials, subfooter, or footer, allow natural smooth scroll upward
+          if (typeof window !== 'undefined' && window.scrollY > subfooterTop + 20) {
+            return;
           }
+
+          // Once reached the absolute top of Testimonials / SubFooter, a deliberate scroll up returns to Statement 2
+          e.preventDefault();
+          e.stopPropagation();
+
+          if (hasTriggeredInGestureRef.current || isAnimatingRef.current) return;
+          if (now - lastScrollTimeRef.current < 500) return;
+
+          hasTriggeredInGestureRef.current = true;
+          lastScrollTimeRef.current = now;
+          goToSection(6);
+          return;
         }
-        return;
       }
 
       // ── WITHIN 3D STAGE (Sections 0 to 6): STRICT 1-SECTION SNAP PER GESTURE ──
@@ -1032,14 +1069,14 @@ export default function App() {
       {/* ── Post-Statement Experience (Testimonials & Nutrition SubFooter) ── */}
       <div
         id="home-subfooter"
-        className="relative z-20 w-full min-h-screen flex flex-col items-center justify-start pb-6 sm:pb-12 md:pb-16 transition-opacity duration-300 ease-out"
+        className="relative z-20 w-full flex flex-col items-center justify-start pb-0 sm:pb-1 md:pb-2 transition-opacity duration-300 ease-out"
         style={{
           visibility: isSubFooterVisible ? 'visible' : 'hidden',
           opacity: subFooterOpacity,
           pointerEvents: isSubFooterVisible ? 'auto' : 'none',
         }}
       >
-        <TestimonialsSection className="!pb-6 sm:!pb-10 md:!pb-14" />
+        <TestimonialsSection className="!pb-2 sm:!pb-4 md:!pb-6" />
         <SubFooter />
       </div>
 

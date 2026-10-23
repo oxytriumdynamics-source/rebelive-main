@@ -62,24 +62,24 @@ export default function LandingStage({
         {/* Giant headline */}
         <div className="flex flex-1 flex-col justify-center gap-0 my-auto py-2">
           {isAllocated ? (
-            <>
+            <h1 className="flex flex-col select-none">
               {/* ARCHETYPE - filled */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] text-white select-none"
+                className="font-display leading-[0.82] text-white select-none block"
                 style={{ fontFamily: DISPLAY, fontSize: 'clamp(4rem, 13vw, 11.5rem)', letterSpacing: '-0.02em' }}
               >
                 ARCHETYPE
-              </motion.h1>
+              </motion.span>
 
               {/* LOCKED - outlined in crisp white */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] select-none"
+                className="font-display leading-[0.82] select-none block"
                 style={{
                   fontFamily: DISPLAY,
                   fontSize: 'clamp(4rem, 13vw, 11.5rem)',
@@ -89,38 +89,38 @@ export default function LandingStage({
                 }}
               >
                 LOCKED.
-              </motion.h1>
+              </motion.span>
 
               {/* PERSONA NAME - filled */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] text-white select-none"
+                className="font-display leading-[0.82] text-white select-none block"
                 style={{ fontFamily: DISPLAY, fontSize: 'clamp(4rem, 13vw, 11.5rem)', letterSpacing: '-0.02em' }}
               >
                 {allocatedName}.
-              </motion.h1>
-            </>
+              </motion.span>
+            </h1>
           ) : (
-            <>
+            <h1 className="flex flex-col select-none">
               {/* FIND - filled */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.18, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] text-white select-none"
+                className="font-display leading-[0.82] text-white select-none block"
                 style={{ fontFamily: DISPLAY, fontSize: 'clamp(4rem, 13vw, 11.5rem)', letterSpacing: '-0.02em' }}
               >
                 FIND
-              </motion.h1>
+              </motion.span>
 
               {/* YOUR - outlined in crisp white */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.3, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] select-none"
+                className="font-display leading-[0.82] select-none block"
                 style={{
                   fontFamily: DISPLAY,
                   fontSize: 'clamp(4rem, 13vw, 11.5rem)',
@@ -130,19 +130,19 @@ export default function LandingStage({
                 }}
               >
                 YOUR
-              </motion.h1>
+              </motion.span>
 
               {/* PERSONA. - filled */}
-              <motion.h1
+              <motion.span
                 initial={{ opacity: 0, x: -24 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.65, delay: 0.42, ease: [0.16, 1, 0.3, 1] }}
-                className="font-display leading-[0.82] text-white select-none"
+                className="font-display leading-[0.82] text-white select-none block"
                 style={{ fontFamily: DISPLAY, fontSize: 'clamp(4rem, 13vw, 11.5rem)', letterSpacing: '-0.02em' }}
               >
                 PERSONA.
-              </motion.h1>
-            </>
+              </motion.span>
+            </h1>
           )}
         </div>
 

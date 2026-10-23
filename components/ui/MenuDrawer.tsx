@@ -73,6 +73,9 @@ export const MenuDrawer: React.FC<MenuDrawerProps> = ({
       {/* Drawer Panel */}
       <div
         data-lenis-prevent
+        role="dialog"
+        aria-modal="true"
+        aria-label="Navigation Menu"
         className="fixed right-0 top-0 bottom-0 h-full h-[100dvh] max-h-[100dvh] w-full max-w-md bg-[#070709] border-l border-white/15 flex flex-col shadow-2xl z-10 text-white animate-in slide-in-from-right duration-300 overflow-hidden"
       >
         {/* Header */}

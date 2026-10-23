@@ -6,7 +6,7 @@ import { motion } from 'framer-motion';
 
 export const SubFooter: React.FC = () => {
     return (
-        <section className="relative w-full pt-10 pb-12 sm:pt-16 sm:pb-20 md:pt-20 md:pb-28 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
+        <section className="relative w-full pt-6 pb-3 sm:pt-8 sm:pb-4 md:pt-10 md:pb-5 text-white z-10 overflow-hidden flex flex-col items-center justify-center px-6 sm:px-12 text-center select-none">
             {/* Subtle atmospheric radial spotlight centered on content */}
             <div
                 className="absolute inset-0 pointer-events-none opacity-40"
@@ -19,7 +19,7 @@ export const SubFooter: React.FC = () => {
                 <motion.h2
                     initial={{ opacity: 0, y: 32, filter: 'blur(8px)' }}
                     whileInView={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
-                    viewport={{ once: false, amount: 0.25 }}
+                    viewport={{ once: true, amount: 0.1 }}
                     transition={{ duration: 0.85, ease: [0.16, 1, 0.3, 1] }}
                     className="text-3xl sm:text-5xl md:text-6xl lg:text-[4rem] font-sans font-black tracking-tight text-white leading-[1.08] uppercase drop-shadow-[0_4px_24px_rgba(0,0,0,0.85)]"
                 >
@@ -29,7 +29,7 @@ export const SubFooter: React.FC = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 20 }}
                     whileInView={{ opacity: 1, y: 0 }}
-                    viewport={{ once: false, amount: 0.25 }}
+                    viewport={{ once: true, amount: 0.1 }}
                     transition={{ duration: 0.8, delay: 0.12, ease: [0.16, 1, 0.3, 1] }}
                     className="text-sm sm:text-base md:text-lg text-neutral-300 font-sans mt-3 sm:mt-4 max-w-2xl mx-auto tracking-normal leading-relaxed space-y-1 sm:space-y-1.5"
                 >
@@ -42,7 +42,7 @@ export const SubFooter: React.FC = () => {
                 <motion.div
                     initial={{ opacity: 0, y: 18, scale: 0.96 }}
                     whileInView={{ opacity: 1, y: 0, scale: 1 }}
-                    viewport={{ once: false, amount: 0.25 }}
+                    viewport={{ once: true, amount: 0.1 }}
                     transition={{ duration: 0.75, delay: 0.22, ease: [0.16, 1, 0.3, 1] }}
                     className="mt-5 sm:mt-6 flex justify-center"
                 >

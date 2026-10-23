@@ -139,21 +139,23 @@ const FlavorCarouselOverlayInner: React.FC<FlavorCarouselOverlayProps> = ({
       {/* ─────────────────────────────────────────────────────────────────
           1. FULL-SCREEN CLICK ZONES (Click anywhere left or right to switch flavors)
       ───────────────────────────────────────────────────────────────── */}
-      <div
+      <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onPrevFlavor();
         }}
-        className="absolute inset-y-0 left-0 w-1/2 z-10 pointer-events-auto cursor-pointer"
+        className="absolute inset-y-0 left-0 w-1/2 z-10 pointer-events-auto cursor-pointer bg-transparent border-0 p-0 m-0"
         title="Click left to see previous flavor"
         aria-label="Previous flavor"
       />
-      <div
+      <button
+        type="button"
         onClick={(e) => {
           e.stopPropagation();
           onNextFlavor();
         }}
-        className="absolute inset-y-0 right-0 w-1/2 z-10 pointer-events-auto cursor-pointer"
+        className="absolute inset-y-0 right-0 w-1/2 z-10 pointer-events-auto cursor-pointer bg-transparent border-0 p-0 m-0"
         title="Click right to see next flavor"
         aria-label="Next flavor"
       />
@@ -340,7 +342,7 @@ const FlavorCarouselOverlayInner: React.FC<FlavorCarouselOverlayProps> = ({
                   transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
                   className="flex flex-col items-center select-none"
                 >
-                  <span
+                  <h1
                     className={`uppercase text-white leading-none drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)] drop-shadow-[0_0_24px_rgba(255,255,255,0.15)] ${headingStyle.className}`}
                     style={{
                       fontFamily: headingStyle.fontFamily,
@@ -350,7 +352,7 @@ const FlavorCarouselOverlayInner: React.FC<FlavorCarouselOverlayProps> = ({
                     }}
                   >
                     {canName}
-                  </span>
+                  </h1>
                 </motion.div>
               </AnimatePresence>
             </div>
