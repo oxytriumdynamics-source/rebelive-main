@@ -73,26 +73,39 @@ export const Footer: React.FC<FooterProps> = ({
 
   // Measure exact heading text height and listen to scroll to smoothly cover 30% on full bottom scroll
   useEffect(() => {
+    // On homepage, don't query geometric layout properties until footer is actually visible
+    if (isHomePage && !isHomeFooterVisible) {
+      return;
+    }
+
+    let rafId: number | null = null;
     const updateDimensions = () => {
-      if (headingRef.current) {
-        setH1Height(headingRef.current.offsetHeight);
-      }
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = requestAnimationFrame(() => {
+        if (headingRef.current) {
+          setH1Height(headingRef.current.offsetHeight);
+        }
+      });
     };
 
     updateDimensions();
-    window.addEventListener('resize', updateDimensions);
+    window.addEventListener('resize', updateDimensions, { passive: true });
 
+    let scrollRafId: number | null = null;
     const handleScroll = () => {
-      const scrollY = window.scrollY;
-      const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-      if (maxScroll <= 0) return;
+      if (scrollRafId) cancelAnimationFrame(scrollRafId);
+      scrollRafId = requestAnimationFrame(() => {
+        const scrollY = window.scrollY;
+        const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+        if (maxScroll <= 0) return;
 
-      const distFromBottom = Math.max(0, maxScroll - scrollY);
+        const distFromBottom = Math.max(0, maxScroll - scrollY);
 
-      // Smooth trigger range: over the last 300px of scrolling to the bottom
-      const triggerRange = 300;
-      const rawProgress = Math.max(0, Math.min(1, 1 - distFromBottom / triggerRange));
-      setScrollProgress(rawProgress);
+        // Smooth trigger range: over the last 300px of scrolling to the bottom
+        const triggerRange = 300;
+        const rawProgress = Math.max(0, Math.min(1, 1 - distFromBottom / triggerRange));
+        setScrollProgress(rawProgress);
+      });
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -108,11 +121,13 @@ export const Footer: React.FC<FooterProps> = ({
     }
 
     return () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      if (scrollRafId) cancelAnimationFrame(scrollRafId);
       window.removeEventListener('resize', updateDimensions);
       window.removeEventListener('scroll', handleScroll);
       if (lenisUnsub) lenisUnsub();
     };
-  }, []);
+  }, [isHomePage, isHomeFooterVisible]);
 
   // Exactly 35% of the actual H1 text letters is covered on full bottom scroll
   const maxOverlap = Math.round(h1Height * 0.30);

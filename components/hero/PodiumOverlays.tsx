@@ -57,17 +57,8 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
       ───────────────────────────────────────────────────────────── */}
       <div className="absolute inset-x-0 top-[-8px] sm:top-[-10px] md:top-[-20px] flex flex-col items-center pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, y: -80, scale: 0.92, filter: 'blur(8px)' }}
-          animate={
-            isPageReady
-              ? { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }
-              : { opacity: 0, y: -65, scale: 0.92, filter: 'blur(8px)' }
-          }
-          transition={{
-            duration: 1.25,
-            delay: 0.2,
-            ease: [0.16, 1, 0.3, 1],
-          }}
+          initial={false}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
           className="flex flex-col items-center"
           style={{
             transform: `translateY(${topScrollY}px) scale(${scrollScale})`,
@@ -81,6 +72,7 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
               fill
               sizes="(max-width: 640px) 165px, (max-width: 768px) 220px, (max-width: 1024px) 275px, 320px"
               priority
+              fetchPriority="high"
               className="object-contain opacity-95 brightness-[1.12] contrast-[1.12] drop-shadow-[0_16px_36px_rgba(0,0,0,0.95)]"
             />
           </div>
@@ -92,17 +84,8 @@ const PodiumOverlaysInner: React.FC<PodiumOverlaysProps> = ({
       ───────────────────────────────────────────────────────────── */}
       <div className="absolute inset-x-0 bottom-[-10px] sm:bottom-[-16px] md:bottom-[-22px] flex flex-col items-center pointer-events-none">
         <motion.div
-          initial={{ opacity: 0, y: 65, scale: 0.92, filter: 'blur(8px)' }}
-          animate={
-            isPageReady
-              ? { opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }
-              : { opacity: 0, y: 65, scale: 0.92, filter: 'blur(8px)' }
-          }
-          transition={{
-            duration: 1.25,
-            delay: 0.28,
-            ease: [0.16, 1, 0.3, 1],
-          }}
+          initial={false}
+          animate={{ opacity: 1, y: 0, scale: 1, filter: 'blur(0px)' }}
           className="flex flex-col items-center"
           style={{
             transform: `translateY(${bottomScrollY}px) scale(${scrollScale})`,

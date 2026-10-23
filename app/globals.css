@@ -96,15 +96,15 @@
   --font-display: 'Code Next', sans-serif;
   --font-heading: 'Code Next', sans-serif;
   --font-heading-weight: 700;
-  --font-body: 'Poppins', sans-serif;
-  --font-mono: 'Poppins', sans-serif;
-  --font-tech: 'Poppins', sans-serif;
-  --font-tall: 'Barlow Condensed', 'Oswald', 'Teko', sans-serif;
+  --font-body: var(--font-poppins), 'Poppins', sans-serif;
+  --font-mono: var(--font-jetbrains-mono), var(--font-poppins), 'Poppins', monospace;
+  --font-tech: var(--font-poppins), 'Poppins', sans-serif;
+  --font-tall: var(--font-barlow-condensed), 'Barlow Condensed', 'Oswald', 'Teko', sans-serif;
 
   /* Persona Typography: Authentic Persona Fonts */
   --font-apex: "PF Fuel", "PF Fuel Pro", 'Code Next', sans-serif;
   --font-capella: "Nasalization", "Nasalization Rg", "Orbitron", "Syne", sans-serif;
-  --font-aviva: "Protest Revolution", "Sedgwick Ave Display", cursive, sans-serif;
+  --font-aviva: var(--font-protest-revolution), "Protest Revolution", "Sedgwick Ave Display", cursive, sans-serif;
 }
 
 @theme inline {
@@ -459,12 +459,12 @@
 
   .font-tech,
   .font-mono {
-    font-family: 'Poppins', sans-serif !important;
+    font-family: var(--font-jetbrains-mono), var(--font-poppins), 'Poppins', sans-serif !important;
   }
 
   .font-sans,
   .font-body {
-    font-family: 'Poppins', sans-serif !important;
+    font-family: var(--font-poppins), 'Poppins', sans-serif !important;
   }
 
   .font-apex {

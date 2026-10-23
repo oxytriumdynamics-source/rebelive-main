@@ -181,8 +181,8 @@ export default function App() {
     router.push('/shop');
   }, [router]);
 
-  // Page entrance animation state - starts false for deterministic SSR/hydration, synced in useEffect
-  const [isPageReady, setIsPageReady] = useState(false);
+  // Page entrance animation state - starts true so hero content renders immediately for LCP
+  const [isPageReady, setIsPageReady] = useState(true);
 
   const handlePageLoaded = useCallback(() => {
     setIsPageReady(true);
@@ -190,12 +190,7 @@ export default function App() {
 
   // Sync entrance readiness safely post-hydration on client
   useEffect(() => {
-    if (hasIntroLoaded()) {
-      setIsPageReady(true);
-      return;
-    }
-    const timer = setTimeout(() => setIsPageReady(true), 2500);
-    return () => clearTimeout(timer);
+    setIsPageReady(true);
   }, []);
 
   // Guarantee manual scroll restoration so page always starts cleanly at top
@@ -204,7 +199,9 @@ export default function App() {
       if ('scrollRestoration' in window.history) {
         window.history.scrollRestoration = 'manual';
       }
-      window.scrollTo(0, 0);
+      if (window.scrollY > 0) {
+        window.scrollTo(0, 0);
+      }
     }
   }, []);
 
@@ -218,10 +215,22 @@ export default function App() {
   const prevFeatureIdxRef = useRef<number>(-1);
   const prevStmtIdxRef = useRef<number>(-1);
 
+  // Cached subfooter measurement to eliminate layout thrashing
+  const subfooterTopRef = useRef<number>(0);
+  const getSubfooterTop = useCallback(() => {
+    if (subfooterTopRef.current > 0) return subfooterTopRef.current;
+    const subfooterEl = document.getElementById('home-subfooter');
+    if (subfooterEl) {
+      subfooterTopRef.current = subfooterEl.offsetTop;
+    }
+    return subfooterTopRef.current || (typeof window !== 'undefined' ? window.innerHeight * 7 : 800);
+  }, []);
+
   // ── Resize / mobile & tablet (debounced to avoid layout thrashing on mobile browser bar resize) ────
   useEffect(() => {
     let timer: NodeJS.Timeout | null = null;
     const updateDimensions = () => {
+      subfooterTopRef.current = 0;
       const w = window.innerWidth;
       const mobile = w < 500;
       const tablet = w >= 500 && w < 1024;
@@ -515,12 +524,10 @@ export default function App() {
       }
 
       // ── IN SUBFOOTER & FOOTER ZONE (Sections 7 and 8) ──
-      const subfooterEl = document.getElementById('home-subfooter');
-      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
-      const isSettledInSubFooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
-      const isInSubFooterZone = activeSectionRef.current >= 7 && isSettledInSubFooter;
+      const isInSubFooterZone = activeSectionRef.current >= 7 && (typeof window !== 'undefined' && window.scrollY >= getSubfooterTop() - 40);
 
       if (isInSubFooterZone) {
+        const subfooterTop = getSubfooterTop();
         if (delta > 0) {
           // Scrolling down: allow Lenis & browser to scroll smoothly and naturally
           // through Testimonials, through SubFooter ("Nutrition as a Lifestyle"), and into the Footer!
@@ -606,13 +613,11 @@ export default function App() {
       const absDeltaY = Math.abs(deltaY);
       const absDeltaX = Math.abs(deltaX);
 
-      const subfooterEl = document.getElementById('home-subfooter');
-      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
-      const isSettledInSubFooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 40;
-      const isInSubFooterZone = activeSectionRef.current >= 7 && isSettledInSubFooter;
+      const isInSubFooterZone = activeSectionRef.current >= 7 && (typeof window !== 'undefined' && window.scrollY >= getSubfooterTop() - 40);
 
       // In the SubFooter and Footer zone: allow natural, continuous smooth scrolling
       if (isInSubFooterZone) {
+        const subfooterTop = getSubfooterTop();
         if (deltaY > 0) {
           // Swiping up (scrolling down): let Lenis & browser scroll naturally without blocking
           return;
@@ -680,21 +685,22 @@ export default function App() {
       if (isSpecsOpen || isMenuOpen || isContactOpen || isOrderOpen) return;
       if (isAnimatingRef.current) return;
 
-      const subfooterEl = document.getElementById('home-subfooter');
-      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
+      if (activeSectionRef.current >= 6) {
+        const subfooterTop = getSubfooterTop();
 
-      // Auto-settle if user stopped halfway in transition between 3D stage and SubFooter
-      if (typeof window !== 'undefined' && window.scrollY > 20 && window.scrollY < subfooterTop - 30) {
-        if (window.scrollY < subfooterTop * 0.45) {
-          goToSection(6);
-        } else {
-          goToSection(7);
+        // Auto-settle if user stopped halfway in transition between 3D stage and SubFooter
+        if (typeof window !== 'undefined' && window.scrollY > 20 && window.scrollY < subfooterTop - 30) {
+          if (window.scrollY < subfooterTop * 0.45) {
+            goToSection(6);
+          } else {
+            goToSection(7);
+          }
+          return;
         }
-        return;
-      }
 
-      const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
-      if (isAtOrPastSubfooter) return;
+        const isAtOrPastSubfooter = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 20;
+        if (isAtOrPastSubfooter) return;
+      }
 
       // Check for quick flick gesture
       const changedTouch = e.changedTouches[0];
@@ -745,8 +751,7 @@ export default function App() {
         goToNext();
       } else if (['ArrowUp', 'PageUp'].includes(e.key)) {
         if (activeSectionRef.current >= 7) {
-          const subfooterEl = document.getElementById('home-subfooter');
-          const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 800);
+          const subfooterTop = getSubfooterTop();
           if (window.scrollY > subfooterTop + 25) {
             return; // Allow natural smooth scroll upward in footer
           }

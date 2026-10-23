@@ -55,12 +55,18 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
     }
 
     const resetToTop = () => {
-      window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
-      if (document.documentElement) document.documentElement.scrollTop = 0;
-      if (document.body) document.body.scrollTop = 0;
+      if (window.scrollY > 0 || (document.documentElement && document.documentElement.scrollTop > 0)) {
+        window.scrollTo({ top: 0, left: 0, behavior: 'instant' as any });
+        if (document.documentElement && document.documentElement.scrollTop > 0) {
+          document.documentElement.scrollTop = 0;
+        }
+        if (document.body && document.body.scrollTop > 0) {
+          document.body.scrollTop = 0;
+        }
+      }
 
       const lenis = (window as any).__lenis as Lenis | undefined;
-      if (lenis) {
+      if (lenis && window.scrollY > 0) {
         if (typeof lenis.scrollTo === 'function') {
           lenis.scrollTo(0, { immediate: true, force: true } as any);
         }
@@ -72,13 +78,9 @@ export const SmoothScroll: React.FC<SmoothScrollProps> = ({ children }) => {
 
     resetToTop();
     const rafId = requestAnimationFrame(resetToTop);
-    const t1 = setTimeout(resetToTop, 25);
-    const t2 = setTimeout(resetToTop, 100);
 
     return () => {
       cancelAnimationFrame(rafId);
-      clearTimeout(t1);
-      clearTimeout(t2);
     };
   }, [pathname]);
 

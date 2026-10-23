@@ -1,16 +1,36 @@
 import type { Metadata, Viewport } from "next";
 import Script from "next/script";
-/* Poppins - body font (self-hosted via @fontsource, zero CDN latency) */
-import "@fontsource/poppins/300.css";
-import "@fontsource/poppins/400.css";
-import "@fontsource/poppins/500.css";
-import "@fontsource/poppins/600.css";
-import "@fontsource/poppins/700.css";
-import "@fontsource/poppins/800.css";
-import "@fontsource/poppins/900.css";
-import "@fontsource/jetbrains-mono/400.css";
-import "@fontsource/jetbrains-mono/500.css";
+import { Poppins, JetBrains_Mono, Barlow_Condensed, Protest_Revolution } from "next/font/google";
 import "./globals.css";
+
+const poppins = Poppins({
+  subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  variable: "--font-poppins",
+  display: "swap",
+});
+
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  variable: "--font-jetbrains-mono",
+  display: "swap",
+});
+
+const barlowCondensed = Barlow_Condensed({
+  subsets: ["latin"],
+  weight: ["600", "700", "800"],
+  variable: "--font-barlow-condensed",
+  display: "swap",
+});
+
+const protestRevolution = Protest_Revolution({
+  subsets: ["latin"],
+  weight: ["400"],
+  variable: "--font-protest-revolution",
+  display: "swap",
+});
+
 import StoreProvider from "@/store/StoreProvider";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
 import { ScrollToTop } from "@/components/layout/ScrollToTop";
@@ -169,20 +189,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="h-full antialiased bg-black text-white" suppressHydrationWarning>
+    <html
+      lang="en"
+      className={`${poppins.variable} ${jetbrainsMono.variable} ${barlowCondensed.variable} ${protestRevolution.variable} h-full antialiased bg-black text-white`}
+      suppressHydrationWarning
+    >
       <head>
-        {/* Preconnect to critical third-party origins */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          rel="preload"
-          as="style"
-          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Oswald:wght@600;700&family=Teko:wght@600;700&family=Bebas+Neue&family=Protest+Revolution&family=Orbitron:wght@600;700;800;900&family=Syne:wght@700;800&family=Permanent+Marker&family=Caveat:wght@700&display=swap"
-        />
-        <link
-          rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Oswald:wght@600;700&family=Teko:wght@600;700&family=Bebas+Neue&family=Protest+Revolution&family=Orbitron:wght@600;700;800;900&family=Syne:wght@700;800&family=Permanent+Marker&family=Caveat:wght@700&display=swap"
-        />
         <script
           type="application/ld+json"
           dangerouslySetInnerHTML={{

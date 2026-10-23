@@ -275,11 +275,12 @@ export default function HalftoneField({
       ro.observe(baseCanvas.parentElement);
     }
 
-    resize();
+    const initRaf = requestAnimationFrame(resize);
 
     return () => {
       isRunning = false;
       cancelAnimationFrame(rafId);
+      cancelAnimationFrame(initRaf);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("mouseleave", onMouseLeave);
       window.removeEventListener("touchmove", onTouchMove);

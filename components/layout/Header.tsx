@@ -109,23 +109,39 @@ export const Header: React.FC<HeaderProps> = ({
     }
 
     // On Home Page:
+    let cachedSubfooterTop = 0;
+    const getSubfooterTop = () => {
+      if (cachedSubfooterTop > 0) return cachedSubfooterTop;
+      const subfooterEl = document.getElementById('home-subfooter');
+      if (subfooterEl) {
+        cachedSubfooterTop = subfooterEl.offsetTop;
+      }
+      return cachedSubfooterTop || (typeof window !== 'undefined' ? window.innerHeight * 7 : 900);
+    };
+
     const checkHomeScroll = (progress: number) => {
       const isMobileScreen = typeof window !== 'undefined' && window.innerWidth < 768;
-      const subfooterEl = document.getElementById('home-subfooter');
-      const subfooterTop = subfooterEl ? subfooterEl.offsetTop : (typeof window !== 'undefined' ? window.innerHeight : 900);
-      const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80 && progress >= 0.80;
-      const isPastStatementByProgress = progress >= 0.84;
 
       if (isMobileScreen) {
         // On mobile screen: shrink to floating pill as soon as scrolled past initial top
         setIsScrolled(progress > 0.04 || (typeof window !== 'undefined' && window.scrollY > 20));
-      } else {
-        // Desktop retains full-width transparent header until reaching subfooter
-        setIsScrolled(isPastStatementByProgress || isPastStatementByScroll);
+        return;
       }
+
+      // Desktop retains full-width transparent header until reaching subfooter
+      // Avoid DOM queries when in the initial stage (progress < 0.75)
+      if (progress < 0.75 && (typeof window === 'undefined' || window.scrollY < 100)) {
+        setIsScrolled(false);
+        return;
+      }
+
+      const subfooterTop = getSubfooterTop();
+      const isPastStatementByScroll = typeof window !== 'undefined' && window.scrollY >= subfooterTop - 80 && progress >= 0.80;
+      const isPastStatementByProgress = progress >= 0.84;
+      setIsScrolled(isPastStatementByProgress || isPastStatementByScroll);
     };
 
-    // Initialize immediately
+    // Initialize immediately without DOM querying
     checkHomeScroll(animationState.scrollProgress);
 
     const unsubProgress = subscribeScrollProgress((p) => {
@@ -136,8 +152,13 @@ export const Header: React.FC<HeaderProps> = ({
       checkHomeScroll(animationState.scrollProgress);
     };
 
+    const handleWindowResize = () => {
+      cachedSubfooterTop = 0;
+      checkHomeScroll(animationState.scrollProgress);
+    };
+
     window.addEventListener('scroll', handleWindowScroll, { passive: true });
-    window.addEventListener('resize', handleWindowScroll, { passive: true });
+    window.addEventListener('resize', handleWindowResize, { passive: true });
 
     let lenisUnsub: (() => void) | null = null;
     const lenis = (window as any).__lenis;

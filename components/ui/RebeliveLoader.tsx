@@ -35,19 +35,19 @@ export const RebeliveLoader: React.FC<RebeliveLoaderProps> = ({
         if (charIndex < targetText.length) {
           charIndex++;
           setDisplayedText(targetText.slice(0, charIndex));
-          timeoutId = setTimeout(typeNextChar, 55);
+          timeoutId = setTimeout(typeNextChar, 28);
         } else {
           setIsComplete(true);
           if (onComplete) {
             timeoutId = setTimeout(() => {
               onComplete();
-            }, 380);
+            }, 140);
           }
         }
       };
 
       typeNextChar();
-    }, 160);
+    }, 60);
 
     return () => {
       clearTimeout(startTimeout);
