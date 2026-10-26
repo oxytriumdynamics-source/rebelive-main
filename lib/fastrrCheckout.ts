@@ -241,7 +241,7 @@ export function getVariantId(productIdOrSlug?: string, packSize: number = 6): nu
  * Global Instant Checkout Pause Flag
  * Set to true to temporarily pause and disable 1-Click Fastrr Instant Checkout across the store.
  */
-export const IS_INSTANT_CHECKOUT_PAUSED = false;
+export const IS_INSTANT_CHECKOUT_PAUSED = true;
 
 /**
  * Generates token from backend and triggers the native Shiprocket Fastrr Instant Checkout UI directly.
