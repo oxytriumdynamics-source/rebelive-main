@@ -37,6 +37,7 @@ export function CartDrawer() {
           image: i.image,
         }))
       );
+      dispatch(closeCart());
     } catch (err: any) {
       setCheckoutError(err.message || 'Unable to open Fastrr checkout');
     } finally {

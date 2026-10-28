@@ -850,3 +850,30 @@ html.story-page-active body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ─── Shiprocket Fastrr Modal & Preloader Hit-Testing Fixes ─── */
+#fastrr-main-container {
+  position: relative !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+#headless-container,
+.headless-modal,
+.headless-modal-content,
+.headless-modal-body,
+#headless-iframe,
+.headless-payment-iframe {
+  position: fixed !important;
+  z-index: 2147483647 !important;
+  pointer-events: auto !important;
+}
+
+/* Ensure Fastrr preloaders never capture or block mouse/touch clicks */
+#fastrr-pre-loader,
+.fastrr-pre-loader,
+.fastrr-pre-loader-container,
+.fastrr-pre-loader-custom,
+.custom-login-pre-loader {
+  pointer-events: none !important;
+}

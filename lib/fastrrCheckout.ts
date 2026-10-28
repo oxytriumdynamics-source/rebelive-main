@@ -267,7 +267,8 @@ export async function launchFastrrCheckout(
   const existingHeadless = document.getElementById('headless-container');
   if (existingHeadless) existingHeadless.remove();
   const existingPreloader = document.getElementById('fastrr-pre-loader');
-  if (existingPreloader) existingPreloader.style.display = 'none';
+  if (existingPreloader) existingPreloader.remove();
+  document.querySelectorAll('.fastrr-pre-loader, .fastrr-pre-loader-container, .fastrr-pre-loader-custom').forEach((el) => el.remove());
   document.body.style.overflow = '';
 
   const fallbackUrl = `${window.location.origin}/order-confirmation`;
@@ -361,9 +362,25 @@ export async function launchFastrrCheckout(
   }
 
   // 3. Setup window postMessage listener for exit/close and redirect events from Fastrr
+  const dismissPreloader = () => {
+    const preloader = document.getElementById('fastrr-pre-loader');
+    if (preloader) {
+      preloader.style.pointerEvents = 'none';
+      preloader.style.display = 'none';
+      preloader.remove();
+    }
+    document.querySelectorAll('.fastrr-pre-loader, .fastrr-pre-loader-container, .fastrr-pre-loader-custom').forEach((el) => {
+      (el as HTMLElement).style.pointerEvents = 'none';
+      (el as HTMLElement).style.display = 'none';
+      el.remove();
+    });
+  };
+
   const handleFastrrMessage = (e: MessageEvent) => {
     if (e.data) {
       extractAndStoreFastrrData(e.data);
+      // As soon as Fastrr transmits any postMessage, we know it's active - dismiss any lingering preloader
+      dismissPreloader();
     }
 
     // Handle payment redirects (e.g. UPI, NetBanking, 3DS authentication)
@@ -409,8 +426,7 @@ export async function launchFastrrCheckout(
       if (main) main.remove();
       const headless = document.getElementById('headless-container');
       if (headless) headless.remove();
-      const preloader = document.getElementById('fastrr-pre-loader');
-      if (preloader) preloader.style.display = 'none';
+      dismissPreloader();
       document.body.style.overflow = '';
       window.removeEventListener('message', handleFastrrMessage);
     }
@@ -421,43 +437,47 @@ export async function launchFastrrCheckout(
   if (window.HeadlessCheckout && typeof window.HeadlessCheckout.addToCart === 'function') {
     const nativeEvent = event?.nativeEvent || event || new MouseEvent('click');
 
-    // Upgrade iframe permissions (payment, camera for UPI QR, clipboard, web-share)
+    // Neutralize preloader clicks immediately so it never traps clicks over the iframe
+    let attempts = 0;
     const checkIframe = setInterval(() => {
-      const iframe = document.getElementById('headless-iframe') as HTMLIFrameElement | null;
-      if (iframe) {
-        try {
-          const currentAllow = iframe.getAttribute('allow') || '';
-          const needed = ['payment', 'camera', 'clipboard-read', 'clipboard-write', 'web-share', 'geolocation'];
-          const missing = needed.filter((p) => !currentAllow.includes(p));
-          if (missing.length > 0) {
-            iframe.setAttribute('allow', `${currentAllow}; ${missing.join('; ')}`.trim().replace(/^;\s*/, ''));
-          }
-        } catch {}
+      attempts++;
 
-        iframe.addEventListener('load', () => {
-          const preloader = document.getElementById('fastrr-pre-loader');
-          if (preloader) {
-            preloader.style.opacity = '0';
-            setTimeout(() => {
-              if (preloader) preloader.style.display = 'none';
-            }, 200);
-          }
-        });
-        clearInterval(checkIframe);
-      }
-    }, 100);
-
-    // Timeout safety for preloader
-    setTimeout(() => {
-      clearInterval(checkIframe);
+      // Force pointer-events: none on any preloader elements
       const preloader = document.getElementById('fastrr-pre-loader');
       if (preloader) {
-        preloader.style.opacity = '0';
-        setTimeout(() => {
-          if (preloader) preloader.style.display = 'none';
-        }, 200);
+        preloader.style.pointerEvents = 'none';
       }
-    }, 2500);
+      document.querySelectorAll('.fastrr-pre-loader, .fastrr-pre-loader-container, .fastrr-pre-loader-custom').forEach((el) => {
+        (el as HTMLElement).style.pointerEvents = 'none';
+      });
+
+      const iframe = document.getElementById('headless-iframe') as HTMLIFrameElement | null;
+      if (iframe) {
+        iframe.style.pointerEvents = 'auto';
+        const modal = document.querySelector('.headless-modal') as HTMLElement | null;
+        if (modal) {
+          modal.style.pointerEvents = 'auto';
+          modal.style.zIndex = '2147483647';
+        }
+
+        iframe.addEventListener('load', () => {
+          dismissPreloader();
+        });
+
+        // Fast fallback: dismiss preloader after 400ms once iframe element exists
+        setTimeout(dismissPreloader, 400);
+        clearInterval(checkIframe);
+      } else if (attempts > 30) {
+        clearInterval(checkIframe);
+        dismissPreloader();
+      }
+    }, 50);
+
+    // Hard fallback timeout: ensure preloader is completely gone
+    setTimeout(() => {
+      clearInterval(checkIframe);
+      dismissPreloader();
+    }, 1200);
 
     window.HeadlessCheckout.addToCart(
       nativeEvent,
@@ -475,6 +495,7 @@ export async function launchFastrrCheckout(
           if (main) main.remove();
           const headless = document.getElementById('headless-container');
           if (headless) headless.remove();
+          dismissPreloader();
           document.body.style.overflow = '';
         }
       }
