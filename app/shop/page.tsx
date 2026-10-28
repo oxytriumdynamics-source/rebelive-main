@@ -33,6 +33,21 @@ const CartDrawer = dynamic(() => import('@/components/shop/CartDrawer').then((m)
 const SANS = "'Poppins', sans-serif";
 const MONO = "'Poppins', sans-serif";
 
+function getMatchingVariant(product: Product | null, packSize: PackSize | number) {
+  if (!product?.variants || product.variants.length === 0) return null;
+  const pack = Number(packSize);
+  return (
+    product.variants.find((v) => {
+      return (
+        v.sizeMl === pack * 250 ||
+        v.sizeMl === pack ||
+        (v.sku && (v.sku.toUpperCase().includes(`PACK-${pack}`) || v.sku.toUpperCase().includes(`${pack}PACK`))) ||
+        new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+      );
+    }) || null
+  );
+}
+
 export default function ShopPage() {
   const router = useRouter();
   const dispatch = useAppDispatch();
@@ -84,17 +99,7 @@ export default function ShopPage() {
 
   const handleConfirmAddToCart = () => {
     if (!quickAddProduct) return;
-    const variantMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
-      ? quickAddProduct.variants.find((v) => {
-          const pack = Number(modalPack);
-          return (
-            v.sizeMl === pack * 250 ||
-            v.sizeMl === pack ||
-            v.sku.toUpperCase().includes(`PACK-${pack}`) ||
-            new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
-          );
-        })
-      : null;
+    const variantMatch = getMatchingVariant(quickAddProduct, modalPack);
     const finalPrice = variantMatch ? variantMatch.price : (PRICES[modalPack]?.price ?? 449);
 
     dispatch(
@@ -341,60 +346,63 @@ export default function ShopPage() {
                 </div>
 
                 {/* Pack Selection (3, 6, 9, 12) */}
-                <div className="space-y-3 mb-6">
-                  <div className="flex items-center justify-between text-xs font-mono text-white/50 uppercase">
-                    <span>Choose Pack Size:</span>
-                    <span className="text-emerald-400 font-bold">{PRICES[modalPack].discount}</span>
-                  </div>
+                {(() => {
+                  const selectedVarMatch = getMatchingVariant(quickAddProduct, modalPack);
+                  const selectedPrice = selectedVarMatch?.price ?? PRICES[modalPack]?.price ?? 449;
+                  const selectedMrp = selectedVarMatch?.compareAtPrice ?? PRICES[modalPack]?.mrp ?? selectedPrice;
+                  const selectedDiscount = selectedMrp > selectedPrice
+                    ? `${Math.round(((selectedMrp - selectedPrice) / selectedMrp) * 100)}% OFF`
+                    : '';
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
-                    {([3, 6, 9, 12] as PackSize[]).map((size) => {
-                      const isSelected = modalPack === size;
-                      const varMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
-                        ? quickAddProduct.variants.find((v) => {
-                            const pack = Number(size);
-                            return (
-                              v.sizeMl === pack * 250 ||
-                              v.sizeMl === pack ||
-                              v.sku.toUpperCase().includes(`PACK-${pack}`) ||
-                              new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
-                            );
-                          })
-                        : null;
-                      const displayPrice = varMatch?.price ?? PRICES[size]?.price ?? 449;
-                      const displayMrp = varMatch?.compareAtPrice ?? PRICES[size]?.mrp ?? 499;
+                  return (
+                    <div className="space-y-3 mb-6">
+                      <div className="flex items-center justify-between text-xs font-mono text-white/50 uppercase">
+                        <span>Choose Pack Size:</span>
+                        {selectedDiscount && (
+                          <span className="text-emerald-400 font-bold">{selectedDiscount}</span>
+                        )}
+                      </div>
 
-                      return (
-                        <button
-                          key={size}
-                          type="button"
-                          onClick={() => {
-                            setModalPack(size);
-                          }}
-                          className={`py-4 px-2.5 sm:px-3 sm:py-5 min-h-[105px] sm:min-h-[116px] rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between items-center ${
-                            isSelected
-                              ? 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
-                              : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white border border-white/10'
-                          }`}
-                        >
-                          <div className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                            Pack of {size}
-                          </div>
-                          <div className="my-auto py-1 flex flex-col items-center justify-center">
-                            <span className="font-mono text-base sm:text-lg font-black leading-none">
-                              ₹{displayPrice}
-                            </span>
-                            {displayMrp && displayMrp > displayPrice && (
-                              <span className={`text-[10px] sm:text-[11px] line-through font-mono mt-1 ${isSelected ? 'text-black/60 font-medium' : 'text-white/45'}`}>
-                                ₹{displayMrp}
-                              </span>
-                            )}
-                          </div>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 sm:gap-3">
+                        {([3, 6, 9, 12] as PackSize[]).map((size) => {
+                          const isSelected = modalPack === size;
+                          const varMatch = getMatchingVariant(quickAddProduct, size);
+                          const displayPrice = varMatch?.price ?? PRICES[size]?.price ?? 449;
+                          const displayMrp = varMatch?.compareAtPrice ?? PRICES[size]?.mrp ?? 499;
+
+                          return (
+                            <button
+                              key={size}
+                              type="button"
+                              onClick={() => {
+                                setModalPack(size);
+                              }}
+                              className={`py-4 px-2.5 sm:px-3 sm:py-5 min-h-[105px] sm:min-h-[116px] rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between items-center ${
+                                isSelected
+                                  ? 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
+                                  : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white border border-white/10'
+                              }`}
+                            >
+                              <div className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider">
+                                Pack of {size}
+                              </div>
+                              <div className="my-auto py-1 flex flex-col items-center justify-center">
+                                <span className="font-mono text-base sm:text-lg font-black leading-none">
+                                  ₹{displayPrice}
+                                </span>
+                                {displayMrp && displayMrp > displayPrice && (
+                                  <span className={`text-[10px] sm:text-[11px] line-through font-mono mt-1 ${isSelected ? 'text-black/60 font-medium' : 'text-white/45'}`}>
+                                    ₹{displayMrp}
+                                  </span>
+                                )}
+                              </div>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  );
+                })()}
 
                 {/* Confirm Add to Cart and Instant Checkout Buttons */}
                 <div className="grid grid-cols-2 gap-3 mt-5">
@@ -413,17 +421,7 @@ export default function ShopPage() {
                       if (!quickAddProduct) return;
                       try {
                         setIsInstantBuying(true);
-                        const varMatch = (quickAddProduct.variants && quickAddProduct.variants.length > 0)
-                          ? quickAddProduct.variants.find((v) => {
-                              const pack = Number(modalPack);
-                              return (
-                                v.sizeMl === pack * 250 ||
-                                v.sizeMl === pack ||
-                                v.sku.toUpperCase().includes(`PACK-${pack}`) ||
-                                new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
-                              );
-                            })
-                          : null;
+                        const varMatch = getMatchingVariant(quickAddProduct, modalPack);
                         const finalPrice = varMatch ? varMatch.price : (PRICES[modalPack]?.price ?? 449);
                         const finalVarId = varMatch ? String(varMatch.id) : String(getVariantId(quickAddProduct.id, modalPack));
 

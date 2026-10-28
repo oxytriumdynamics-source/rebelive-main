@@ -489,7 +489,7 @@ export default function ProductDetailPage() {
   const activeDiscount =
     activeMrp > activePrice
       ? `${Math.round(((activeMrp - activePrice) / activeMrp) * 100)}% OFF`
-      : (PRICES[packSize]?.discount || '');
+      : '';
   const perCan = Math.round(activePrice / packSize);
 
   const pricing = {
