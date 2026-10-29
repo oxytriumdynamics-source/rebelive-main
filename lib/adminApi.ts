@@ -24,9 +24,9 @@ adminClient.interceptors.request.use((config) => {
 adminClient.interceptors.response.use(
   (res) => res,
   async (error) => {
-    // If 401 Unauthorized or 403 Forbidden occurs on protected routes, purge session and broadcast
+    // Only 401 Unauthorized should clear session. 403 Forbidden indicates permission denial.
     const status = error.response?.status;
-    if ((status === 401 || status === 403) && typeof window !== 'undefined') {
+    if (status === 401 && typeof window !== 'undefined') {
       if (!error.config?.url?.includes('/login')) {
         clearAdminSession();
         window.dispatchEvent(new CustomEvent('admin-session-expired', { detail: { status } }));
@@ -39,7 +39,7 @@ adminClient.interceptors.response.use(
 export function isAuthError(err: unknown): boolean {
   if (err && typeof err === 'object' && 'response' in err) {
     const res = (err as { response?: { status?: number } }).response;
-    return res?.status === 401 || res?.status === 403;
+    return res?.status === 401;
   }
   return false;
 }
@@ -49,10 +49,11 @@ export interface AdminUser {
   email: string;
   firstName: string;
   lastName: string;
-  role: 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN';
+  role: 'CUSTOMER' | 'TEAM' | 'ADMIN' | 'SUPERADMIN';
   phone?: string | null;
   emailVerified: boolean;
   isRestricted?: boolean;
+  assignedModules?: string[];
   avatarUrl?: string | null;
   createdAt: string;
   lastLoginAt?: string | null;
@@ -340,12 +341,18 @@ export async function changeAdminPassword(
   }
 }
 
-// ─── DASHBOARD & METRICS ───────────────────────────────
+let cachedDashboard: { data: AdminDashboardData; timestamp: number } | null = null;
+const DASHBOARD_CACHE_TTL = 30000; // 30 seconds cache
 
-export async function fetchAdminDashboard(): Promise<AdminDashboardData> {
+export async function fetchAdminDashboard(forceRefresh = false): Promise<AdminDashboardData> {
+  const now = Date.now();
+  if (!forceRefresh && cachedDashboard && now - cachedDashboard.timestamp < DASHBOARD_CACHE_TTL) {
+    return cachedDashboard.data;
+  }
   try {
     const res = await adminClient.get('/dashboard');
     if (res.data?.status === 'success' && res.data?.data) {
+      cachedDashboard = { data: res.data.data, timestamp: now };
       return res.data.data;
     }
   } catch (err: any) {
@@ -493,7 +500,19 @@ export async function trackOrderShiprocket(orderId: string): Promise<any> {
   return res.data?.data;
 }
 
+/**
+ * Permanently purges an order and all its items/payments from the database.
+ * SUPER ADMIN only.
+ */
+export async function deleteAdminOrderPermanent(
+  orderId: string
+): Promise<{ status: string; message: string }> {
+  const res = await adminClient.delete(`/orders/${orderId}`);
+  return res.data;
+}
+
 // ─── PRODUCTS CRUD ─────────────────────────────────────
+
 
 export async function fetchAdminProducts(search?: string): Promise<AdminProduct[]> {
   try {
@@ -636,7 +655,19 @@ export async function restrictAdminUser(userId: string, isRestricted?: boolean):
   return res.data?.data;
 }
 
+/**
+ * Permanently deletes a user account and purges all relational data from the database.
+ * SUPER ADMIN only.
+ */
+export async function deleteAdminUserPermanent(
+  userId: string
+): Promise<{ status: string; message: string }> {
+  const res = await adminClient.delete(`/users/${userId}`);
+  return res.data;
+}
+
 // ─── TESTIMONIALS MANAGEMENT ───────────────────────────
+
 
 export interface AdminTestimonial {
   id: string;
@@ -1051,5 +1082,86 @@ export async function uploadBlogImage(
 ): Promise<CloudinaryUploadResponse> {
   return uploadProductImage(fileOrData, 'rebelive/blogs');
 }
+
+// ─── ACTIVITY & AUDIT LOGS ─────────────────────────────
+
+export interface AdminActivityLog {
+  id: string;
+  userId?: string | null;
+  actorEmail?: string | null;
+  actorName?: string | null;
+  actorRole?: string | null;
+  action: string;
+  entity: string;
+  entityId?: string | null;
+  details?: any;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  createdAt: string;
+  user?: {
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  } | null;
+}
+
+export async function fetchAdminActivityLogs(params?: {
+  page?: number;
+  limit?: number;
+  search?: string;
+  role?: string;
+  entity?: string;
+}): Promise<{ data: AdminActivityLog[]; total: number; page: number; totalPages: number }> {
+  try {
+    const res = await adminClient.get('/audit-logs', { params });
+    return {
+      data: res.data.data || [],
+      total: res.data.pagination?.total || 0,
+      page: res.data.pagination?.page || 1,
+      totalPages: res.data.pagination?.totalPages || 1,
+    };
+  } catch (err: any) {
+    console.error('Failed to fetch admin audit logs:', err);
+    return {
+      data: [],
+      total: 0,
+      page: 1,
+      totalPages: 1,
+    };
+  }
+}
+
+// ─── STAFF MANAGEMENT (SUPER ADMIN) ───────────────────
+
+export async function createStaffAccount(data: {
+  email: string;
+  password: string;
+  firstName: string;
+  lastName?: string;
+  phone?: string;
+  role: 'ADMIN' | 'TEAM';
+  assignedModules?: string[];
+}): Promise<AdminUser> {
+  const res = await adminClient.post('/staff', data);
+  return res.data.data;
+}
+
+export async function updateStaffAccount(
+  id: string,
+  data: {
+    firstName?: string;
+    lastName?: string;
+    phone?: string;
+    role?: 'ADMIN' | 'TEAM';
+    assignedModules?: string[];
+    password?: string;
+    isRestricted?: boolean;
+  }
+): Promise<AdminUser> {
+  const res = await adminClient.patch(`/staff/${id}`, data);
+  return res.data.data;
+}
+
 
 

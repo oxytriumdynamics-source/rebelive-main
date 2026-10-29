@@ -1,23 +1,8 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import {
-  LayoutDashboard,
-  Package,
-  Boxes,
-  Users,
-  Truck,
-  LogOut,
-  ExternalLink,
-  Menu,
-  X,
-  RefreshCw,
-  Search,
-  Bell,
-  User as UserIcon,
-  Quote,
-} from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import {
   clearAdminSession,
   fetchAdminDashboard,
@@ -26,7 +11,7 @@ import {
   AdminUser,
   AdminDashboardData,
 } from '@/lib/adminApi';
-import { AdminLayoutShell } from '@/components/root/AdminLayoutShell';
+import { AdminLayoutShell, AdminTabId } from '@/components/root/AdminLayoutShell';
 import { RootAuthGateway } from '@/components/root/RootAuthGateway';
 import { RootOverviewTab } from '@/components/root/RootOverviewTab';
 import { RootOrdersTab } from '@/components/root/RootOrdersTab';
@@ -37,29 +22,70 @@ import { RootContactQueriesTab } from '@/components/root/RootContactQueriesTab';
 import { RootCorporateQueriesTab } from '@/components/root/RootCorporateQueriesTab';
 import { RootUsersTab } from '@/components/root/RootUsersTab';
 import { RootShiprocketTab } from '@/components/root/RootShiprocketTab';
+import { RootActivityLogsTab } from '@/components/root/RootActivityLogsTab';
 import { RootSettingsTab } from '@/components/root/RootSettingsTab';
 import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToaster';
 
-const MONO = "'Poppins', sans-serif";
-const SANS = "'Poppins', sans-serif";
+const VALID_TABS: AdminTabId[] = [
+  'overview',
+  'orders',
+  'products',
+  'blogs',
+  'testimonials',
+  'contact-queries',
+  'corporate-queries',
+  'users',
+  'shiprocket',
+  'activity-logs',
+  'settings',
+];
 
 export default function AdminRootPage() {
   const [adminUser, setAdminUser] = useState<AdminUser | null>(null);
-  const [activeTab, setActiveTab] = useState<
-    | 'overview'
-    | 'orders'
-    | 'products'
-    | 'blogs'
-    | 'testimonials'
-    | 'contact-queries'
-    | 'corporate-queries'
-    | 'users'
-    | 'shiprocket'
-    | 'settings'
-  >('overview');
+  const [activeTab, setActiveTab] = useState<AdminTabId>('overview');
+  const [visitedTabs, setVisitedTabs] = useState<Set<AdminTabId>>(new Set(['overview']));
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
   const [isInitializing, setIsInitializing] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
+
+  /**
+   * Evaluates if a given tab is authorized for the current user's role and assigned modules.
+   */
+  const isTabPermitted = useCallback((tab: AdminTabId, user: AdminUser | null): boolean => {
+    if (!user) return false;
+    if (user.role === 'SUPERADMIN') return true;
+
+    // Restricted for Admin & Team
+    if (tab === 'settings' || tab === 'activity-logs' || tab === 'users') {
+      return false;
+    }
+
+    if (user.role === 'ADMIN') return true;
+
+    if (user.role === 'TEAM') {
+      if (tab === 'overview') return true;
+      const assigned = user.assignedModules || [];
+      if (tab === 'shiprocket') return assigned.includes('orders');
+      return assigned.includes(tab);
+    }
+
+    return false;
+  }, []);
+
+  const handleTabChange = useCallback((tab: AdminTabId) => {
+    setActiveTab(tab);
+    setVisitedTabs((prev) => {
+      if (prev.has(tab)) return prev;
+      const next = new Set(prev);
+      next.add(tab);
+      return next;
+    });
+
+    if (typeof window !== 'undefined') {
+      const url = tab === 'overview' ? '/root' : `/root?tab=${tab}`;
+      window.history.pushState({}, '', url);
+    }
+  }, []);
 
   // Check stored admin session on mount
   useEffect(() => {
@@ -90,24 +116,13 @@ export default function AdminRootPage() {
 
       if (typeof window !== 'undefined') {
         const params = new URLSearchParams(window.location.search);
-        const tab = params.get('tab') as any;
-        if (
-          tab &&
-          [
-            'overview',
-            'orders',
-            'products',
-            'blogs',
-            'testimonials',
-            'contact-queries',
-            'corporate-queries',
-            'users',
-            'shiprocket',
-            'settings',
-          ].includes(tab)
-        ) {
-          if (tab !== 'settings' || verifiedUser?.role === 'SUPERADMIN') {
-            setActiveTab(tab);
+        const urlTab = params.get('tab') as AdminTabId;
+        if (urlTab && VALID_TABS.includes(urlTab)) {
+          if (isTabPermitted(urlTab, verifiedUser)) {
+            setActiveTab(urlTab);
+            setVisitedTabs(new Set(['overview', urlTab]));
+          } else {
+            setActiveTab('overview');
           }
         }
       }
@@ -118,7 +133,7 @@ export default function AdminRootPage() {
     const handleSessionExpired = () => {
       setAdminUser(null);
       setDashboardData(null);
-      showAdminToast('Session expired or unauthorized. Please re-authenticate.', 'error', 'Session Expired');
+      showAdminToast('Session expired. Please re-authenticate.', 'error', 'Session Expired');
     };
 
     window.addEventListener('admin-session-expired', handleSessionExpired);
@@ -128,11 +143,11 @@ export default function AdminRootPage() {
       isMounted = false;
       window.removeEventListener('admin-session-expired', handleSessionExpired);
     };
-  }, []);
+  }, [isTabPermitted]);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (force = false) => {
     try {
-      const data = await fetchAdminDashboard();
+      const data = await fetchAdminDashboard(force);
       setDashboardData(data);
     } catch (err: any) {
       if (isAuthError(err)) {
@@ -144,9 +159,9 @@ export default function AdminRootPage() {
     }
   };
 
-  const handleAuthenticated = (user: AdminUser, token: string) => {
+  const handleAuthenticated = (user: AdminUser) => {
     setAdminUser(user);
-    loadDashboardData();
+    loadDashboardData(true);
     showAdminToast(`Welcome, ${user.firstName || 'Administrator'}! Session active.`, 'success', 'Session Authenticated');
   };
 
@@ -172,40 +187,92 @@ export default function AdminRootPage() {
       <AdminLayoutShell
         activeTab={activeTab}
         adminUser={adminUser}
-        onTabChange={(tab) => {
-          setActiveTab(tab);
-          if (typeof window !== 'undefined') {
-            const url = tab === 'overview' ? '/root' : `/root?tab=${tab}`;
-            window.history.pushState({}, '', url);
-          }
-        }}
+        onTabChange={handleTabChange}
         searchValue={searchQuery}
         onSearchChange={setSearchQuery}
         searchPlaceholder="Search.."
       >
         <div className="w-full">
-          {activeTab === 'overview' && (
-            <RootOverviewTab
-              data={dashboardData}
-              userName={adminUser.firstName || 'User'}
-              onNavigateTab={(tab) => {
-                setActiveTab(tab);
-                if (typeof window !== 'undefined') {
-                  const url = tab === 'overview' ? '/root' : `/root?tab=${tab}`;
-                  window.history.pushState({}, '', url);
-                }
-              }}
-            />
+          {/* Overview Dashboard Tab */}
+          {visitedTabs.has('overview') && (
+            <div className={activeTab === 'overview' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootOverviewTab
+                data={dashboardData}
+                userName={adminUser.firstName || 'User'}
+                onNavigateTab={(tab) => handleTabChange(tab as AdminTabId)}
+              />
+            </div>
           )}
-          {activeTab === 'orders' && <RootOrdersTab />}
-          {activeTab === 'products' && <RootProductsTab />}
-          {activeTab === 'blogs' && <RootBlogsTab />}
-          {activeTab === 'testimonials' && <RootTestimonialsTab />}
-          {activeTab === 'contact-queries' && <RootContactQueriesTab />}
-          {activeTab === 'corporate-queries' && <RootCorporateQueriesTab />}
-          {activeTab === 'users' && <RootUsersTab />}
-          {activeTab === 'shiprocket' && <RootShiprocketTab />}
-          {activeTab === 'settings' && <RootSettingsTab adminUser={adminUser} />}
+
+          {/* Orders Management */}
+          {visitedTabs.has('orders') && (
+            <div className={activeTab === 'orders' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootOrdersTab />
+            </div>
+          )}
+
+          {/* Product Catalog Management */}
+          {visitedTabs.has('products') && (
+            <div className={activeTab === 'products' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootProductsTab />
+            </div>
+          )}
+
+          {/* Blogs & Articles */}
+          {visitedTabs.has('blogs') && (
+            <div className={activeTab === 'blogs' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootBlogsTab />
+            </div>
+          )}
+
+          {/* Customer Testimonials */}
+          {visitedTabs.has('testimonials') && (
+            <div className={activeTab === 'testimonials' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootTestimonialsTab />
+            </div>
+          )}
+
+          {/* Contact Inquiries */}
+          {visitedTabs.has('contact-queries') && (
+            <div className={activeTab === 'contact-queries' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootContactQueriesTab />
+            </div>
+          )}
+
+          {/* Corporate / Bulk Inquiries */}
+          {visitedTabs.has('corporate-queries') && (
+            <div className={activeTab === 'corporate-queries' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootCorporateQueriesTab />
+            </div>
+          )}
+
+          {/* Logistics & Shiprocket */}
+          {visitedTabs.has('shiprocket') && (
+            <div className={activeTab === 'shiprocket' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootShiprocketTab />
+            </div>
+          )}
+
+          {/* User & Access Control (Super Admin Exclusive) */}
+          {visitedTabs.has('users') && adminUser.role === 'SUPERADMIN' && (
+            <div className={activeTab === 'users' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootUsersTab />
+            </div>
+          )}
+
+          {/* Activity Logs & Audit Trail (Super Admin Exclusive) */}
+          {visitedTabs.has('activity-logs') && adminUser.role === 'SUPERADMIN' && (
+            <div className={activeTab === 'activity-logs' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootActivityLogsTab />
+            </div>
+          )}
+
+          {/* System Settings & Credentials (Super Admin Exclusive) */}
+          {visitedTabs.has('settings') && adminUser.role === 'SUPERADMIN' && (
+            <div className={activeTab === 'settings' ? 'block animate-in fade-in duration-150' : 'hidden'}>
+              <RootSettingsTab adminUser={adminUser} />
+            </div>
+          )}
         </div>
       </AdminLayoutShell>
     </AdminToastProvider>

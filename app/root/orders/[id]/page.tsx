@@ -21,6 +21,8 @@ import {
   ShieldCheck,
   AlertCircle,
   FileText,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import { AdminLayoutShell } from '@/components/root/AdminLayoutShell';
 import {
@@ -28,9 +30,13 @@ import {
   updateOrderStatus,
   dispatchOrderToShiprocket,
   trackOrderShiprocket,
+  deleteAdminOrderPermanent,
+  getStoredAdminUser,
   AdminOrder,
+  AdminUser,
 } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
+
 
 const MONO = "'Poppins', sans-serif";
 
@@ -48,6 +54,32 @@ export default function OrderDetailsPage() {
   const [isDispatching, setIsDispatching] = useState(false);
   const [trackingScans, setTrackingScans] = useState<any | null>(null);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
+
+  // Super Admin permanent delete
+  const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    setCurrentAdmin(getStoredAdminUser());
+  }, []);
+
+  const handleConfirmDelete = async () => {
+    if (!order) return;
+    setIsDeleting(true);
+    try {
+      const res = await deleteAdminOrderPermanent(order.id);
+      showAdminToast(
+        res.message || `Order #${order.orderNumber} permanently purged from database`,
+        'success',
+        'Order Purged'
+      );
+      router.push('/root?tab=orders');
+    } catch (err: any) {
+      showAdminToast(err.message || 'Failed to delete order', 'error', 'Delete Failed');
+      setIsDeleting(false);
+    }
+  };
 
   const loadOrder = async () => {
     setIsLoading(true);
@@ -159,9 +191,21 @@ export default function OrderDetailsPage() {
                 <FileText className="w-3.5 h-3.5" />
                 <span>Print Invoice</span>
               </button>
+
+              {currentAdmin?.role === 'SUPERADMIN' && (
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="px-3.5 py-1.5 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 text-xs font-mono border border-red-500/20 transition-colors flex items-center gap-1.5 cursor-pointer"
+                  title="Permanently Delete Order (Super Admin Only)"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>Delete Order</span>
+                </button>
+              )}
             </div>
           )}
         </div>
+
 
         {/* ─── Feedback Banner ─── */}
         {actionSuccessMsg && (
@@ -624,7 +668,81 @@ export default function OrderDetailsPage() {
             )}
           </div>
         )}
+
+        {/* ── Modal: Delete Order Confirmation (SUPERADMIN Only) ── */}
+        {showDeleteConfirm && order && (
+          <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+            <div className="w-full max-w-md bg-[#0e0e0e] border border-red-500/30 rounded-3xl p-6 text-white space-y-5 shadow-2xl">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0 text-red-400">
+                  <AlertTriangle className="w-5 h-5" />
+                </div>
+                <div className="space-y-1">
+                  <span className="text-[10px] font-mono text-red-400 font-bold uppercase tracking-wider block">
+                    SUPER ADMIN ACTION · IRREVERSIBLE
+                  </span>
+                  <h3 className="text-base font-bold font-mono text-white">
+                    Permanently Delete Order?
+                  </h3>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs font-mono">
+                <div className="flex justify-between items-center">
+                  <span className="text-white/40">Order Ref:</span>
+                  <span className="font-bold text-white">{order.orderNumber}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/40">Amount:</span>
+                  <span className="font-bold text-white">₹{order.total.toLocaleString('en-IN')}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/40">Customer:</span>
+                  <span className="text-white truncate max-w-[200px]">{order.user?.email || 'Guest'}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-white/40">Items Count:</span>
+                  <span className="text-white">{order.items?.length || 0} line items</span>
+                </div>
+              </div>
+
+              <p className="text-xs text-white/60 leading-relaxed">
+                This will permanently delete Order <span className="font-mono text-white font-bold">{order.orderNumber}</span> and purge all associated database records (order items, tracking history, and payment transactions). This action cannot be undone.
+              </p>
+
+              <div className="flex items-center gap-3 pt-2">
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="flex-1 py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase transition-all cursor-pointer disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={isDeleting}
+                  onClick={handleConfirmDelete}
+                  className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase transition-all cursor-pointer shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+                >
+                  {isDeleting ? (
+                    <>
+                      <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                      <span>Purging...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Confirm Delete</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayoutShell>
   );
 }
+

@@ -27,6 +27,7 @@ import {
 } from '@/store/slices/shippingSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
 import PaymentConfirmationLockAnimation from '@/components/shop/PaymentConfirmationLockAnimation';
+import { isValidCustomerName } from '@/lib/fastrrCheckout';
 
 interface WebhookSyncState {
   connected: boolean;
@@ -113,7 +114,12 @@ function OrderConfirmationContent() {
 
       try {
         const rawCust = sessionStorage.getItem('rebelive_fastrr_customer') || localStorage.getItem('rebelive_fastrr_customer');
-        if (rawCust) storedCustomer = JSON.parse(rawCust);
+        if (rawCust) {
+          const parsed = JSON.parse(rawCust);
+          if (parsed && typeof parsed === 'object') {
+            storedCustomer = parsed;
+          }
+        }
       } catch { }
     }
 
@@ -132,6 +138,28 @@ function OrderConfirmationContent() {
       };
     }
 
+    // Sanitize customer data, removing any contaminated browser extension names
+    if (storedCustomer) {
+      if (storedCustomer.name && !isValidCustomerName(storedCustomer.name)) {
+        delete storedCustomer.name;
+      }
+    }
+
+    // Supplement customer info from address if not already present
+    if (storedAddress) {
+      if (!storedCustomer) storedCustomer = {};
+      const addrName = storedAddress.fullName || storedAddress.name || (storedAddress.first_name ? `${storedAddress.first_name} ${storedAddress.last_name || ''}`.trim() : '');
+      if (addrName && isValidCustomerName(addrName) && !storedCustomer.name) {
+        storedCustomer.name = addrName;
+      }
+      if (storedAddress.email && !storedCustomer.email) {
+        storedCustomer.email = storedAddress.email;
+      }
+      if (storedAddress.phone && !storedCustomer.phone) {
+        storedCustomer.phone = storedAddress.phone;
+      }
+    }
+
     try {
       // Proactively confirm and register order in MongoDB if valid order ID is present (ONLY ONCE per orderId)
       if (queryId && queryId !== 'RBL-CONFIRMED' && !hasConfirmedRef.current[queryId]) {
@@ -141,7 +169,7 @@ function OrderConfirmationContent() {
           items: storedItems.length > 0 ? storedItems : undefined,
           shippingAddress: storedAddress || undefined,
           billingAddress: storedBillingAddress || undefined,
-          customer: storedCustomer || undefined,
+          customer: storedCustomer && (storedCustomer.name || storedCustomer.phone || storedCustomer.email) ? storedCustomer : undefined,
         })).unwrap();
 
         // Clear temporary items & addresses so they cannot be reused for a duplicate order

@@ -28,6 +28,7 @@ import {
   CheckCircle2,
   SlidersHorizontal,
   BookOpen,
+  ScrollText,
 } from 'lucide-react';
 import {
   clearAdminSession,
@@ -41,10 +42,23 @@ import { AdminToastProvider, showAdminToast } from '@/components/root/AdminToast
 const MONO = "'Poppins', sans-serif";
 const SANS = "'Poppins', sans-serif";
 
+export type AdminTabId =
+  | 'overview'
+  | 'orders'
+  | 'products'
+  | 'blogs'
+  | 'testimonials'
+  | 'contact-queries'
+  | 'corporate-queries'
+  | 'users'
+  | 'shiprocket'
+  | 'activity-logs'
+  | 'settings';
+
 interface AdminLayoutShellProps {
-  activeTab?: 'overview' | 'orders' | 'products' | 'blogs' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings';
+  activeTab?: AdminTabId;
   children: React.ReactNode;
-  onTabChange?: (tab: 'overview' | 'orders' | 'products' | 'blogs' | 'testimonials' | 'contact-queries' | 'corporate-queries' | 'users' | 'shiprocket' | 'settings') => void;
+  onTabChange?: (tab: AdminTabId) => void;
   searchPlaceholder?: string;
   searchValue?: string;
   onSearchChange?: (val: string) => void;
@@ -179,51 +193,49 @@ export function AdminLayoutShell({
     return <RootAuthGateway onAuthenticated={handleAuthenticated} />;
   }
 
-  type AdminTabId =
-    | 'overview'
-    | 'orders'
-    | 'products'
-    | 'blogs'
-    | 'testimonials'
-    | 'contact-queries'
-    | 'corporate-queries'
-    | 'users'
-    | 'shiprocket'
-    | 'settings';
+  const isSuperAdmin = adminUser.role === 'SUPERADMIN';
+  const isAdmin = adminUser.role === 'ADMIN';
+  const isTeam = adminUser.role === 'TEAM';
+  const assigned = Array.isArray(adminUser.assignedModules) ? adminUser.assignedModules : [];
 
-  const NAV_TABS: Array<{
+  const ALL_POSSIBLE_TABS: Array<{
     id: AdminTabId;
     label: string;
     icon: React.ComponentType<{ className?: string }>;
     href: string;
+    moduleKey?: string;
   }> = [
     { id: 'overview', label: 'Dashboard', icon: LayoutDashboard, href: '/root' },
-    { id: 'orders', label: 'Orders', icon: Package, href: '/root?tab=orders' },
-    { id: 'products', label: 'Catalog', icon: Boxes, href: '/root?tab=products' },
-    { id: 'blogs', label: 'Blogs & Articles', icon: BookOpen, href: '/root?tab=blogs' },
-    { id: 'testimonials', label: 'Testimonials', icon: Quote, href: '/root?tab=testimonials' },
-    { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail, href: '/root?tab=contact-queries' },
-    { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2, href: '/root?tab=corporate-queries' },
-    { id: 'users', label: 'Users', icon: Users, href: '/root?tab=users' },
-    { id: 'shiprocket', label: 'Logistics', icon: Truck, href: '/root?tab=shiprocket' },
-    ...(adminUser.role === 'SUPERADMIN'
-      ? [{ id: 'settings' as const, label: 'Settings', icon: SlidersHorizontal, href: '/root?tab=settings' }]
-      : []),
+    { id: 'orders', label: 'Orders', icon: Package, href: '/root?tab=orders', moduleKey: 'orders' },
+    { id: 'products', label: 'Catalog', icon: Boxes, href: '/root?tab=products', moduleKey: 'products' },
+    { id: 'blogs', label: 'Blogs & Articles', icon: BookOpen, href: '/root?tab=blogs', moduleKey: 'blogs' },
+    { id: 'testimonials', label: 'Testimonials', icon: Quote, href: '/root?tab=testimonials', moduleKey: 'testimonials' },
+    { id: 'contact-queries', label: 'Contact Inquiries', icon: Mail, href: '/root?tab=contact-queries', moduleKey: 'contact-queries' },
+    { id: 'corporate-queries', label: 'Corporate Inquiries', icon: Building2, href: '/root?tab=corporate-queries', moduleKey: 'corporate-queries' },
+    { id: 'shiprocket', label: 'Logistics', icon: Truck, href: '/root?tab=shiprocket', moduleKey: 'orders' },
   ];
 
-  const handleTabClick = (
-    tabId:
-      | 'overview'
-      | 'orders'
-      | 'products'
-      | 'blogs'
-      | 'testimonials'
-      | 'contact-queries'
-      | 'corporate-queries'
-      | 'users'
-      | 'shiprocket'
-      | 'settings'
-  ) => {
+  let NAV_TABS = ALL_POSSIBLE_TABS;
+
+  if (isSuperAdmin) {
+    NAV_TABS = [
+      ...ALL_POSSIBLE_TABS.slice(0, 7),
+      { id: 'users', label: 'Users & Access', icon: Users, href: '/root?tab=users' },
+      ALL_POSSIBLE_TABS[7], // shiprocket
+      { id: 'activity-logs', label: 'Activity Logs', icon: ScrollText, href: '/root?tab=activity-logs' },
+      { id: 'settings', label: 'Settings', icon: SlidersHorizontal, href: '/root?tab=settings' },
+    ];
+  } else if (isAdmin) {
+    NAV_TABS = ALL_POSSIBLE_TABS;
+  } else if (isTeam) {
+    NAV_TABS = ALL_POSSIBLE_TABS.filter((t) => {
+      if (t.id === 'overview') return true;
+      if (!t.moduleKey) return false;
+      return assigned.includes(t.moduleKey);
+    });
+  }
+
+  const handleTabClick = (tabId: AdminTabId) => {
     setMobileMenuOpen(false);
     if (onTabChange) {
       onTabChange(tabId);
@@ -426,9 +438,19 @@ export function AdminLayoutShell({
                         {adminUser.email}
                       </p>
                       <div className="mt-1.5">
-                        <span className="inline-block px-2 py-0.5 rounded-full text-[9px] font-mono font-bold bg-white text-black">
-                          {adminUser.role}
-                        </span>
+                        {adminUser.role === 'SUPERADMIN' ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-[#d8ac52] text-black">
+                            SUPER ADMIN (OWNER)
+                          </span>
+                        ) : adminUser.role === 'ADMIN' ? (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-white text-black">
+                            ADMINISTRATOR
+                          </span>
+                        ) : (
+                          <span className="inline-block px-2.5 py-0.5 rounded-full text-[9px] font-mono font-bold bg-emerald-400 text-black">
+                            TEAM MEMBER
+                          </span>
+                        )}
                       </div>
                     </div>
 

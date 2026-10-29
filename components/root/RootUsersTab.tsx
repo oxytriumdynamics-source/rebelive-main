@@ -19,16 +19,20 @@ import {
   ChevronsLeft,
   ChevronsRight,
   Filter,
+  Trash2,
+  AlertTriangle,
 } from 'lucide-react';
 import {
   fetchAdminUsers,
   updateAdminUser,
   restrictAdminUser,
+  deleteAdminUserPermanent,
   getStoredAdminUser,
   AdminUser,
 } from '@/lib/adminApi';
 import { formatRebelId } from '@/lib/auth';
 import { showAdminToast } from '@/components/root/AdminToaster';
+
 
 const MONO = "'Poppins', sans-serif";
 
@@ -66,10 +70,44 @@ export function RootUsersTab() {
   const [limit, setLimit] = useState(15);
   const [isLoading, setIsLoading] = useState(true);
   const [search, setSearch] = useState('');
-  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN'>('ALL');
+  const [roleFilter, setRoleFilter] = useState<'ALL' | 'CUSTOMER' | 'TEAM' | 'ADMIN' | 'SUPERADMIN'>('ALL');
   const [selectedUser, setSelectedUser] = useState<AdminUser | null>(null);
   const [feedback, setFeedback] = useState('');
   const [currentAdmin, setCurrentAdmin] = useState<AdminUser | null>(null);
+
+  // Super Admin User Deletion
+  const [userToDelete, setUserToDelete] = useState<AdminUser | null>(null);
+  const [isDeletingUser, setIsDeletingUser] = useState(false);
+
+  const handleConfirmDeleteUser = async () => {
+    if (!userToDelete) return;
+    setIsDeletingUser(true);
+    try {
+      const res = await deleteAdminUserPermanent(userToDelete.id);
+      showAdminToast(
+        res.message || `User ${userToDelete.email} permanently purged from database`,
+        'success',
+        'User Purged'
+      );
+      setUsers((prev) => prev.filter((u) => u.id !== userToDelete.id));
+      setTotal((prev) => Math.max(0, prev - 1));
+      setUserToDelete(null);
+    } catch (err: any) {
+      showAdminToast(err.message || 'Failed to delete user account', 'error', 'Delete Failed');
+    } finally {
+      setIsDeletingUser(false);
+    }
+  };
+
+
+  const MODULE_OPTIONS = [
+    { key: 'orders', label: 'Orders & Logistics' },
+    { key: 'products', label: 'Catalog & Inventory' },
+    { key: 'blogs', label: 'Blogs & Articles' },
+    { key: 'testimonials', label: 'Testimonials' },
+    { key: 'contact-queries', label: 'Contact Inquiries' },
+    { key: 'corporate-queries', label: 'Corporate Inquiries' },
+  ];
 
   const loadUsers = async (
     targetPage = page,
@@ -120,7 +158,7 @@ export function RootUsersTab() {
     loadUsers(1, '', roleFilter, limit);
   };
 
-  const handleRoleFilterChange = (newRole: 'ALL' | 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN') => {
+  const handleRoleFilterChange = (newRole: 'ALL' | 'CUSTOMER' | 'TEAM' | 'ADMIN' | 'SUPERADMIN') => {
     setRoleFilter(newRole);
     setPage(1);
     loadUsers(1, search, newRole, limit);
@@ -151,16 +189,16 @@ export function RootUsersTab() {
         setSelectedUser((prev) => (prev ? { ...prev, isRestricted: updated.isRestricted } : null));
       }
       showAdminToast(
-        `User ${nextState ? 'restricted' : 'restriction lifted'}.`,
+        `User ${nextState ? 'deactivated' : 'restriction lifted'}.`,
         nextState ? 'info' : 'success',
-        nextState ? 'Account Restricted' : 'Account Restored'
+        nextState ? 'Account Deactivated' : 'Account Restored'
       );
     } catch (err: any) {
       showAdminToast(err.message || 'Error updating user restriction status', 'error', 'Action Failed');
     }
   };
 
-  const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'ADMIN' | 'SUPERADMIN') => {
+  const handleRoleChange = async (userId: string, newRole: 'CUSTOMER' | 'TEAM' | 'ADMIN' | 'SUPERADMIN') => {
     if (currentAdmin?.role !== 'SUPERADMIN') {
       showAdminToast('Only Super Admin has authority to assign or change user roles.', 'error', 'Permission Denied');
       return;
@@ -172,16 +210,53 @@ export function RootUsersTab() {
     }
 
     try {
-      const updated = await updateAdminUser(userId, { role: newRole });
-      setUsers((prev) => prev.map((u) => (u.id === userId ? { ...u, role: updated.role } : u)));
+      const defaultModules = newRole === 'TEAM' && (!selectedUser?.assignedModules || selectedUser.assignedModules.length === 0)
+        ? ['orders', 'products']
+        : selectedUser?.assignedModules || [];
+
+      const updated = await updateAdminUser(userId, {
+        role: newRole,
+        ...(newRole === 'TEAM' ? { assignedModules: defaultModules } : {}),
+      } as any);
+
+      setUsers((prev) =>
+        prev.map((u) =>
+          u.id === userId
+            ? { ...u, role: updated.role, assignedModules: updated.assignedModules || defaultModules }
+            : u
+        )
+      );
       if (selectedUser?.id === userId) {
-        setSelectedUser((prev) => (prev ? { ...prev, role: updated.role } : null));
+        setSelectedUser((prev) =>
+          prev
+            ? { ...prev, role: updated.role, assignedModules: updated.assignedModules || defaultModules }
+            : null
+        );
       }
       setFeedback(`User role updated to ${newRole}`);
       showAdminToast(`User role updated to ${newRole}`, 'success', 'Role Updated');
       setTimeout(() => setFeedback(''), 3000);
     } catch (err: any) {
       showAdminToast(err.message || 'Error updating user role', 'error', 'Update Failed');
+    }
+  };
+
+  const handleToggleModule = async (moduleKey: string) => {
+    if (!selectedUser || currentAdmin?.role !== 'SUPERADMIN') return;
+    const current = selectedUser.assignedModules || [];
+    const updatedModules = current.includes(moduleKey)
+      ? current.filter((m) => m !== moduleKey)
+      : [...current, moduleKey];
+
+    try {
+      await updateAdminUser(selectedUser.id, { assignedModules: updatedModules } as any);
+      setUsers((prev) =>
+        prev.map((u) => (u.id === selectedUser.id ? { ...u, assignedModules: updatedModules } : u))
+      );
+      setSelectedUser((prev) => (prev ? { ...prev, assignedModules: updatedModules } : null));
+      showAdminToast('Module permissions updated.', 'success', 'Permissions Saved');
+    } catch (err: any) {
+      showAdminToast(err.message || 'Failed to update module permissions', 'error', 'Update Failed');
     }
   };
 
@@ -209,6 +284,7 @@ export function RootUsersTab() {
             >
               <option value="ALL">All Roles</option>
               <option value="CUSTOMER">Customer</option>
+              <option value="TEAM">Team Member</option>
               <option value="ADMIN">Admin</option>
               <option value="SUPERADMIN">Super Admin</option>
             </select>
@@ -291,7 +367,9 @@ export function RootUsersTab() {
                     <td className="py-4 px-4 sm:px-6">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-white block text-xs">
-                          {u.firstName} {u.lastName}
+                          {u.firstName && !u.firstName.toLowerCase().startsWith('chrome:') && !u.firstName.toLowerCase().includes('call method')
+                            ? `${u.firstName} ${u.lastName || ''}`.trim()
+                            : (u.phone ? `Customer (${u.phone})` : 'Customer Account')}
                         </span>
                         <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-white/10 text-white/80 border border-white/15">
                           {formatRebelId(u.id)}
@@ -307,20 +385,27 @@ export function RootUsersTab() {
                         <span
                           className={`inline-block px-2.5 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase ${
                             u.role === 'SUPERADMIN'
-                              ? 'bg-white text-black border border-white'
+                              ? 'bg-[#d8ac52] text-black font-extrabold shadow-sm'
                               : u.role === 'ADMIN'
-                              ? 'bg-white/20 text-white border border-white/30'
+                              ? 'bg-white text-black font-bold'
+                              : u.role === 'TEAM'
+                              ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/30'
                               : 'bg-white/10 text-white/70 border border-white/15'
                           }`}
                         >
-                          {u.role}
+                          {u.role === 'TEAM' ? 'TEAM' : u.role}
                         </span>
                         {u.isRestricted && (
                           <span className="inline-block px-2 py-0.5 rounded-full font-mono text-[9px] font-bold uppercase bg-white/10 text-white/50 border border-white/20">
-                            RESTRICTED
+                            DEACTIVATED
                           </span>
                         )}
                       </div>
+                      {u.role === 'TEAM' && u.assignedModules && u.assignedModules.length > 0 && (
+                        <span className="text-[9px] font-mono text-white/40 block mt-1">
+                          {u.assignedModules.length} module{u.assignedModules.length > 1 ? 's' : ''} assigned
+                        </span>
+                      )}
                     </td>
 
                     <td className="py-4 px-4 font-mono text-[11px] text-white/70">
@@ -344,14 +429,28 @@ export function RootUsersTab() {
                     </td>
 
                     <td className="py-4 px-4 sm:px-6 text-right">
-                      <button
-                        onClick={() => setSelectedUser(u)}
-                        className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white text-xs font-mono transition-colors cursor-pointer"
-                      >
-                        Dossier
-                      </button>
+                      <div className="flex items-center justify-end gap-1.5">
+                        <button
+                          onClick={() => setSelectedUser(u)}
+                          className="px-3 py-1 rounded-lg bg-white/5 hover:bg-white/15 text-white text-xs font-mono transition-colors cursor-pointer"
+                        >
+                          Dossier
+                        </button>
+                        {currentAdmin?.role === 'SUPERADMIN' &&
+                          u.email !== 'oxytriumdynamics@gmail.com' &&
+                          u.id !== currentAdmin.id && (
+                            <button
+                              onClick={() => setUserToDelete(u)}
+                              className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 text-red-400 hover:text-red-300 border border-red-500/20 transition-colors cursor-pointer"
+                              title="Permanently Delete User from Database (Super Admin Only)"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                      </div>
                     </td>
                   </tr>
+
                 ))
               )}
             </tbody>
@@ -512,24 +611,58 @@ export function RootUsersTab() {
                     </span>
                   </div>
                 ) : currentAdmin?.role === 'SUPERADMIN' ? (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     <div className="flex gap-2">
-                      {(['CUSTOMER', 'ADMIN'] as const).map((r) => (
+                      {(['CUSTOMER', 'TEAM', 'ADMIN'] as const).map((r) => (
                         <button
                           key={r}
                           onClick={() => handleRoleChange(selectedUser.id, r)}
                           className={`flex-1 px-3 py-2 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer ${
                             selectedUser.role === r
-                              ? 'bg-white text-black font-extrabold shadow-sm'
-                              : 'bg-white/5 text-white/60 hover:bg-white/10'
+                              ? r === 'TEAM'
+                                ? 'bg-emerald-400 text-black font-extrabold shadow-sm'
+                                : 'bg-white text-black font-extrabold shadow-sm'
+                              : 'bg-white/5 text-white/60 hover:text-white hover:bg-white/10'
                           }`}
                         >
-                          {r === 'ADMIN' ? 'Make Admin' : 'Customer'}
+                          {r === 'ADMIN' ? 'Admin' : r === 'TEAM' ? 'Team Member' : 'Customer'}
                         </button>
                       ))}
                     </div>
+
+                    {selectedUser.role === 'TEAM' && (
+                      <div className="space-y-2 p-3 rounded-xl bg-white/[0.03] border border-emerald-500/20">
+                        <span className="text-[10px] font-mono uppercase text-emerald-400 font-bold block">
+                          ASSIGNED MODULE RESPONSIBILITIES
+                        </span>
+                        <div className="grid grid-cols-2 gap-2 pt-1">
+                          {MODULE_OPTIONS.map((m) => {
+                            const isChecked = (selectedUser.assignedModules || []).includes(m.key);
+                            return (
+                              <label
+                                key={m.key}
+                                className={`flex items-center gap-2 p-2 rounded-lg border text-[11px] font-mono transition-colors cursor-pointer ${
+                                  isChecked
+                                    ? 'bg-emerald-500/10 border-emerald-500/30 text-white'
+                                    : 'bg-white/[0.02] border-white/10 text-white/50 hover:text-white'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isChecked}
+                                  onChange={() => handleToggleModule(m.key)}
+                                  className="rounded border-white/20 text-emerald-400 focus:ring-0 cursor-pointer"
+                                />
+                                <span className="truncate">{m.label}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
                     <p className="text-[10px] font-mono text-white/40 leading-relaxed">
-                      Admins have operational access to products, orders, queries, and inventory, but cannot assign roles or change other admin passwords.
+                      Super Admin retains full authority. Admins manage day-to-day operations. Team members only access assigned modules.
                     </p>
                   </div>
                 ) : (
@@ -602,7 +735,38 @@ export function RootUsersTab() {
                   </div>
                 </div>
               )}
+
+              {/* Super Admin Danger Zone: Permanent Account Deletion */}
+              {currentAdmin?.role === 'SUPERADMIN' &&
+                selectedUser.email !== 'oxytriumdynamics@gmail.com' &&
+                selectedUser.id !== currentAdmin.id && (
+                  <div className="p-3.5 rounded-xl bg-red-950/20 border border-red-500/25 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-mono text-red-400 font-bold uppercase block">
+                        DANGER ZONE · PERMANENT REMOVAL
+                      </span>
+                      <span className="text-[9px] font-mono px-2 py-0.5 rounded font-bold uppercase bg-red-500/10 text-red-400 border border-red-500/20">
+                        IRREVERSIBLE
+                      </span>
+                    </div>
+                    <p className="text-[10px] font-mono text-white/50 leading-relaxed">
+                      Permanently delete this user from the database along with all associated addresses, orders, reviews, and carts.
+                    </p>
+                    <button
+                      onClick={() => {
+                        const target = selectedUser;
+                        setSelectedUser(null);
+                        setUserToDelete(target);
+                      }}
+                      className="w-full py-2 px-3 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer bg-red-600/20 hover:bg-red-600 text-red-300 hover:text-white border border-red-500/30 flex items-center justify-center gap-2"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Permanently Delete User From DB</span>
+                    </button>
+                  </div>
+                )}
             </div>
+
 
             <div className="pt-2 flex justify-end border-t border-white/10">
               <button
@@ -615,6 +779,80 @@ export function RootUsersTab() {
           </div>
         </div>
       )}
+
+      {/* ── Modal: Delete User Confirmation (SUPERADMIN Only) ── */}
+      {userToDelete && (
+        <div className="fixed inset-0 z-[130] flex items-center justify-center p-4 bg-black/85 backdrop-blur-md animate-in fade-in">
+          <div className="w-full max-w-md bg-[#0e0e0e] border border-red-500/30 rounded-3xl p-6 text-white space-y-5 shadow-2xl">
+            <div className="flex items-start gap-3.5">
+              <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center shrink-0 text-red-400">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div className="space-y-1">
+                <span className="text-[10px] font-mono text-red-400 font-bold uppercase tracking-wider block">
+                  SUPER ADMIN ACTION · IRREVERSIBLE
+                </span>
+                <h3 className="text-base font-bold font-mono text-white">
+                  Permanently Delete User?
+                </h3>
+              </div>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 space-y-2 text-xs font-mono">
+              <div className="flex justify-between items-center">
+                <span className="text-white/40">User ID:</span>
+                <span className="font-bold text-white">{formatRebelId(userToDelete.id)}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/40">Name:</span>
+                <span className="font-bold text-white">{userToDelete.firstName} {userToDelete.lastName}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/40">Email:</span>
+                <span className="text-white truncate max-w-[200px]">{userToDelete.email}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-white/40">Role:</span>
+                <span className="font-bold text-white uppercase">{userToDelete.role}</span>
+              </div>
+            </div>
+
+            <p className="text-xs text-white/60 leading-relaxed">
+              Are you sure you want to completely purge <span className="font-mono text-white font-bold">{userToDelete.email}</span>? All related database records (addresses, orders, cart items, wishlist, reviews, and activity tokens) will be completely erased. This action cannot be undone.
+            </p>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                disabled={isDeletingUser}
+                onClick={() => setUserToDelete(null)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 text-white font-mono text-xs font-bold uppercase transition-all cursor-pointer disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={isDeletingUser}
+                onClick={handleConfirmDeleteUser}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-mono text-xs font-bold uppercase transition-all cursor-pointer shadow-lg shadow-red-950/40 flex items-center justify-center gap-2 disabled:opacity-50 active:scale-95"
+              >
+                {isDeletingUser ? (
+                  <>
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                    <span>Purging...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>Confirm Delete</span>
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+

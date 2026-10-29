@@ -22,7 +22,32 @@ declare global {
 }
 
 /**
- * Extracts address, customer, and orderId from any Fastrr event, callback, or message
+ * Validates that a string is a genuine customer name and not a browser extension,
+ * DevTools call, or synthetic placeholder.
+ */
+export function isValidCustomerName(name: any): boolean {
+  if (!name || typeof name !== 'string') return false;
+  const trimmed = name.trim();
+  if (trimmed.length < 2 || trimmed.length > 70) return false;
+  const lower = trimmed.toLowerCase();
+  if (
+    lower.startsWith('chrome:') ||
+    lower.includes('call method') ||
+    lower.includes('webpack') ||
+    lower.includes('devtools') ||
+    lower.includes('[object') ||
+    lower === 'customer' ||
+    lower === 'undefined' ||
+    lower === 'null' ||
+    lower === 'customer rebelive'
+  ) {
+    return false;
+  }
+  return /[a-zA-Z]/.test(trimmed);
+}
+
+/**
+ * Extracts address, customer, and orderId from genuine Fastrr events, callbacks, or messages
  * and persists to sessionStorage and localStorage so order confirmation can send authentic data.
  */
 export function extractAndStoreFastrrData(data: any): { address: any; billingAddress: any; customer: any; orderId: any } {
@@ -38,6 +63,32 @@ export function extractAndStoreFastrrData(data: any): { address: any; billingAdd
         return { address: null, billingAddress: null, customer: null, orderId: null };
       }
     }
+  }
+
+  // Guard against arbitrary extension postMessages that lack Fastrr markers
+  const hasFastrrMarkers =
+    payload.order_id ||
+    payload.orderId ||
+    payload.fastrr_order_id ||
+    payload.shipping_address ||
+    payload.delivery_address ||
+    payload.selected_address ||
+    payload.billing_address ||
+    payload.trigger ||
+    payload.event ||
+    payload.headless ||
+    payload.cart_data ||
+    payload.actions ||
+    payload.data?.order_id ||
+    payload.data?.shipping_address ||
+    payload.order?.order_id ||
+    payload.result?.data?.order_id ||
+    payload.result?.shipping_address ||
+    payload.pincode ||
+    payload.postal_code;
+
+  if (!hasFastrrMarkers && !payload.customer?.email && !payload.customer?.phone) {
+    return { address: null, billingAddress: null, customer: null, orderId: null };
   }
 
   const orderId =
@@ -89,30 +140,76 @@ export function extractAndStoreFastrrData(data: any): { address: any; billingAdd
     };
   }
 
-  const customer =
+  const sourceAddr =
+    address ||
+    payload.shipping_address ||
+    payload.delivery_address ||
+    payload.selected_address ||
+    payload.billing_address ||
+    payload.data?.shipping_address;
+
+  const rawCust =
     payload.customer ||
     payload.buyer ||
     payload.user ||
     payload.data?.customer ||
     payload.order?.customer ||
     payload.result?.customer ||
-    (payload.phone || payload.email || payload.name || payload.result?.phone || payload.result?.email
-      ? {
-          name:
-            payload.name ||
-            payload.result?.name ||
-            (payload.first_name || payload.result?.shipping_address?.first_name
-              ? `${payload.first_name || payload.result?.shipping_address?.first_name || ''} ${
-                  payload.last_name || payload.result?.shipping_address?.last_name || ''
-                }`.trim()
-              : undefined),
-          email: payload.email || payload.result?.email || undefined,
-          phone: payload.phone || payload.result?.phone || payload.mobile || payload.contact || undefined,
-        }
-      : null);
+    null;
+
+  const candidateName =
+    (rawCust?.name && isValidCustomerName(rawCust.name) ? rawCust.name : '') ||
+    (rawCust?.first_name || rawCust?.firstName
+      ? `${rawCust.first_name || rawCust.firstName} ${rawCust.last_name || rawCust.lastName || ''}`.trim()
+      : '') ||
+    (sourceAddr?.first_name || sourceAddr?.firstName
+      ? `${sourceAddr.first_name || sourceAddr.firstName} ${sourceAddr.last_name || sourceAddr.lastName || ''}`.trim()
+      : '') ||
+    (sourceAddr?.name && isValidCustomerName(sourceAddr.name) ? sourceAddr.name : '') ||
+    (sourceAddr?.billing_customer_name && isValidCustomerName(sourceAddr.billing_customer_name) ? `${sourceAddr.billing_customer_name} ${sourceAddr.billing_last_name || ''}`.trim() : '') ||
+    (payload.name && isValidCustomerName(payload.name) ? payload.name : '');
+
+  const validName = isValidCustomerName(candidateName) ? candidateName.trim() : undefined;
+
+  const candidatePhone =
+    rawCust?.phone ||
+    rawCust?.mobile ||
+    rawCust?.contact ||
+    sourceAddr?.phone ||
+    sourceAddr?.mobile ||
+    sourceAddr?.contact ||
+    sourceAddr?.billing_phone ||
+    payload.phone ||
+    payload.mobile ||
+    payload.contact ||
+    payload.result?.phone;
+
+  const candidateEmail =
+    rawCust?.email ||
+    rawCust?.customer_email ||
+    sourceAddr?.email ||
+    sourceAddr?.billing_email ||
+    payload.email ||
+    payload.result?.email;
+
+  let customer: { name?: string; email?: string; phone?: string } | null = null;
+  if (validName || candidatePhone || candidateEmail) {
+    customer = {
+      name: validName,
+      phone: candidatePhone ? String(candidatePhone).replace(/\D/g, '').slice(-10) || String(candidatePhone).trim() : undefined,
+      email: candidateEmail ? String(candidateEmail).trim().toLowerCase() : undefined,
+    };
+  }
 
   if (typeof window !== 'undefined') {
     try {
+      // Purge any stale contaminated customer cache
+      const staleCust = localStorage.getItem('rebelive_fastrr_customer');
+      if (staleCust && (staleCust.includes('chrome:') || staleCust.includes('call method'))) {
+        localStorage.removeItem('rebelive_fastrr_customer');
+        sessionStorage.removeItem('rebelive_fastrr_customer');
+      }
+
       if (address) {
         sessionStorage.setItem('rebelive_fastrr_address', JSON.stringify(address));
         localStorage.setItem('rebelive_fastrr_address', JSON.stringify(address));
@@ -121,7 +218,7 @@ export function extractAndStoreFastrrData(data: any): { address: any; billingAdd
         sessionStorage.setItem('rebelive_fastrr_billing_address', JSON.stringify(billingAddress));
         localStorage.setItem('rebelive_fastrr_billing_address', JSON.stringify(billingAddress));
       }
-      if (customer) {
+      if (customer && (customer.name || customer.phone || customer.email)) {
         sessionStorage.setItem('rebelive_fastrr_customer', JSON.stringify(customer));
         localStorage.setItem('rebelive_fastrr_customer', JSON.stringify(customer));
       }
@@ -136,12 +233,42 @@ export function extractAndStoreFastrrData(data: any): { address: any; billingAdd
 }
 
 if (typeof window !== 'undefined') {
+  // Proactively clean up any stale contaminated storage on script load
+  try {
+    const cachedCust = localStorage.getItem('rebelive_fastrr_customer');
+    if (cachedCust && (cachedCust.includes('chrome:') || cachedCust.includes('call method'))) {
+      localStorage.removeItem('rebelive_fastrr_customer');
+      sessionStorage.removeItem('rebelive_fastrr_customer');
+    }
+  } catch {}
+
   window.srCustomCheckoutCallBackFn = function (res: any) {
     extractAndStoreFastrrData(res);
   };
 
   window.addEventListener('message', (e: MessageEvent) => {
-    if (e.data) {
+    if (!e.data) return;
+    const origin = (e.origin || '').toLowerCase();
+    const isFastrrOrigin =
+      origin.includes('shiprocket.com') ||
+      origin.includes('pickrr.com') ||
+      origin.includes('fastrr.com') ||
+      (typeof window !== 'undefined' && origin.includes(window.location.host));
+
+    const isFastrrEvent =
+      typeof e.data === 'object' &&
+      (e.data.trigger ||
+        e.data.event ||
+        e.data.fastrr_order_id ||
+        e.data.order_id ||
+        e.data.orderId ||
+        e.data.shipping_address ||
+        e.data.delivery_address ||
+        e.data.headless ||
+        e.data.actions);
+
+    // Only process messages that are either from Fastrr origins OR explicitly identify as Fastrr events
+    if (isFastrrOrigin || isFastrrEvent) {
       extractAndStoreFastrrData(e.data);
     }
   });
@@ -239,9 +366,9 @@ export function getVariantId(productIdOrSlug?: string, packSize: number = 6): nu
 
 /**
  * Global Instant Checkout Pause Flag
- * Set to true to temporarily pause and disable 1-Click Fastrr Instant Checkout across the store.
+ * Set to false so 1-Click Fastrr Instant Checkout is active across the store.
  */
-export const IS_INSTANT_CHECKOUT_PAUSED = true;
+export const IS_INSTANT_CHECKOUT_PAUSED = false;
 
 /**
  * Generates token from backend and triggers the native Shiprocket Fastrr Instant Checkout UI directly.
