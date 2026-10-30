@@ -23,7 +23,9 @@ import {
   User,
   Trash2,
   AlertTriangle,
+  FileText,
 } from 'lucide-react';
+import { TaxInvoiceModal } from '@/components/invoice/TaxInvoiceModal';
 import {
   fetchAdminOrders,
   updateOrderStatus,
@@ -50,6 +52,7 @@ export function RootOrdersTab() {
 
   // Modals
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null);
+  const [invoiceOrder, setInvoiceOrder] = useState<AdminOrder | null>(null);
   const [trackingModalData, setTrackingModalData] = useState<any | null>(null);
   const [isTrackingLoading, setIsTrackingLoading] = useState(false);
   const [dispatchingOrderId, setDispatchingOrderId] = useState<string | null>(null);
@@ -455,6 +458,14 @@ export function RootOrdersTab() {
                       {/* Actions */}
                       <td className="py-4 px-4 sm:px-6 text-right">
                         <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            onClick={() => setInvoiceOrder(order)}
+                            className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px]"
+                            title="View & Print Tax Invoice"
+                          >
+                            <FileText className="w-3.5 h-3.5 text-white/80" />
+                            <span className="hidden sm:inline">Invoice</span>
+                          </button>
                           <Link
                             href={`/root/orders/${order.id}`}
                             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px]"
@@ -838,6 +849,13 @@ export function RootOrdersTab() {
           </div>
         </div>
       )}
+
+      {/* ─── Tax Invoice Modal ─── */}
+      <TaxInvoiceModal
+        order={invoiceOrder}
+        isOpen={Boolean(invoiceOrder)}
+        onClose={() => setInvoiceOrder(null)}
+      />
     </div>
   );
 }

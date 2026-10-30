@@ -9,6 +9,7 @@ import {
   ShoppingBag,
   ArrowRight,
   Eye,
+  FileText,
 } from "lucide-react";
 import { Order, OrderStatus } from "@/lib/profileApi";
 import {
@@ -18,6 +19,7 @@ import {
 } from "@/store/slices/profileSlice";
 import { useAppDispatch, useAppSelector } from "@/store/hooks";
 import OrderDetailsModal from "./OrderDetailsModal";
+import { TaxInvoiceModal } from "@/components/invoice/TaxInvoiceModal";
 
 interface ProfileOrdersTabProps {
   accentColor?: string;
@@ -36,6 +38,7 @@ export default function ProfileOrdersTab({
 
   const [activeFilter, setActiveFilter] = useState<FilterType>("ALL");
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [invoiceOrder, setInvoiceOrder] = useState<Order | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   useEffect(() => {
@@ -281,6 +284,16 @@ export default function ProfileOrdersTab({
                   <div className="flex items-center gap-2">
                     <button
                       type="button"
+                      onClick={() => setInvoiceOrder(order)}
+                      className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white hover:bg-white/15 transition-all cursor-pointer"
+                      title="View & Print Official Tax Invoice"
+                    >
+                      <FileText className="h-3 w-3" />
+                      <span>Invoice</span>
+                    </button>
+
+                    <button
+                      type="button"
                       onClick={() => handleViewDetails(order)}
                       className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white hover:bg-white/15 transition-all cursor-pointer"
                     >
@@ -310,6 +323,13 @@ export default function ProfileOrdersTab({
         onClose={() => setIsModalOpen(false)}
         onOrderUpdated={handleOrderUpdated}
         accentColor={accentColor}
+      />
+
+      {/* Tax Invoice Modal */}
+      <TaxInvoiceModal
+        order={invoiceOrder}
+        isOpen={Boolean(invoiceOrder)}
+        onClose={() => setInvoiceOrder(null)}
       />
     </div>
   );

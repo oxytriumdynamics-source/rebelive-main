@@ -36,7 +36,7 @@ import {
   AdminUser,
 } from '@/lib/adminApi';
 import { showAdminToast } from '@/components/root/AdminToaster';
-
+import { TaxInvoiceModal } from '@/components/invoice/TaxInvoiceModal';
 
 const MONO = "'Poppins', sans-serif";
 
@@ -48,6 +48,7 @@ export default function OrderDetailsPage() {
   const [order, setOrder] = useState<AdminOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   const [copiedAwb, setCopiedAwb] = useState(false);
   const [actionSuccessMsg, setActionSuccessMsg] = useState('');
@@ -185,11 +186,11 @@ export default function OrderDetailsPage() {
               </button>
 
               <button
-                onClick={() => window.print()}
-                className="px-3.5 py-1.5 rounded-xl bg-white/5 hover:bg-white/10 text-white/80 hover:text-white text-xs font-mono border border-white/10 transition-colors flex items-center gap-1.5 cursor-pointer"
+                onClick={() => setIsInvoiceOpen(true)}
+                className="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-mono font-bold border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
-                <FileText className="w-3.5 h-3.5" />
-                <span>Print Invoice</span>
+                <FileText className="w-3.5 h-3.5 text-black" />
+                <span>Tax Invoice</span>
               </button>
 
               {currentAdmin?.role === 'SUPERADMIN' && (
@@ -741,6 +742,12 @@ export default function OrderDetailsPage() {
             </div>
           </div>
         )}
+        {/* Tax Invoice Modal */}
+        <TaxInvoiceModal
+          order={order}
+          isOpen={isInvoiceOpen}
+          onClose={() => setIsInvoiceOpen(false)}
+        />
       </div>
     </AdminLayoutShell>
   );

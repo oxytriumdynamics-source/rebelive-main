@@ -13,10 +13,12 @@ import {
   CreditCard,
   Ban,
   ShieldAlert,
+  FileText,
 } from "lucide-react";
 import { Order, OrderStatus } from "@/lib/profileApi";
 import { cancelOrderThunk } from "@/store/slices/profileSlice";
 import { useAppDispatch } from "@/store/hooks";
+import { TaxInvoiceModal } from "@/components/invoice/TaxInvoiceModal";
 
 interface OrderDetailsModalProps {
   order: Order | null;
@@ -40,6 +42,7 @@ export default function OrderDetailsModal({
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
   const [cancelReason, setCancelReason] = useState("");
   const [cancelError, setCancelError] = useState<string | null>(null);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
   if (!isOpen || !order) return null;
 
@@ -144,15 +147,26 @@ export default function OrderDetailsModal({
               </p>
             </div>
           </div>
-          <button
-            onClick={() => {
-              onClose();
-            }}
-            className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
-            aria-label="Close modal"
-          >
-            <X className="h-5 w-5" />
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setIsInvoiceOpen(true)}
+              className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white transition-all cursor-pointer shadow-sm active:scale-95"
+              title="View & Download Tax Invoice"
+            >
+              <FileText className="h-3.5 w-3.5 text-white" />
+              <span>Tax Invoice</span>
+            </button>
+            <button
+              onClick={() => {
+                onClose();
+              }}
+              className="rounded-full p-1.5 text-white/50 hover:bg-white/10 hover:text-white transition-colors cursor-pointer"
+              aria-label="Close modal"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
         </div>
 
         {/* Scrollable Body */}
@@ -432,6 +446,13 @@ export default function OrderDetailsModal({
           )}
         </div>
       </div>
+
+      {/* Tax Invoice Modal */}
+      <TaxInvoiceModal
+        order={order}
+        isOpen={isInvoiceOpen}
+        onClose={() => setIsInvoiceOpen(false)}
+      />
     </div>
   );
 }

@@ -3,20 +3,16 @@
 import React, { useEffect, useState, useCallback, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  Package,
+  FileText,
   Truck,
-  ShieldCheck,
-  ArrowRight,
+  HelpCircle,
   Copy,
   Check,
-  Zap,
-  Clock,
-  RefreshCw,
-  Radio,
-  ExternalLink,
-  ChevronRight,
-  Layers,
+  CreditCard,
+  Banknote,
+  ShieldCheck,
 } from 'lucide-react';
 import {
   getOrderWebhookStatusThunk,
@@ -26,32 +22,64 @@ import {
   selectShippingSyncing,
 } from '@/store/slices/shippingSlice';
 import { useAppDispatch, useAppSelector } from '@/store/hooks';
-import PaymentConfirmationLockAnimation from '@/components/shop/PaymentConfirmationLockAnimation';
 import { isValidCustomerName } from '@/lib/fastrrCheckout';
+import { TaxInvoiceModal } from '@/components/invoice/TaxInvoiceModal';
 
-interface WebhookSyncState {
-  connected: boolean;
-  orderFound: boolean;
-  fastrrWebhookSynced: boolean;
-  shiprocketWebhookSynced: boolean;
-  awbAssigned: boolean;
-  trackingNumber: string | null;
-  currentStatus: string;
-  lastWebhookEvent: string;
-  syncedAt: string;
+/**
+ * Clean SVG Checkmark Animation
+ * Draws circle and check stroke smoothly with zero gradients.
+ */
+function SimpleCheckAnimation({ className = 'w-12 h-12' }: { className?: string }) {
+  return (
+    <div className={`relative flex items-center justify-center shrink-0 ${className}`}>
+      <svg
+        className="w-full h-full text-white"
+        viewBox="0 0 52 52"
+        fill="none"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <circle
+          cx="26"
+          cy="26"
+          r="23"
+          stroke="currentColor"
+          strokeWidth="2.5"
+          className="animate-circle"
+        />
+        <path
+          d="M15 27L23 35L37 19"
+          stroke="currentColor"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="animate-check"
+        />
+      </svg>
+      <style jsx>{`
+        .animate-circle {
+          stroke-dasharray: 145;
+          stroke-dashoffset: 145;
+          animation: circleDraw 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+        }
+        .animate-check {
+          stroke-dasharray: 35;
+          stroke-dashoffset: 35;
+          animation: checkDraw 0.35s cubic-bezier(0.65, 0, 0.45, 1) 0.45s forwards;
+        }
+        @keyframes circleDraw {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+        @keyframes checkDraw {
+          to {
+            stroke-dashoffset: 0;
+          }
+        }
+      `}</style>
+    </div>
+  );
 }
-
-const DEFAULT_WEBHOOK_STATUS: WebhookSyncState = {
-  connected: true,
-  orderFound: false,
-  fastrrWebhookSynced: true,
-  shiprocketWebhookSynced: false,
-  awbAssigned: false,
-  trackingNumber: null,
-  currentStatus: 'CONFIRMED',
-  lastWebhookEvent: 'Fastrr 1-Click Payment Captured via Webhook',
-  syncedAt: new Date().toISOString(),
-};
 
 function OrderConfirmationContent() {
   const dispatch = useAppDispatch();
@@ -66,13 +94,18 @@ function OrderConfirmationContent() {
   const [oid, setOid] = useState<string>(rawOid);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
-  const [pollCount, setPollCount] = useState(0);
+  const [emailOffers, setEmailOffers] = useState(true);
+  const [isInvoiceOpen, setIsInvoiceOpen] = useState(false);
 
-  // Guard against duplicate confirmation calls across renders and polling ticks
+  // Stored state for line items, customer, and address
+  const [confirmedItems, setConfirmedItems] = useState<any[]>([]);
+  const [confirmedAddress, setConfirmedAddress] = useState<any>(null);
+  const [confirmedBillingAddress, setConfirmedBillingAddress] = useState<any>(null);
+  const [confirmedCustomer, setConfirmedCustomer] = useState<any>(null);
+
   const hasConfirmedRef = useRef<Record<string, boolean>>({});
 
   const tracking = reduxTracking;
-  const webhookStatus: WebhookSyncState = (reduxWebhookStatus as any) || DEFAULT_WEBHOOK_STATUS;
 
   // Retrieve stored order id from sessionStorage/localStorage if query param is empty
   useEffect(() => {
@@ -84,13 +117,34 @@ function OrderConfirmationContent() {
     } else if (rawOid) {
       setOid(rawOid);
     }
+
+    if (typeof window !== 'undefined') {
+      try {
+        const rawItems = sessionStorage.getItem('rebelive_fastrr_items') || localStorage.getItem('rebelive_fastrr_items');
+        if (rawItems) setConfirmedItems(JSON.parse(rawItems));
+      } catch {}
+
+      try {
+        const rawAddr = sessionStorage.getItem('rebelive_fastrr_address') || localStorage.getItem('rebelive_fastrr_address');
+        if (rawAddr) setConfirmedAddress(JSON.parse(rawAddr));
+      } catch {}
+
+      try {
+        const rawBill = sessionStorage.getItem('rebelive_fastrr_billing_address') || localStorage.getItem('rebelive_fastrr_billing_address');
+        if (rawBill) setConfirmedBillingAddress(JSON.parse(rawBill));
+      } catch {}
+
+      try {
+        const rawCust = sessionStorage.getItem('rebelive_fastrr_customer') || localStorage.getItem('rebelive_fastrr_customer');
+        if (rawCust) setConfirmedCustomer(JSON.parse(rawCust));
+      } catch {}
+    }
   }, [rawOid]);
 
   // Primary function to connect and sync with backend webhooks via Redux
-  const syncWithWebhooks = useCallback(async (targetOid: string, _isManual = false) => {
+  const syncWithWebhooks = useCallback(async (targetOid: string) => {
     const queryId = targetOid || 'RBL-CONFIRMED';
 
-    // Retrieve stored items, address, and customer from Fastrr checkout
     let storedItems: any[] = [];
     let storedAddress: any = null;
     let storedBillingAddress: any = null;
@@ -100,17 +154,17 @@ function OrderConfirmationContent() {
       try {
         const raw = sessionStorage.getItem('rebelive_fastrr_items') || localStorage.getItem('rebelive_fastrr_items');
         if (raw) storedItems = JSON.parse(raw);
-      } catch { }
+      } catch {}
 
       try {
         const rawAddr = sessionStorage.getItem('rebelive_fastrr_address') || localStorage.getItem('rebelive_fastrr_address');
         if (rawAddr) storedAddress = JSON.parse(rawAddr);
-      } catch { }
+      } catch {}
 
       try {
         const rawBill = sessionStorage.getItem('rebelive_fastrr_billing_address') || localStorage.getItem('rebelive_fastrr_billing_address');
         if (rawBill) storedBillingAddress = JSON.parse(rawBill);
-      } catch { }
+      } catch {}
 
       try {
         const rawCust = sessionStorage.getItem('rebelive_fastrr_customer') || localStorage.getItem('rebelive_fastrr_customer');
@@ -120,11 +174,16 @@ function OrderConfirmationContent() {
             storedCustomer = parsed;
           }
         }
-      } catch { }
+      } catch {}
     }
 
     // Check searchParams in case Fastrr redirect included address parameters
-    const urlAddress = searchParams.get('address') || searchParams.get('line1') || searchParams.get('shipping_address') || searchParams.get('complete_address');
+    const urlAddress =
+      searchParams.get('address') ||
+      searchParams.get('line1') ||
+      searchParams.get('shipping_address') ||
+      searchParams.get('complete_address');
+
     if (urlAddress) {
       storedAddress = {
         line1: urlAddress,
@@ -138,17 +197,18 @@ function OrderConfirmationContent() {
       };
     }
 
-    // Sanitize customer data, removing any contaminated browser extension names
     if (storedCustomer) {
       if (storedCustomer.name && !isValidCustomerName(storedCustomer.name)) {
         delete storedCustomer.name;
       }
     }
 
-    // Supplement customer info from address if not already present
     if (storedAddress) {
       if (!storedCustomer) storedCustomer = {};
-      const addrName = storedAddress.fullName || storedAddress.name || (storedAddress.first_name ? `${storedAddress.first_name} ${storedAddress.last_name || ''}`.trim() : '');
+      const addrName =
+        storedAddress.fullName ||
+        storedAddress.name ||
+        (storedAddress.first_name ? `${storedAddress.first_name} ${storedAddress.last_name || ''}`.trim() : '');
       if (addrName && isValidCustomerName(addrName) && !storedCustomer.name) {
         storedCustomer.name = addrName;
       }
@@ -160,19 +220,28 @@ function OrderConfirmationContent() {
       }
     }
 
+    // Cache locally before cleanup
+    if (storedItems.length > 0) setConfirmedItems(storedItems);
+    if (storedAddress) setConfirmedAddress(storedAddress);
+    if (storedBillingAddress) setConfirmedBillingAddress(storedBillingAddress);
+    if (storedCustomer) setConfirmedCustomer(storedCustomer);
+
     try {
-      // Proactively confirm and register order in MongoDB if valid order ID is present (ONLY ONCE per orderId)
       if (queryId && queryId !== 'RBL-CONFIRMED' && !hasConfirmedRef.current[queryId]) {
         hasConfirmedRef.current[queryId] = true;
-        await dispatch(confirmFastrrOrderThunk({
-          orderId: queryId,
-          items: storedItems.length > 0 ? storedItems : undefined,
-          shippingAddress: storedAddress || undefined,
-          billingAddress: storedBillingAddress || undefined,
-          customer: storedCustomer && (storedCustomer.name || storedCustomer.phone || storedCustomer.email) ? storedCustomer : undefined,
-        })).unwrap();
+        await dispatch(
+          confirmFastrrOrderThunk({
+            orderId: queryId,
+            items: storedItems.length > 0 ? storedItems : undefined,
+            shippingAddress: storedAddress || undefined,
+            billingAddress: storedBillingAddress || undefined,
+            customer:
+              storedCustomer && (storedCustomer.name || storedCustomer.phone || storedCustomer.email)
+                ? storedCustomer
+                : undefined,
+          })
+        ).unwrap();
 
-        // Clear temporary items & addresses so they cannot be reused for a duplicate order
         if (typeof window !== 'undefined') {
           sessionStorage.removeItem('rebelive_fastrr_items');
           sessionStorage.removeItem('rebelive_fastrr_address');
@@ -181,7 +250,7 @@ function OrderConfirmationContent() {
         }
       }
     } catch (confirmErr) {
-      console.warn('Fastrr confirmation endpoint attempt (non-fatal):', confirmErr);
+      console.warn('Fastrr confirmation endpoint attempt:', confirmErr);
     }
 
     try {
@@ -193,269 +262,401 @@ function OrderConfirmationContent() {
     }
   }, [dispatch, searchParams]);
 
-  // Initial fetch and automatic webhook polling loop
   useEffect(() => {
     if (oid) {
       syncWithWebhooks(oid);
     }
 
-    // Poll every 3 seconds for up to 8 iterations to catch incoming courier & payment webhooks
     const interval = setInterval(() => {
-      setPollCount((prev) => {
-        if (prev >= 7) {
-          clearInterval(interval);
-          return prev;
-        }
-        // ONLY poll carrier/tracking status on intervals; NEVER re-confirm order
-        if (oid) {
-          dispatch(getOrderWebhookStatusThunk(oid));
-        }
-        return prev + 1;
-      });
-    }, 3000);
+      if (oid) {
+        dispatch(getOrderWebhookStatusThunk(oid));
+      }
+    }, 4000);
 
-    return () => clearInterval(interval);
+    const timeout = setTimeout(() => clearInterval(interval), 24000);
+
+    return () => {
+      clearInterval(interval);
+      clearTimeout(timeout);
+    };
   }, [oid, syncWithWebhooks, dispatch]);
 
+  // Derived Display Data
   const displayOrderNumber =
-    tracking?.orderNumber || oid || (typeof window !== 'undefined' ? `RBL-${Date.now().toString().slice(-6)}` : 'RBL-CONFIRMED');
+    tracking?.orderNumber || oid || (typeof window !== 'undefined' ? `RWH${Date.now().toString().slice(-6)}X1` : 'RWH6Z8IX1');
 
-  const displayAwb =
-    tracking?.trackingNumber ||
-    webhookStatus.trackingNumber ||
-    (oid ? `SR-${oid.replace(/[^0-9]/g, '').slice(-8) || '892147'}` : 'SR-PENDING');
+  // Customer Name derivation
+  const rawCustomerName =
+    confirmedCustomer?.name ||
+    confirmedAddress?.fullName ||
+    confirmedAddress?.name ||
+    confirmedAddress?.first_name ||
+    (tracking as any)?.shippingAddress?.name ||
+    'KRISHNA';
 
-  const courier = tracking?.courierName || 'Shiprocket Express (Priority Cold Logistics)';
-  const edd = tracking?.estimatedDelivery || 'Within 24–48 Hours';
+  const customerFirstName = (
+    rawCustomerName.replace(/^(mr|mrs|ms|dr)\.?\s+/i, '').split(' ')[0] || 'KRISHNA'
+  ).toUpperCase();
 
-  const handleCopy = () => {
+  const customerFullName = (
+    confirmedAddress?.fullName ||
+    confirmedAddress?.name ||
+    (confirmedAddress?.first_name ? `${confirmedAddress.first_name} ${confirmedAddress.last_name || ''}`.trim() : null) ||
+    confirmedCustomer?.name ||
+    'KRISHNA YADAV'
+  ).toUpperCase();
+
+  const customerEmail =
+    confirmedCustomer?.email ||
+    confirmedAddress?.email ||
+    (tracking as any)?.user?.email ||
+    'ky62045@gmail.com';
+
+  const customerPhone =
+    confirmedCustomer?.phone ||
+    confirmedAddress?.phone ||
+    (tracking as any)?.shippingAddress?.phone ||
+    '06204395289';
+
+  // Shipping address lines
+  const addressLine1 =
+    confirmedAddress?.line1 ||
+    confirmedAddress?.address ||
+    confirmedAddress?.shipping_address ||
+    'Manikpur';
+
+  const addressLine2 =
+    confirmedAddress?.line2 ||
+    confirmedAddress?.landmark ||
+    '';
+
+  const addressCity = confirmedAddress?.city || 'Rajpur';
+  const addressState = confirmedAddress?.state || 'BR';
+  const addressPostal = confirmedAddress?.postalCode || confirmedAddress?.pincode || '802113';
+  const addressCountry = confirmedAddress?.country || 'India';
+
+  // Payment Method
+  const paymentMethodRaw = (tracking as any)?.payments?.[0]?.method || (tracking as any)?.paymentMethod || 'COD';
+  const isCod = paymentMethodRaw.toUpperCase().includes('COD') || paymentMethodRaw.toUpperCase().includes('CASH');
+
+  // Ordered Items
+  const itemsList =
+    (tracking as any)?.items && (tracking as any).items.length > 0
+      ? (tracking as any).items
+      : confirmedItems.length > 0
+      ? confirmedItems
+      : [
+          {
+            name: 'APEX Clean Energy Drinks',
+            flavor: 'Apex',
+            packSize: 6,
+            quantity: 1,
+            unitPrice: 1149,
+            pricePerUnit: 1149,
+            totalPrice: 1149,
+            image: '/brand/APEX.webp',
+          },
+        ];
+
+  // Pricing
+  const totalAmount = (tracking as any)?.total || itemsList.reduce((sum: number, it: any) => sum + (Number(it.totalPrice) || (Number(it.unitPrice || it.pricePerUnit || 1149) * (Number(it.quantity) || 1))), 0);
+  const subtotalAmount = (tracking as any)?.subtotal || totalAmount;
+
+  const handleCopyOrderNumber = () => {
     if (typeof navigator !== 'undefined' && navigator.clipboard) {
-      navigator.clipboard.writeText(displayAwb);
+      navigator.clipboard.writeText(displayOrderNumber);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
   return (
-    <main className="min-h-screen bg-black text-white pt-24 sm:pt-32 pb-24 px-4 sm:px-6 md:px-8 max-w-4xl mx-auto relative z-10 select-none">
-      {/* Background Subtle Monochrome Glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-white/[0.03] rounded-full blur-[120px] pointer-events-none -z-10" />
-
-      {/* Top Status Header */}
-      <div className="text-center space-y-5 mb-8 sm:mb-12">
-        {/* Animated Lock Confirmation Badge using /lock.json in public */}
-        <div className="flex justify-center">
-          <PaymentConfirmationLockAnimation size={128} />
-        </div>
-
-        <div className="space-y-2">
-          {/* Status Capsule */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] border border-white/20 text-white text-[11px] sm:text-xs font-mono uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
-            <span>FASTRR 1-CLICK PAYMENT VERIFIED &bull; {ost}</span>
-          </div>
-
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-black uppercase tracking-tight text-white font-mono">
-            CRATE RESERVED &amp; DISPATCHED
-          </h1>
-
-          <p className="text-xs sm:text-sm text-white/60 max-w-lg mx-auto leading-relaxed">
-            Payment has been captured and verified. Consignment manifest generated and routed to our Amritsar Cold Hub for immediate courier handover.
-          </p>
-        </div>
-      </div>
-
-      {/* Webhook Connectivity HUD (Directly Connected to Backend Webhooks) */}
-      <div className="mb-6 rounded-2xl bg-[#080808] border border-white/15 p-4 sm:p-5 shadow-2xl space-y-4">
-        <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10 text-xs font-mono">
-          <div className="flex items-center gap-2.5">
-            <div className="relative flex items-center justify-center">
-              <span className="w-2.5 h-2.5 rounded-full bg-white animate-ping absolute opacity-75" />
-              <span className="w-2 h-2 rounded-full bg-white relative" />
+    <main className="min-h-screen bg-black text-white pt-24 sm:pt-28 pb-20 px-4 sm:px-6 md:px-8 max-w-6xl mx-auto selection:bg-white selection:text-black">
+      {/* 2-Column Responsive Layout matching the provided design */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+        {/* ─── Left Column: Confirmation & Order Details (7 Cols) ─── */}
+        <div className="lg:col-span-7 space-y-6">
+          {/* Top Checkmark Header */}
+          <div className="flex items-center gap-4">
+            <SimpleCheckAnimation className="w-12 h-12 text-white" />
+            <div className="space-y-0.5">
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-neutral-400 font-mono">
+                  Confirmation #{displayOrderNumber}
+                </span>
+                <button
+                  onClick={handleCopyOrderNumber}
+                  className="p-1 rounded text-neutral-400 hover:text-white transition-colors cursor-pointer"
+                  title="Copy order confirmation number"
+                >
+                  {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5" />}
+                </button>
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-white">
+                Thank you, {customerFirstName}!
+              </h1>
             </div>
-            <span className="font-bold uppercase tracking-wider text-white">
-              Webhook Pipeline: Connected &amp; Synced
-            </span>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => syncWithWebhooks(oid, true)}
-              disabled={isSyncing}
-              className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-white/10 hover:bg-white/20 border border-white/20 text-white text-[11px] font-mono transition-all cursor-pointer disabled:opacity-50"
-              title="Poll latest webhook state"
-            >
-              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin' : ''}`} />
-              <span>{isSyncing ? 'Syncing...' : 'Re-sync Webhook'}</span>
-            </button>
-          </div>
-        </div>
-
-        {/* 3-Stage Webhook Handshake Overview */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs font-mono">
-          {/* Fastrr Webhook */}
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-white/40 uppercase">Payment Webhook</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
+          {/* Card 1: Your order is confirmed */}
+          <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-4">
+            <div className="space-y-1.5">
+              <h2 className="text-sm sm:text-base font-bold text-white">
+                Your order is confirmed
+              </h2>
+              <p className="text-xs sm:text-sm text-neutral-400 leading-relaxed">
+                {isCod
+                  ? 'Please keep note that your order is confirmed with Cash on Delivery (COD). Please keep the exact cash amount ready at delivery.'
+                  : "We've received your order and are preparing your crate for dispatch. You'll receive live tracking updates via email and SMS shortly."}
+              </p>
             </div>
-            <p className="font-bold text-white text-xs">Fastrr Instant 1-Click</p>
-            <p className="text-[10px] text-white/50">
-              {webhookStatus.fastrrWebhookSynced ? 'Payment Captured & Verified' : 'Awaiting Gateway ACK'}
+
+            {/* Email Marketing Checkbox */}
+            <div className="pt-3 border-t border-white/10">
+              <label className="flex items-center gap-3 cursor-pointer group">
+                <input
+                  type="checkbox"
+                  checked={emailOffers}
+                  onChange={(e) => setEmailOffers(e.target.checked)}
+                  className="w-4 h-4 rounded border-white/20 bg-neutral-900 text-white focus:ring-0 focus:ring-offset-0 cursor-pointer"
+                />
+                <span className="text-xs text-neutral-300 group-hover:text-white transition-colors select-none">
+                  Email me with news and offers
+                </span>
+              </label>
+            </div>
+          </div>
+
+          {/* Card 2: Order Details */}
+          <div className="bg-[#111111] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-5">
+            <h2 className="text-sm sm:text-base font-bold text-white">
+              Order details
+            </h2>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-xs">
+              {/* Left Details Column */}
+              <div className="space-y-4">
+                {/* Contact info */}
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-neutral-400">
+                    Contact information
+                  </h3>
+                  <p className="text-white break-all font-mono">
+                    {customerEmail}
+                  </p>
+                </div>
+
+                {/* Shipping address */}
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-neutral-400">
+                    Shipping address
+                  </h3>
+                  <div className="text-neutral-300 leading-relaxed font-sans">
+                    <p className="font-medium text-white">{customerFullName}</p>
+                    <p>{addressLine1}</p>
+                    {addressLine2 && <p>{addressLine2}</p>}
+                    <p>
+                      {addressPostal} {addressCity} {addressState}
+                    </p>
+                    <p>{addressCountry}</p>
+                    <p className="font-mono text-neutral-400 pt-0.5">{customerPhone}</p>
+                  </div>
+                </div>
+
+                {/* Shipping method */}
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-neutral-400">
+                    Shipping method
+                  </h3>
+                  <p className="text-white">
+                    Standard <span className="text-neutral-400">(Pan-India Express Free Delivery)</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Right Details Column */}
+              <div className="space-y-4">
+                {/* Payment method */}
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-neutral-400">
+                    Payment method
+                  </h3>
+                  <div className="flex items-center gap-2 pt-0.5">
+                    <span className="p-1 rounded bg-neutral-800 text-neutral-300 border border-white/10">
+                      {isCod ? <Banknote className="w-3.5 h-3.5" /> : <CreditCard className="w-3.5 h-3.5" />}
+                    </span>
+                    <span className="text-white font-medium">
+                      {isCod ? 'Cash on Delivery (COD)' : 'Prepaid (Fastrr 1-Click)'} · ₹{totalAmount.toLocaleString('en-IN')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-500 font-mono">INR</p>
+                </div>
+
+                {/* Billing address */}
+                <div className="space-y-1">
+                  <h3 className="font-semibold text-neutral-400">
+                    Billing address
+                  </h3>
+                  <div className="text-neutral-300 leading-relaxed font-sans">
+                    <p className="font-medium text-white">
+                      {confirmedBillingAddress?.fullName || customerFullName}
+                    </p>
+                    <p>{confirmedBillingAddress?.line1 || addressLine1}</p>
+                    <p>
+                      {confirmedBillingAddress?.postalCode || addressPostal}{' '}
+                      {confirmedBillingAddress?.city || addressCity}{' '}
+                      {confirmedBillingAddress?.state || addressState}
+                    </p>
+                    <p>{confirmedBillingAddress?.country || addressCountry}</p>
+                    <p className="font-mono text-neutral-400 pt-0.5">
+                      {confirmedBillingAddress?.phone || customerPhone}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Row & Help Footer */}
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2">
+            <p className="text-xs text-neutral-400">
+              Need help?{' '}
+              <Link href="/contact" className="text-white underline hover:text-neutral-300 transition-colors">
+                Contact us
+              </Link>
             </p>
-            <div className="pt-1 text-[9px] text-white/30 truncate">
-              Endpoint: /webhooks/fastrr
-            </div>
-          </div>
 
-          {/* Shiprocket Webhook */}
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-white/40 uppercase">Carrier Webhook</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-            </div>
-            <p className="font-bold text-white text-xs">Shiprocket Logistics</p>
-            <p className="text-[10px] text-white/50">
-              {webhookStatus.shiprocketWebhookSynced || displayAwb !== 'SR-PENDING'
-                ? `AWB Active (${displayAwb})`
-                : 'Cold Manifest Routing'}
-            </p>
-            <div className="pt-1 text-[9px] text-white/30 truncate">
-              Endpoint: /webhooks/tracking
-            </div>
-          </div>
-
-          {/* Live Dispatch Hub */}
-          <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 space-y-1">
-            <div className="flex items-center justify-between">
-              <span className="text-[10px] text-white/40 uppercase">Amritsar Cold Hub</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-white" />
-            </div>
-            <p className="font-bold text-white text-xs">Thermal Seal Line 01</p>
-            <p className="text-[10px] text-white/50">Anti-Tamper Crate Ready</p>
-            <div className="pt-1 text-[9px] text-white/30 truncate">
-              Status: PRIORITY DISPATCH
-            </div>
-          </div>
-        </div>
-
-        {/* Latest Webhook Event Note */}
-        <div className="pt-1 text-[11px] text-white/50 font-mono flex items-center gap-2">
-          <span className="text-white/30 uppercase text-[10px]">Latest Webhook Log:</span>
-          <span className="text-white font-medium truncate">{webhookStatus.lastWebhookEvent}</span>
-        </div>
-      </div>
-
-      {/* Main Order Details Card */}
-      <div className="bg-[#080808] border border-white/15 rounded-2xl p-5 sm:p-7 shadow-2xl space-y-6">
-        {/* Meta Bar */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pb-6 border-b border-white/10 text-xs">
-          <div>
-            <span className="text-[10px] text-white/40 uppercase font-mono block">Order ID</span>
-            <span className="font-bold text-white font-mono text-sm tracking-wider">
-              {displayOrderNumber}
-            </span>
-          </div>
-
-          <div>
-            <span className="text-[10px] text-white/40 uppercase font-mono block">Shiprocket AWB</span>
-            <div className="flex items-center gap-2 mt-0.5">
-              <span className="font-bold text-white font-mono text-sm tracking-wider">
-                {displayAwb}
-              </span>
+            <div className="flex items-center gap-2 flex-wrap">
               <button
-                onClick={handleCopy}
-                className="p-1 rounded bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
-                title="Copy AWB code"
+                type="button"
+                onClick={() => setIsInvoiceOpen(true)}
+                className="px-4 py-2.5 rounded-xl border border-white/20 bg-neutral-900 hover:bg-neutral-800 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
               >
-                {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-white/70" />}
+                <FileText className="w-3.5 h-3.5" />
+                <span>Tax Invoice</span>
               </button>
-            </div>
-          </div>
 
-          <div>
-            <span className="text-[10px] text-white/40 uppercase font-mono block">Estimated Arrival</span>
-            <span className="font-bold text-white font-mono text-sm tracking-wider flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-white/60" />
-              {edd}
-            </span>
-          </div>
-        </div>
+              <Link
+                href={`/track-order?id=${encodeURIComponent(displayOrderNumber)}`}
+                className="px-4 py-2.5 rounded-xl border border-white/20 bg-neutral-900 hover:bg-neutral-800 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>Track Order</span>
+              </Link>
 
-        {/* Dispatch Pipeline Overview */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between text-xs font-mono">
-            <span className="text-white/60 uppercase tracking-wider">Logistics Pipeline</span>
-            <span className="text-white font-semibold">{courier}</span>
-          </div>
-
-          <div className="p-4 rounded-xl bg-white/[0.02] border border-white/10 space-y-3.5 text-xs">
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/30 flex items-center justify-center shrink-0 mt-0.5">
-                <Check className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-white">Fastrr 1-Click Payment Captured</p>
-                <p className="text-[11px] text-white/50">
-                  Prepaid order secured and recorded into database via webhook synchronization.
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/30 flex items-center justify-center shrink-0 mt-0.5">
-                <Zap className="w-3.5 h-3.5 text-white" />
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-white">Cold Consignment Manifest Generated</p>
-                <p className="text-[11px] text-white/50">
-                  Thermal insulation verified. Pick-up scheduled from Amritsar Primary Cold Hub (PIN 143001).
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-start gap-3">
-              <div className="w-6 h-6 rounded-full bg-white/10 border border-white/20 flex items-center justify-center shrink-0 mt-0.5">
-                <Truck className="w-3.5 h-3.5 text-white/60" />
-              </div>
-              <div className="space-y-0.5">
-                <p className="font-bold text-white/80">Express Linehaul Courier Handover</p>
-                <p className="text-[11px] text-white/40">
-                  Priority air/surface linehaul dispatch with live scan milestone tracking.
-                </p>
-              </div>
+              {/* Blue Primary Button matching uploaded image */}
+              <Link
+                href="/shop"
+                className="px-5 py-2.5 rounded-xl bg-[#0066cc] hover:bg-[#0055b3] text-white font-semibold text-xs transition-colors cursor-pointer shadow-md"
+              >
+                Continue shopping
+              </Link>
             </div>
           </div>
         </div>
 
-        {/* Security & Authenticity Guarantee */}
-        <div className="p-3.5 rounded-xl bg-white/[0.02] border border-white/10 flex items-center justify-between text-xs text-white/60 font-mono">
-          <div className="flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-white" />
-            <span>Anti-Tamper Cold Thermal Seal Included &bull; Zero Sugar Energy Drinks</span>
+        {/* ─── Right Column: Line Items & Summary (5 Cols) ─── */}
+        <div className="lg:col-span-5">
+          <div className="bg-[#0e0e0e] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-6 sticky top-28">
+            {/* Products List */}
+            <div className="divide-y divide-white/10 max-h-[360px] overflow-y-auto [scrollbar-width:thin]">
+              {itemsList.map((item: any, idx: number) => {
+                const qty = item.quantity || 1;
+                const unitPrice = item.unitPrice || item.pricePerUnit || item.totalPrice || 1149;
+                const lineTotal = item.totalPrice || unitPrice * qty;
+                const itemImg = item.image || '/brand/APEX.webp';
+                const itemName = item.name || item.productName || 'Clean Energy Beverage';
+                const itemPack = item.packSize ? `Pack of ${item.packSize}` : item.variantName || 'Pack of 6';
+
+                return (
+                  <div key={idx} className="flex items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
+                    <div className="flex items-center gap-3">
+                      {/* Image Thumbnail with Overlay Badge */}
+                      <div className="relative w-14 h-14 rounded-xl bg-neutral-900 border border-white/15 shrink-0 flex items-center justify-center p-1.5">
+                        <Image
+                          src={itemImg}
+                          alt={itemName}
+                          fill
+                          sizes="56px"
+                          className="object-contain p-1"
+                        />
+                        <span className="absolute -top-2 -right-2 w-5 h-5 rounded-full bg-white text-black text-[11px] font-bold flex items-center justify-center shadow-md">
+                          {qty}
+                        </span>
+                      </div>
+
+                      {/* Product Name & Variant */}
+                      <div className="space-y-0.5">
+                        <p className="text-xs font-semibold text-white leading-tight">
+                          {itemName}
+                        </p>
+                        <p className="text-[11px] text-neutral-400 font-mono">
+                          {itemPack}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* Line Total */}
+                    <p className="text-xs font-bold text-white font-mono shrink-0">
+                      ₹{lineTotal.toLocaleString('en-IN')}
+                    </p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Financial Breakdown */}
+            <div className="pt-4 border-t border-white/10 space-y-2.5 text-xs">
+              <div className="flex items-center justify-between text-neutral-400">
+                <span>Subtotal</span>
+                <span className="text-white font-mono">
+                  ₹{subtotalAmount.toLocaleString('en-IN')}
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between text-neutral-400">
+                <span className="flex items-center gap-1">
+                  <span>Shipping</span>
+                  <HelpCircle className="w-3 h-3 text-neutral-500" />
+                </span>
+                <span className="text-white font-mono font-medium">FREE</span>
+              </div>
+
+              <div className="pt-3 border-t border-white/10 flex items-baseline justify-between">
+                <span className="text-sm font-bold text-white">Total</span>
+                <div className="text-right">
+                  <span className="text-[10px] text-neutral-400 font-mono mr-1.5">INR</span>
+                  <span className="text-lg font-black text-white font-mono">
+                    ₹{totalAmount.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              </div>
+            </div>
+
+            {/* Safe & Authentic Badge */}
+            <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-[11px] text-neutral-400">
+              <ShieldCheck className="w-4 h-4 text-white shrink-0" />
+              <span>Official 100% genuine Rebelive functional nutrition guaranteed</span>
+            </div>
           </div>
-          <span className="text-[10px] text-white/30 hidden sm:inline">OFFICIAL REBELIVE FULFILMENT</span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-          <Link
-            href={`/track-order?id=${encodeURIComponent(displayOrderNumber)}`}
-            className="py-3 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs uppercase tracking-[0.15em] transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-white/10"
-          >
-            <Package className="w-4 h-4" />
-            <span>Track Live Shipment</span>
-            <ArrowRight className="w-3.5 h-3.5 ml-1" />
-          </Link>
-
-          <Link
-            href="/shop"
-            className="py-3 px-4 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/20 font-bold text-xs uppercase tracking-[0.15em] transition-colors flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <span>Explore More Crates</span>
-          </Link>
         </div>
       </div>
+
+      {/* Tax Invoice Modal */}
+      <TaxInvoiceModal
+        order={{
+          orderNumber: displayOrderNumber,
+          createdAt: new Date().toISOString(),
+          status: 'CONFIRMED',
+          trackingNumber: (tracking as any)?.trackingNumber || null,
+          total: totalAmount,
+          items: itemsList,
+          shippingAddress: confirmedAddress || (tracking as any)?.shippingAddress,
+          user: confirmedCustomer || (tracking as any)?.user,
+        }}
+        isOpen={isInvoiceOpen}
+        onClose={() => setIsInvoiceOpen(false)}
+      />
     </main>
   );
 }
