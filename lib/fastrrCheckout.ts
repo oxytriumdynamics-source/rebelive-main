@@ -364,9 +364,52 @@ export function getVariantId(productIdOrSlug?: string, packSize: number = 6): nu
   return PRODUCT_VARIANT_MAP[key]?.[packSize] || PRODUCT_VARIANT_MAP.apex[packSize] || 102;
 }
 
+export interface CheckoutPublicStatus {
+  enabled: boolean;
+  pauseMessage: string;
+}
+
+let cachedStatus: { data: CheckoutPublicStatus; expiresAt: number } | null = null;
+
 /**
- * Global Instant Checkout Pause Flag
- * Set to false so 1-Click Fastrr Instant Checkout is active across the store.
+ * Fetches the real-time store checkout status managed via Admin Settings.
+ */
+export async function fetchCheckoutPublicStatus(force = false): Promise<CheckoutPublicStatus> {
+  const now = Date.now();
+  if (!force && cachedStatus && now < cachedStatus.expiresAt) {
+    return cachedStatus.data;
+  }
+
+  const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
+  try {
+    const res = await fetch(`${apiBase}/shipping/checkout-status`, {
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    if (res.ok) {
+      const json = await res.json();
+      if (json?.status === 'success' && json.data) {
+        const result: CheckoutPublicStatus = {
+          enabled: Boolean(json.data.enabled),
+          pauseMessage: json.data.pauseMessage || 'Instant checkout is temporarily paused for maintenance. Please check back shortly.',
+        };
+        cachedStatus = { data: result, expiresAt: now + 15_000 };
+        return result;
+      }
+    }
+  } catch (err) {
+    console.warn('[Fastrr] Unable to fetch checkout status from server:', err);
+  }
+
+  const fallback: CheckoutPublicStatus = {
+    enabled: true,
+    pauseMessage: 'Instant checkout is temporarily paused for maintenance. Please check back shortly.',
+  };
+  return fallback;
+}
+
+/**
+ * Backward compatibility flag. Real-time state is determined dynamically via fetchCheckoutPublicStatus.
  */
 export const IS_INSTANT_CHECKOUT_PAUSED = false;
 
@@ -380,8 +423,10 @@ export async function launchFastrrCheckout(
 ): Promise<void> {
   if (typeof window === 'undefined') return;
 
-  if (IS_INSTANT_CHECKOUT_PAUSED) {
-    throw new Error('Instant checkout is temporarily paused for maintenance. Please check back shortly.');
+  // Real-time store checkout status check
+  const liveStatus = await fetchCheckoutPublicStatus();
+  if (!liveStatus.enabled) {
+    throw new Error(liveStatus.pauseMessage || 'Instant checkout is temporarily paused for maintenance. Please check back shortly.');
   }
 
   if (!items || items.length === 0) {

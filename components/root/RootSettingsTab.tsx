@@ -27,6 +27,8 @@ import {
   Package,
   Boxes,
   BookOpen,
+  ShoppingCart,
+  Power,
 } from 'lucide-react';
 import {
   fetchAdminAdmins,
@@ -34,6 +36,8 @@ import {
   changeAdminPassword,
   createStaffAccount,
   updateStaffAccount,
+  fetchAdminSettings,
+  updateAdminCheckoutSetting,
   AdminUser,
 } from '@/lib/adminApi';
 import { formatRebelId } from '@/lib/auth';
@@ -88,7 +92,117 @@ export function RootSettingsTab({ adminUser }: RootSettingsTabProps) {
   const [editStaffModules, setEditStaffModules] = useState<string[]>([]);
   const [isSavingPermissions, setIsSavingPermissions] = useState(false);
 
+  // Store Checkout Control State
+  const [checkoutEnabled, setCheckoutEnabled] = useState(true);
+  const [pauseMessage, setPauseMessage] = useState('Instant checkout is temporarily paused for maintenance. Please check back shortly.');
+  const [checkoutLastUpdated, setCheckoutLastUpdated] = useState<string | null>(null);
+  const [checkoutUpdatedBy, setCheckoutUpdatedBy] = useState<string | null>(null);
+  const [isLoadingCheckoutSetting, setIsLoadingCheckoutSetting] = useState(true);
+  const [isUpdatingCheckout, setIsUpdatingCheckout] = useState(false);
+  const [isSavingMessage, setIsSavingMessage] = useState(false);
+
   const isSuperAdmin = adminUser?.role === 'SUPERADMIN';
+
+  const loadSettings = async () => {
+    setIsLoadingCheckoutSetting(true);
+    try {
+      const data = await fetchAdminSettings();
+      if (data?.checkout) {
+        setCheckoutEnabled(data.checkout.enabled);
+        if (data.checkout.pauseMessage) {
+          setPauseMessage(data.checkout.pauseMessage);
+        }
+        setCheckoutLastUpdated(data.checkout.updatedAt || null);
+        setCheckoutUpdatedBy(data.checkout.updatedBy || null);
+      }
+    } catch (err: any) {
+      console.error('Failed to load store checkout settings:', err);
+    } finally {
+      setIsLoadingCheckoutSetting(false);
+    }
+  };
+
+  const handleToggleCheckout = async () => {
+    const nextState = !checkoutEnabled;
+    const actionLabel = nextState ? 'enable (turn ON)' : 'disable (turn OFF)';
+
+    if (
+      !confirm(
+        `Are you sure you want to ${actionLabel} store checkout?\n\n${
+          !nextState
+            ? 'Customers will NOT be able to place new orders. A maintenance banner will appear in the cart.'
+            : 'Customers will be able to purchase products instantly via Fastrr 1-Click checkout.'
+        }`
+      )
+    ) {
+      return;
+    }
+
+    setIsUpdatingCheckout(true);
+    try {
+      const updated = await updateAdminCheckoutSetting(nextState, pauseMessage);
+      setCheckoutEnabled(updated.enabled);
+      setCheckoutLastUpdated(updated.updatedAt || new Date().toISOString());
+      setCheckoutUpdatedBy(updated.updatedBy || adminUser?.email || 'Admin');
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('checkout-status-changed', {
+            detail: {
+              enabled: updated.enabled,
+              pauseMessage: updated.pauseMessage || pauseMessage,
+            },
+          })
+        );
+      }
+
+      showAdminToast(
+        `Store checkout has been ${updated.enabled ? 'activated (accepting orders)' : 'paused (orders stopped)'}.`,
+        updated.enabled ? 'success' : 'info',
+        updated.enabled ? 'Checkout Online' : 'Checkout Paused'
+      );
+    } catch (err: any) {
+      showAdminToast(err.message || 'Failed to update checkout setting', 'error', 'Action Failed');
+    } finally {
+      setIsUpdatingCheckout(false);
+    }
+  };
+
+  const handleSavePauseMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!pauseMessage.trim()) {
+      showAdminToast('Please provide a valid pause notice message.', 'error', 'Validation Error');
+      return;
+    }
+
+    setIsSavingMessage(true);
+    try {
+      const updated = await updateAdminCheckoutSetting(checkoutEnabled, pauseMessage.trim());
+      setPauseMessage(updated.pauseMessage || pauseMessage);
+      setCheckoutLastUpdated(updated.updatedAt || new Date().toISOString());
+
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('checkout-status-changed', {
+            detail: {
+              enabled: updated.enabled,
+              pauseMessage: updated.pauseMessage || pauseMessage,
+            },
+          })
+        );
+      }
+
+      showAdminToast('Customer pause notice message updated successfully.', 'success', 'Notice Saved');
+    } catch (err: any) {
+      showAdminToast(err.message || 'Failed to save pause message', 'error', 'Error');
+    } finally {
+      setIsSavingMessage(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSettings();
+  }, []);
 
   const loadAdmins = async () => {
     setIsLoadingAdmins(true);
@@ -291,7 +405,18 @@ export function RootSettingsTab({ adminUser }: RootSettingsTabProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <div
+            className={`px-3 py-1.5 rounded-xl border flex items-center gap-2 font-mono text-[11px] font-bold uppercase tracking-wider transition-colors ${
+              checkoutEnabled
+                ? 'bg-emerald-500/10 border-emerald-500/30 text-emerald-400'
+                : 'bg-amber-500/10 border-amber-500/30 text-amber-400'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${checkoutEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+            CHECKOUT: {checkoutEnabled ? 'ONLINE' : 'PAUSED'}
+          </div>
+
           <span className="px-3 py-1.5 rounded-xl bg-[#d8ac52]/20 border border-[#d8ac52]/40 text-[#d8ac52] font-mono text-[11px] font-bold uppercase tracking-wider flex items-center gap-2">
             <ShieldCheck className="w-3.5 h-3.5 text-[#d8ac52]" />
             SUPER ADMIN (OWNER) CONSOLE
@@ -537,8 +662,169 @@ export function RootSettingsTab({ adminUser }: RootSettingsTabProps) {
           </div>
         </div>
 
-        {/* Right Column (1 Col): Master Password & Security Controls */}
+        {/* Right Column (1 Col): Master Operations & Security Controls */}
         <div className="space-y-4">
+          {/* ─── Store Checkout Control (Kill Switch) ─── */}
+          <div className="bg-[#090909] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl relative overflow-hidden">
+            {/* Accent glow bar */}
+            <div
+              className={`absolute top-0 left-0 right-0 h-1 transition-colors duration-300 ${
+                checkoutEnabled ? 'bg-emerald-400' : 'bg-amber-400'
+              }`}
+            />
+
+            <div className="flex items-center justify-between gap-2 pb-3 border-b border-white/10">
+              <div className="flex items-center gap-2">
+                <div
+                  className={`p-2 rounded-xl transition-colors ${
+                    checkoutEnabled
+                      ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
+                      : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  }`}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+                    STORE CHECKOUT
+                  </h3>
+                  <p className="text-[10px] text-white/40 font-mono">
+                    Global 1-Click Fastrr & Storefront Checkout
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={loadSettings}
+                disabled={isLoadingCheckoutSetting}
+                title="Refresh checkout status"
+                className="p-1.5 rounded-lg text-white/40 hover:text-white bg-white/5 hover:bg-white/10 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingCheckoutSetting ? 'animate-spin' : ''}`} />
+              </button>
+            </div>
+
+            {/* Status & Interactive Switch Banner */}
+            <div
+              className={`p-4 rounded-xl border transition-all ${
+                checkoutEnabled
+                  ? 'bg-emerald-950/20 border-emerald-500/30'
+                  : 'bg-amber-950/20 border-amber-500/30'
+              }`}
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="space-y-0.5">
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        checkoutEnabled ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                      }`}
+                    />
+                    <span
+                      className={`text-xs font-mono font-bold uppercase tracking-wider ${
+                        checkoutEnabled ? 'text-emerald-400' : 'text-amber-400'
+                      }`}
+                    >
+                      {checkoutEnabled ? 'CHECKOUT ACTIVE' : 'CHECKOUT PAUSED'}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-white/60">
+                    {checkoutEnabled
+                      ? 'Accepting live orders. Shoppers can purchase products instantly.'
+                      : 'Orders paused. Shoppers will see a maintenance notice in the crate.'}
+                  </p>
+                </div>
+
+                {/* Switch Toggle */}
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={checkoutEnabled}
+                  disabled={isUpdatingCheckout || isLoadingCheckoutSetting}
+                  onClick={handleToggleCheckout}
+                  className={`relative inline-flex h-7 w-14 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none disabled:opacity-50 ${
+                    checkoutEnabled ? 'bg-emerald-500' : 'bg-white/20'
+                  }`}
+                >
+                  <span
+                    className={`pointer-events-none inline-block h-6 w-6 transform rounded-full bg-white shadow-lg ring-0 transition duration-200 ease-in-out ${
+                      checkoutEnabled ? 'translate-x-7' : 'translate-x-0'
+                    }`}
+                  />
+                </button>
+              </div>
+
+              {/* Action Button */}
+              <div className="mt-3 pt-3 border-t border-white/10 flex items-center justify-between gap-2">
+                <span className="text-[10px] font-mono text-white/40">
+                  {checkoutEnabled ? 'Active in cart & store' : 'Disabled store-wide'}
+                </span>
+                <button
+                  type="button"
+                  onClick={handleToggleCheckout}
+                  disabled={isUpdatingCheckout || isLoadingCheckoutSetting}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-mono font-bold uppercase transition-all cursor-pointer flex items-center gap-1.5 ${
+                    checkoutEnabled
+                      ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                      : 'bg-emerald-500 hover:bg-emerald-400 text-black shadow-sm font-extrabold'
+                  } disabled:opacity-50`}
+                >
+                  {isUpdatingCheckout ? (
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Power className="w-3.5 h-3.5" />
+                  )}
+                  <span>{checkoutEnabled ? 'Turn OFF Checkout' : 'Turn ON Checkout'}</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Custom Pause Notice Shown to Customers */}
+            <form onSubmit={handleSavePauseMessage} className="space-y-2 pt-1">
+              <div className="flex items-center justify-between">
+                <label className="text-[10px] font-mono uppercase tracking-widest text-white/60 block">
+                  PAUSE NOTICE (SHOWN IN CART)
+                </label>
+                <span className="text-[9px] font-mono text-white/30">Custom customer banner</span>
+              </div>
+
+              <textarea
+                rows={2}
+                value={pauseMessage}
+                onChange={(e) => setPauseMessage(e.target.value)}
+                placeholder="e.g. Instant checkout is temporarily paused for maintenance. Please check back shortly."
+                className="w-full bg-[#121212] border border-white/10 rounded-xl p-2.5 text-xs text-white placeholder-white/30 focus:outline-none focus:border-white font-mono resize-none"
+              />
+
+              <div className="flex items-center justify-between pt-1">
+                <span className="text-[10px] font-mono text-white/30 truncate max-w-[190px]">
+                  {checkoutLastUpdated ? (
+                    <>
+                      Updated{' '}
+                      {new Date(checkoutLastUpdated).toLocaleTimeString([], {
+                        hour: '2-digit',
+                        minute: '2-digit',
+                      })}
+                      {checkoutUpdatedBy ? ` by ${checkoutUpdatedBy}` : ''}
+                    </>
+                  ) : (
+                    'Default setting'
+                  )}
+                </span>
+                <button
+                  type="submit"
+                  disabled={isSavingMessage || isLoadingCheckoutSetting}
+                  className="px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white text-xs font-mono transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                >
+                  {isSavingMessage ? <RefreshCw className="w-3 h-3 animate-spin" /> : <Check className="w-3 h-3" />}
+                  <span>Save Notice</span>
+                </button>
+              </div>
+            </form>
+          </div>
+
+          {/* ─── Change Super Admin Password Card ─── */}
           <div className="bg-[#090909] border border-white/10 rounded-2xl p-5 sm:p-6 space-y-4 shadow-xl">
             <div className="flex items-center gap-2 pb-2 border-b border-white/10">
               <KeyRound className="w-4 h-4 text-white" />

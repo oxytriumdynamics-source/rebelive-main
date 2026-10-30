@@ -11,15 +11,56 @@ import {
   removeFromCart,
   clearCart,
 } from '@/store/slices/cartSlice';
-import { launchFastrrCheckout, getVariantId, IS_INSTANT_CHECKOUT_PAUSED } from '@/lib/fastrrCheckout';
+import {
+  launchFastrrCheckout,
+  getVariantId,
+  fetchCheckoutPublicStatus,
+  CheckoutPublicStatus,
+} from '@/lib/fastrrCheckout';
 
 export function CartDrawer() {
   const dispatch = useAppDispatch();
   const { items, isOpen } = useAppSelector((state) => state.cart);
   const [isLaunching, setIsLaunching] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
+  const [checkoutStatus, setCheckoutStatus] = useState<CheckoutPublicStatus>({
+    enabled: true,
+    pauseMessage: 'Instant checkout is temporarily paused for maintenance. Please check back shortly.',
+  });
+
+  useEffect(() => {
+    if (!isOpen) return;
+    let isSubscribed = true;
+    fetchCheckoutPublicStatus()
+      .then((status) => {
+        if (isSubscribed) setCheckoutStatus(status);
+      })
+      .catch(() => {});
+
+    const handleStatusChanged = (e: any) => {
+      if (e.detail?.enabled !== undefined) {
+        setCheckoutStatus(e.detail);
+      } else {
+        fetchCheckoutPublicStatus(true).then((s) => {
+          if (isSubscribed) setCheckoutStatus(s);
+        }).catch(() => {});
+      }
+    };
+
+    window.addEventListener('checkout-status-changed', handleStatusChanged);
+    return () => {
+      isSubscribed = false;
+      window.removeEventListener('checkout-status-changed', handleStatusChanged);
+    };
+  }, [isOpen]);
+
+  const isCheckoutDisabled = !checkoutStatus.enabled;
 
   const handleInstantCheckout = async (e: React.MouseEvent) => {
+    if (isCheckoutDisabled) {
+      setCheckoutError(checkoutStatus.pauseMessage || 'Checkout is temporarily paused.');
+      return;
+    }
     try {
       setCheckoutError(null);
       setIsLaunching(true);
@@ -274,26 +315,26 @@ export function CartDrawer() {
 
             <button
               id="cart-fastrr-checkout-btn"
-              disabled={isLaunching || IS_INSTANT_CHECKOUT_PAUSED}
+              disabled={isLaunching || isCheckoutDisabled}
               onClick={handleInstantCheckout}
               className={`w-full py-3.5 rounded-xl text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-white/10 ${
-                IS_INSTANT_CHECKOUT_PAUSED
+                isCheckoutDisabled
                   ? 'bg-white/10 text-white/40 border border-white/10 cursor-not-allowed'
                   : 'bg-white text-black hover:bg-neutral-200 cursor-pointer active:scale-[0.98] disabled:opacity-60'
               }`}
             >
-              <Zap className={`w-4 h-4 ${IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/40 fill-white/40' : 'text-black fill-black'}`} />
+              <Zap className={`w-4 h-4 ${isCheckoutDisabled ? 'text-white/40 fill-white/40' : 'text-black fill-black'}`} />
               <span>
-                {IS_INSTANT_CHECKOUT_PAUSED
+                {isCheckoutDisabled
                   ? 'Checkout Temporarily Paused'
                   : isLaunching
                   ? 'Connecting Fastrr...'
                   : `Instant Checkout • ₹${subtotal.toLocaleString('en-IN')}`}
               </span>
             </button>
-            {IS_INSTANT_CHECKOUT_PAUSED ? (
-              <p className="text-[10px] text-amber-400/80 font-mono text-center tracking-wider uppercase">
-                Instant checkout is temporarily paused for maintenance
+            {isCheckoutDisabled ? (
+              <p className="text-[10px] text-amber-400/80 font-mono text-center tracking-wider uppercase px-2 leading-relaxed">
+                {checkoutStatus.pauseMessage || 'Instant checkout is temporarily paused for maintenance'}
               </p>
             ) : (
               <div className="flex items-center justify-center gap-1.5 text-[10px] text-white/50 font-mono tracking-wider">

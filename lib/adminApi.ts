@@ -1163,5 +1163,31 @@ export async function updateStaffAccount(
   return res.data.data;
 }
 
+// ─── SYSTEM & STORE SETTINGS (CHECKOUT CONTROL) ─────────
+
+export interface AdminCheckoutSetting {
+  enabled: boolean;
+  pauseMessage?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+}
+
+export async function fetchAdminSettings(): Promise<{ checkout: AdminCheckoutSetting }> {
+  const res = await adminClient.get('/settings');
+  return res.data.data;
+}
+
+export async function updateAdminCheckoutSetting(
+  enabled: boolean,
+  pauseMessage?: string
+): Promise<AdminCheckoutSetting> {
+  const res = await adminClient.patch('/settings/checkout', {
+    enabled,
+    pauseMessage,
+  });
+  return res.data.data;
+}
+
+
 
 
