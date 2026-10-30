@@ -1,8 +1,7 @@
 'use client';
 
-import React, { useRef } from 'react';
-import Image from 'next/image';
-import { X, Printer, Download, FileText, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useState } from 'react';
+import { X, Printer, Download, FileText, RefreshCw } from 'lucide-react';
 import { parseOrderShippingAddress, numberToIndianWords } from './invoiceUtils';
 
 export interface TaxInvoiceModalProps {
@@ -28,6 +27,8 @@ interface CalculatedInvoiceItem {
 
 export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [isPrinting, setIsPrinting] = useState(false);
 
   if (!isOpen || !order) return null;
 
@@ -122,53 +123,188 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
   const grandTotal = Number(order.total) || (totalTaxableValue + totalCgst + totalSgst + shippingCharges);
   const amountWords = numberToIndianWords(grandTotal);
 
+  /**
+   * Dedicated Isolated Iframe Printing to eliminate blank pages
+   */
   const handlePrint = () => {
-    window.print();
+    if (!invoiceRef.current) return;
+    setIsPrinting(true);
+
+    try {
+      // Gather active stylesheets from the document
+      let stylesHtml = '';
+      document.querySelectorAll('link[rel="stylesheet"], style').forEach((node) => {
+        stylesHtml += node.outerHTML;
+      });
+
+      const invoiceContent = invoiceRef.current.outerHTML;
+
+      const iframe = document.createElement('iframe');
+      iframe.style.position = 'fixed';
+      iframe.style.right = '0';
+      iframe.style.bottom = '0';
+      iframe.style.width = '0';
+      iframe.style.height = '0';
+      iframe.style.border = 'none';
+      iframe.style.opacity = '0';
+      document.body.appendChild(iframe);
+
+      const doc = iframe.contentWindow?.document;
+      if (!doc) {
+        window.print();
+        setIsPrinting(false);
+        return;
+      }
+
+      doc.open();
+      doc.write(`
+        <!DOCTYPE html>
+        <html lang="en">
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Tax Invoice - ${orderNumber}</title>
+            <link rel="preconnect" href="https://fonts.googleapis.com">
+            <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+            <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+            ${stylesHtml}
+            <style>
+              * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                box-sizing: border-box !important;
+              }
+              html, body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                width: 100% !important;
+                font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif !important;
+              }
+              @page {
+                size: A4 portrait;
+                margin: 6mm 8mm 6mm 8mm;
+              }
+              #rebelive-tax-invoice-document {
+                width: 100% !important;
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 4mm 6mm !important;
+                box-shadow: none !important;
+                border: none !important;
+                background: #ffffff !important;
+                color: #000000 !important;
+                page-break-after: avoid !important;
+                page-break-inside: avoid !important;
+              }
+              .rebelive-no-print {
+                display: none !important;
+              }
+            </style>
+          </head>
+          <body>
+            ${invoiceContent}
+          </body>
+        </html>
+      `);
+      doc.close();
+
+      setTimeout(() => {
+        iframe.contentWindow?.focus();
+        iframe.contentWindow?.print();
+        setIsPrinting(false);
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 2000);
+      }, 400);
+    } catch (err) {
+      console.warn('Iframe print failed, falling back to window.print():', err);
+      window.print();
+      setIsPrinting(false);
+    }
+  };
+
+  /**
+   * Direct Download of Invoice as High-Resolution Image/PNG
+   */
+  const handleDownload = async () => {
+    if (!invoiceRef.current) return;
+    setIsDownloading(true);
+
+    try {
+      const html2canvas = (await import('html2canvas')).default;
+      const canvas = await html2canvas(invoiceRef.current, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+        logging: false,
+      });
+
+      const dataUrl = canvas.toDataURL('image/png');
+      const link = document.createElement('a');
+      link.download = `Tax-Invoice-${orderNumber}.png`;
+      link.href = dataUrl;
+      link.click();
+    } catch (err) {
+      console.error('Failed to download invoice image:', err);
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   return (
     <>
-      {/* ─── Print-Only Specific Stylesheet ─── */}
+      {/* ─── Global Print Styles (Fallback for Ctrl+P) ─── */}
       <style jsx global>{`
         @media print {
+          /* Hide main site wrapper elements */
           body {
-            background-color: #ffffff !important;
+            background: #ffffff !important;
             color: #000000 !important;
             margin: 0 !important;
             padding: 0 !important;
           }
-          /* Hide all page elements except the tax invoice modal */
-          body > *:not(#rebelive-invoice-portal-root) {
-            display: none !important;
+          body * {
+            visibility: hidden !important;
           }
-          #rebelive-invoice-backdrop {
-            background: transparent !important;
-            padding: 0 !important;
-            position: static !important;
-            overflow: visible !important;
+          #rebelive-tax-invoice-document,
+          #rebelive-tax-invoice-document * {
+            visibility: visible !important;
           }
-          #rebelive-invoice-modal-card {
+          #rebelive-tax-invoice-document {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 6mm 8mm !important;
             box-shadow: none !important;
             border: none !important;
-            max-width: 100% !important;
-            width: 100% !important;
-            margin: 0 !important;
+            background: #ffffff !important;
+            color: #000000 !important;
+            page-break-after: avoid !important;
+          }
+          #rebelive-invoice-portal-root,
+          #rebelive-invoice-backdrop,
+          #rebelive-invoice-modal-card {
+            position: static !important;
+            background: transparent !important;
+            box-shadow: none !important;
+            border: none !important;
             padding: 0 !important;
-            border-radius: 0 !important;
+            margin: 0 !important;
+            overflow: visible !important;
           }
           .rebelive-no-print {
             display: none !important;
           }
-          #rebelive-tax-invoice-document {
-            box-shadow: none !important;
-            border: none !important;
-            padding: 10mm 12mm !important;
-            width: 100% !important;
-            font-size: 11px !important;
-          }
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm 10mm 10mm;
+            margin: 6mm 8mm 6mm 8mm;
           }
         }
       `}</style>
@@ -207,11 +343,24 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
               <div className="flex items-center gap-2">
                 <button
                   type="button"
-                  onClick={handlePrint}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border border-white/10 disabled:opacity-50"
+                  title="Download Image Receipt"
                 >
-                  <Printer className="w-3.5 h-3.5 text-black" />
-                  <span>Print Invoice / PDF</span>
+                  {isDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  <span>{isDownloading ? 'Saving...' : 'Download Image'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePrint}
+                  disabled={isPrinting}
+                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                  title="Print or Save as PDF"
+                >
+                  {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5 text-black" />}
+                  <span>{isPrinting ? 'Opening...' : 'Print / Save PDF'}</span>
                 </button>
 
                 <button
@@ -236,15 +385,12 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                 {/* ─── Top Brand Header ─── */}
                 <div className="text-center space-y-1 mb-2">
                   <div className="flex justify-center items-center py-1">
-                    <div className="relative h-12 w-52 sm:h-14 sm:w-60">
-                      <Image
-                        src="/brand/REBELIVE Logo Black.png"
-                        alt="REBELIVE"
-                        fill
-                        className="object-contain"
-                        priority
-                      />
-                    </div>
+                    <img
+                      src="/brand/REBELIVE Logo Black.png"
+                      alt="REBELIVE"
+                      className="h-11 sm:h-13 w-auto object-contain mx-auto"
+                      crossOrigin="anonymous"
+                    />
                   </div>
                   <h2 className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-neutral-900">
                     OXYTRIUM DYNAMICS PRIVATE LIMITED
@@ -520,13 +666,25 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                 >
                   Close
                 </button>
+
+                <button
+                  type="button"
+                  onClick={handleDownload}
+                  disabled={isDownloading}
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs uppercase cursor-pointer flex items-center gap-1.5 border border-white/10 disabled:opacity-50"
+                >
+                  {isDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
+                  <span>{isDownloading ? 'Saving...' : 'Download Image'}</span>
+                </button>
+
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase cursor-pointer flex items-center gap-1.5 shadow-md"
+                  disabled={isPrinting}
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print / Save PDF</span>
+                  {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                  <span>{isPrinting ? 'Opening...' : 'Print / Save PDF'}</span>
                 </button>
               </div>
             </div>
