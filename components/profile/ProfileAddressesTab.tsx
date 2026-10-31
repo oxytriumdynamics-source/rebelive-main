@@ -194,7 +194,7 @@ export default function ProfileAddressesTab({
             SAVED DELIVERY ADDRESSES
           </h2>
           <p className="font-mono text-xs text-white/50 mt-1">
-            Addresses from your orders and Fastrr 1-Click checkout are saved here for instant re-orders.
+            YOUR SAVED ADDRESSES FOR FASTER CHECKOUTS & EASY REORDERS.
           </p>
         </div>
 

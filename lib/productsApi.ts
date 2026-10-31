@@ -2,7 +2,7 @@ import axios from 'axios';
 import { Product } from '@/data/products';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes fresh TTL
+const CACHE_TTL_MS = 20 * 1000; // 20 seconds TTL so stock updates reflect quickly
 const STORAGE_KEY_PRODUCTS = 'rebelive_products_cache_v4';
 const STORAGE_KEY_SLUG_PREFIX = 'rebelive_prod_slug_v4_';
 
@@ -117,6 +117,12 @@ export function clearProductsCache(): void {
       keysToRemove.forEach((k) => localStorage.removeItem(k));
     } catch {}
   }
+}
+
+if (isClient()) {
+  window.addEventListener('products-cache-cleared', () => {
+    clearProductsCache();
+  });
 }
 
 /**

@@ -77,6 +77,12 @@ export default function ShopPage() {
   // Load products via Redux dispatch
   React.useEffect(() => {
     dispatch(fetchProducts(false));
+
+    const handleCacheCleared = () => {
+      dispatch(fetchProducts(true));
+    };
+    window.addEventListener('products-cache-cleared', handleCacheCleared);
+    return () => window.removeEventListener('products-cache-cleared', handleCacheCleared);
   }, [dispatch]);
 
   const handleRetry = async () => {
@@ -100,6 +106,11 @@ export default function ShopPage() {
   const handleConfirmAddToCart = () => {
     if (!quickAddProduct) return;
     const variantMatch = getMatchingVariant(quickAddProduct, modalPack);
+    const isOutOfStock = variantMatch
+      ? (variantMatch.isActive === false || (variantMatch.stockQty !== undefined && variantMatch.stockQty !== null && variantMatch.stockQty <= 0))
+      : false;
+    if (isOutOfStock) return;
+
     const finalPrice = variantMatch ? variantMatch.price : (PRICES[modalPack]?.price ?? 449);
 
     dispatch(
@@ -245,6 +256,10 @@ export default function ShopPage() {
                   {/* ── Lower Area: Starting Price + ADD TO CART Button ── */}
                   <div className="px-4 sm:px-5 pb-4 sm:pb-5 pt-3.5 mt-auto">
                     {(() => {
+                      const isEntireProductOutOfStock = (p.variants && p.variants.length > 0)
+                        ? p.variants.every((v) => v.isActive === false || (v.stockQty !== undefined && v.stockQty !== null && v.stockQty <= 0))
+                        : false;
+
                       const startingVariant = (p.variants && p.variants.length > 0)
                         ? p.variants.reduce((min, v) => (v.price < min.price ? v : min), p.variants[0])
                         : null;
@@ -258,27 +273,43 @@ export default function ShopPage() {
                           }).filter(Boolean) as number[]
                         : [3, 6, 9, 12];
                       const uniquePacks = [...new Set(packNumbers)].sort((a, b) => a - b);
-                      const packBadgeLabel = uniquePacks.length > 0 ? `PACK OF ${uniquePacks.join(', ')}` : 'PACK OF 3, 6, 9, 12';
+                      const packBadgeLabel = isEntireProductOutOfStock
+                        ? 'OUT OF STOCK'
+                        : uniquePacks.length > 0
+                        ? `PACK OF ${uniquePacks.join(', ')}`
+                        : 'PACK OF 3, 6, 9, 12';
 
                       return (
                         <div className="flex items-baseline justify-between mb-3">
                           <div>
                             <span className="text-[9.5px] text-white/40 uppercase font-mono block">
-                              STARTING AT
+                              {isEntireProductOutOfStock ? 'STATUS' : 'STARTING AT'}
                             </span>
                             <div className="flex items-baseline gap-1.5">
-                              <span className="text-lg font-bold text-white tracking-tight font-mono">
-                                ₹{startingPrice.toLocaleString('en-IN')}
-                              </span>
-                              {startingMrp && startingMrp > startingPrice && (
-                                <span className="text-[11px] text-white/35 line-through font-mono">
-                                  ₹{startingMrp.toLocaleString('en-IN')}
+                              {isEntireProductOutOfStock ? (
+                                <span className="text-sm font-bold text-red-400 font-mono tracking-wider">
+                                  SOLD OUT
                                 </span>
+                              ) : (
+                                <>
+                                  <span className="text-lg font-bold text-white tracking-tight font-mono">
+                                    ₹{startingPrice.toLocaleString('en-IN')}
+                                  </span>
+                                  {startingMrp && startingMrp > startingPrice && (
+                                    <span className="text-[11px] text-white/35 line-through font-mono">
+                                      ₹{startingMrp.toLocaleString('en-IN')}
+                                    </span>
+                                  )}
+                                </>
                               )}
                             </div>
                           </div>
 
-                          <span className="text-[9.5px] text-white/70 font-mono font-medium px-2 py-0.5 rounded-full bg-white/[0.05] border border-white/10">
+                          <span className={`text-[9.5px] font-mono font-medium px-2 py-0.5 rounded-full border ${
+                            isEntireProductOutOfStock
+                              ? 'bg-red-500/20 text-red-400 border-red-500/40'
+                              : 'text-white/70 bg-white/[0.05] border-white/10'
+                          }`}>
                             {packBadgeLabel}
                           </span>
                         </div>
@@ -292,7 +323,7 @@ export default function ShopPage() {
                       className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer shadow-[0_2px_15px_rgba(255,255,255,0.2)] hover:shadow-[0_4px_25px_rgba(255,255,255,0.35)] active:scale-[0.98] flex items-center justify-center gap-2 group/btn"
                     >
                       <ShoppingBag className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-110" />
-                      <span>Add to Cart</span>
+                      <span>Configure & Buy</span>
                     </button>
                   </div>
                 </div>
@@ -348,6 +379,10 @@ export default function ShopPage() {
                 {/* Pack Selection (3, 6, 9, 12) */}
                 {(() => {
                   const selectedVarMatch = getMatchingVariant(quickAddProduct, modalPack);
+                  const isSelectedPackOutOfStock = selectedVarMatch
+                    ? (selectedVarMatch.isActive === false || (selectedVarMatch.stockQty !== undefined && selectedVarMatch.stockQty !== null && selectedVarMatch.stockQty <= 0))
+                    : false;
+
                   const selectedPrice = selectedVarMatch?.price ?? PRICES[modalPack]?.price ?? 449;
                   const selectedMrp = selectedVarMatch?.compareAtPrice ?? PRICES[modalPack]?.mrp ?? selectedPrice;
                   const selectedDiscount = selectedMrp > selectedPrice
@@ -367,6 +402,9 @@ export default function ShopPage() {
                         {([3, 6, 9, 12] as PackSize[]).map((size) => {
                           const isSelected = modalPack === size;
                           const varMatch = getMatchingVariant(quickAddProduct, size);
+                          const isPackOutOfStock = varMatch
+                            ? (varMatch.isActive === false || (varMatch.stockQty !== undefined && varMatch.stockQty !== null && varMatch.stockQty <= 0))
+                            : false;
                           const displayPrice = varMatch?.price ?? PRICES[size]?.price ?? 449;
                           const displayMrp = varMatch?.compareAtPrice ?? PRICES[size]?.mrp ?? 499;
 
@@ -379,88 +417,124 @@ export default function ShopPage() {
                               }}
                               className={`py-4 px-2.5 sm:px-3 sm:py-5 min-h-[105px] sm:min-h-[116px] rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between items-center ${
                                 isSelected
-                                  ? 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
+                                  ? isPackOutOfStock
+                                    ? 'bg-red-500/15 text-white font-bold ring-2 ring-red-500/60 scale-[1.03]'
+                                    : 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
+                                  : isPackOutOfStock
+                                  ? 'bg-white/[0.02] text-white/30 border border-white/5'
                                   : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white border border-white/10'
                               }`}
                             >
-                              <div className="font-mono text-[11px] sm:text-xs font-bold uppercase tracking-wider">
-                                Pack of {size}
+                              <div className="flex items-center justify-between w-full px-1">
+                                <span className="font-mono text-[10px] sm:text-[11px] font-bold uppercase tracking-wider">
+                                  Pack of {size}
+                                </span>
                               </div>
                               <div className="my-auto py-1 flex flex-col items-center justify-center">
-                                <span className="font-mono text-base sm:text-lg font-black leading-none">
-                                  ₹{displayPrice}
-                                </span>
-                                {displayMrp && displayMrp > displayPrice && (
-                                  <span className={`text-[10px] sm:text-[11px] line-through font-mono mt-1 ${isSelected ? 'text-black/60 font-medium' : 'text-white/45'}`}>
-                                    ₹{displayMrp}
+                                {isPackOutOfStock ? (
+                                  <span className="text-[10px] uppercase font-mono font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded border border-red-500/40">
+                                    Out of Stock
                                   </span>
+                                ) : (
+                                  <>
+                                    <span className="font-mono text-base sm:text-lg font-black leading-none">
+                                      ₹{displayPrice}
+                                    </span>
+                                    {displayMrp && displayMrp > displayPrice && (
+                                      <span className={`text-[10px] sm:text-[11px] line-through font-mono mt-1 ${isSelected ? 'text-black/60 font-medium' : 'text-white/45'}`}>
+                                        ₹{displayMrp}
+                                      </span>
+                                    )}
+                                  </>
                                 )}
                               </div>
                             </button>
                           );
                         })}
                       </div>
+
+                      {isSelectedPackOutOfStock && (
+                        <p className="text-[11px] text-red-400 font-mono text-center pt-1">
+                          This pack configuration is currently out of stock.
+                        </p>
+                      )}
                     </div>
                   );
                 })()}
 
                 {/* Confirm Add to Cart and Instant Checkout Buttons */}
-                <div className="grid grid-cols-2 gap-3 mt-5">
-                  <button
-                    type="button"
-                    onClick={handleConfirmAddToCart}
-                    className="w-full py-3.5 rounded-xl bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/20 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer flex items-center justify-center gap-2"
-                  >
-                    <ShoppingBag className="w-3.5 h-3.5" />
-                    <span>Add to Cart</span>
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isInstantBuying || IS_INSTANT_CHECKOUT_PAUSED}
-                    onClick={async (e) => {
-                      if (!quickAddProduct) return;
-                      try {
-                        setIsInstantBuying(true);
-                        const varMatch = getMatchingVariant(quickAddProduct, modalPack);
-                        const finalPrice = varMatch ? varMatch.price : (PRICES[modalPack]?.price ?? 449);
-                        const finalVarId = varMatch ? String(varMatch.id) : String(getVariantId(quickAddProduct.id, modalPack));
+                {(() => {
+                  const selectedVarMatch = getMatchingVariant(quickAddProduct, modalPack);
+                  const isSelectedPackOutOfStock = selectedVarMatch
+                    ? (selectedVarMatch.isActive === false || (selectedVarMatch.stockQty !== undefined && selectedVarMatch.stockQty !== null && selectedVarMatch.stockQty <= 0))
+                    : false;
 
-                        const itemToBuy = {
-                          productId: quickAddProduct.id,
-                          slug: quickAddProduct.id,
-                          variantId: finalVarId,
-                          name: quickAddProduct.name,
-                          flavor: quickAddProduct.flavor,
-                          packSize: modalPack,
-                          quantity: 1,
-                          unitPrice: finalPrice,
-                          image: quickAddProduct.image || quickAddProduct.canImage,
-                        };
-                        setQuickAddProduct(null);
-                        await launchFastrrCheckout(e, [itemToBuy]);
-                      } catch (err: any) {
-                        console.warn('Fastrr checkout error:', err);
-                        dispatch(openCart());
-                      } finally {
-                        setIsInstantBuying(false);
-                      }
-                    }}
-                    className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
-                      IS_INSTANT_CHECKOUT_PAUSED
-                        ? 'bg-white/10 text-white/40 border border-white/10 cursor-not-allowed'
-                        : 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-white/20 active:scale-[0.98] disabled:opacity-60'
-                    }`}
-                  >
-                    <Zap className={`w-3.5 h-3.5 ${IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/30 fill-white/30' : 'text-black fill-black'}`} />
-                    <span>
-                      {IS_INSTANT_CHECKOUT_PAUSED
-                        ? 'Checkout Paused'
-                        : isInstantBuying
-                        ? 'Connecting Fastrr...'
-                        : 'Instant Buy'}
-                    </span>
-                  </button>
-                </div>
+                  return (
+                    <div className="grid grid-cols-2 gap-3 mt-5">
+                      <button
+                        type="button"
+                        disabled={isSelectedPackOutOfStock}
+                        onClick={handleConfirmAddToCart}
+                        className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 ${
+                          isSelectedPackOutOfStock
+                            ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
+                            : 'bg-white/[0.08] hover:bg-white/[0.15] text-white border border-white/20 cursor-pointer'
+                        }`}
+                      >
+                        <ShoppingBag className="w-3.5 h-3.5" />
+                        <span>{isSelectedPackOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
+                      </button>
+                      <button
+                        type="button"
+                        disabled={isSelectedPackOutOfStock || isInstantBuying || IS_INSTANT_CHECKOUT_PAUSED}
+                        onClick={async (e) => {
+                          if (!quickAddProduct || isSelectedPackOutOfStock) return;
+                          try {
+                            setIsInstantBuying(true);
+                            const varMatch = getMatchingVariant(quickAddProduct, modalPack);
+                            const finalPrice = varMatch ? varMatch.price : (PRICES[modalPack]?.price ?? 449);
+                            const finalVarId = varMatch ? String(varMatch.id) : String(getVariantId(quickAddProduct.id, modalPack));
+
+                            const itemToBuy = {
+                              productId: quickAddProduct.id,
+                              slug: quickAddProduct.id,
+                              variantId: finalVarId,
+                              name: quickAddProduct.name,
+                              flavor: quickAddProduct.flavor,
+                              packSize: modalPack,
+                              quantity: 1,
+                              unitPrice: finalPrice,
+                              image: quickAddProduct.image || quickAddProduct.canImage,
+                            };
+                            setQuickAddProduct(null);
+                            await launchFastrrCheckout(e, [itemToBuy]);
+                          } catch (err: any) {
+                            console.warn('Fastrr checkout error:', err);
+                            dispatch(openCart());
+                          } finally {
+                            setIsInstantBuying(false);
+                          }
+                        }}
+                        className={`w-full py-3.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-lg ${
+                          isSelectedPackOutOfStock || IS_INSTANT_CHECKOUT_PAUSED
+                            ? 'bg-white/10 text-white/30 border border-white/10 cursor-not-allowed'
+                            : 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-white/20 active:scale-[0.98] disabled:opacity-60'
+                        }`}
+                      >
+                        <Zap className={`w-3.5 h-3.5 ${isSelectedPackOutOfStock || IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/20 fill-white/20' : 'text-black fill-black'}`} />
+                        <span>
+                          {isSelectedPackOutOfStock
+                            ? 'Out of Stock'
+                            : IS_INSTANT_CHECKOUT_PAUSED
+                            ? 'Checkout Paused'
+                            : isInstantBuying
+                            ? 'Connecting Fastrr...'
+                            : 'Instant Buy'}
+                        </span>
+                      </button>
+                    </div>
+                  );
+                })()}
               </motion.div>
             </div>
           )}

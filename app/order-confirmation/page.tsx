@@ -285,78 +285,170 @@ function OrderConfirmationContent() {
   const displayOrderNumber =
     tracking?.orderNumber || oid || (typeof window !== 'undefined' ? `RWH${Date.now().toString().slice(-6)}X1` : 'RWH6Z8IX1');
 
-  // Customer Name derivation
-  const rawCustomerName =
-    confirmedCustomer?.name ||
-    confirmedAddress?.fullName ||
-    confirmedAddress?.name ||
-    confirmedAddress?.first_name ||
-    (tracking as any)?.shippingAddress?.name ||
-    'KRISHNA';
+  // Unified Address and Customer Resolution (Authentic data with zero dummy fallbacks)
+  const orderShippingAddr =
+    (tracking as any)?.order?.shippingAddress ||
+    (tracking as any)?.shippingAddress ||
+    confirmedAddress ||
+    null;
 
-  const customerFirstName = (
-    rawCustomerName.replace(/^(mr|mrs|ms|dr)\.?\s+/i, '').split(' ')[0] || 'KRISHNA'
-  ).toUpperCase();
+  const orderBillingAddr =
+    (tracking as any)?.order?.billingAddress ||
+    (tracking as any)?.billingAddress ||
+    confirmedBillingAddress ||
+    null;
 
-  const customerFullName = (
-    confirmedAddress?.fullName ||
-    confirmedAddress?.name ||
-    (confirmedAddress?.first_name ? `${confirmedAddress.first_name} ${confirmedAddress.last_name || ''}`.trim() : null) ||
-    confirmedCustomer?.name ||
-    'KRISHNA YADAV'
-  ).toUpperCase();
+  const orderUserData =
+    (tracking as any)?.order?.user ||
+    (tracking as any)?.user ||
+    confirmedCustomer ||
+    null;
 
-  const customerEmail =
-    confirmedCustomer?.email ||
-    confirmedAddress?.email ||
-    (tracking as any)?.user?.email ||
-    'ky62045@gmail.com';
-
-  const customerPhone =
-    confirmedCustomer?.phone ||
-    confirmedAddress?.phone ||
-    (tracking as any)?.shippingAddress?.phone ||
-    '06204395289';
-
-  // Shipping address lines
-  const addressLine1 =
-    confirmedAddress?.line1 ||
-    confirmedAddress?.address ||
-    confirmedAddress?.shipping_address ||
-    'Manikpur';
-
-  const addressLine2 =
-    confirmedAddress?.line2 ||
-    confirmedAddress?.landmark ||
+  // Customer Name derivation (Strictly authentic with no dummy strings)
+  const resolvedCustomerName =
+    orderShippingAddr?.fullName ||
+    orderShippingAddr?.name ||
+    (orderShippingAddr?.first_name ? `${orderShippingAddr.first_name} ${orderShippingAddr.last_name || ''}`.trim() : null) ||
+    orderShippingAddr?.shipping_customer_name ||
+    orderShippingAddr?.billing_customer_name ||
+    orderUserData?.name ||
+    (orderUserData?.firstName ? `${orderUserData.firstName} ${orderUserData.lastName || ''}`.trim() : null) ||
+    orderBillingAddr?.fullName ||
+    orderBillingAddr?.name ||
     '';
 
-  const addressCity = confirmedAddress?.city || 'Rajpur';
-  const addressState = confirmedAddress?.state || 'BR';
-  const addressPostal = confirmedAddress?.postalCode || confirmedAddress?.pincode || '802113';
-  const addressCountry = confirmedAddress?.country || 'India';
+  const customerFirstName = resolvedCustomerName
+    ? resolvedCustomerName.replace(/^(mr|mrs|ms|dr)\.?\s+/i, '').split(' ')[0].toUpperCase()
+    : 'CUSTOMER';
 
-  // Payment Method
-  const paymentMethodRaw = (tracking as any)?.payments?.[0]?.method || (tracking as any)?.paymentMethod || 'COD';
-  const isCod = paymentMethodRaw.toUpperCase().includes('COD') || paymentMethodRaw.toUpperCase().includes('CASH');
+  const customerFullName = (resolvedCustomerName || 'REBELIVE CUSTOMER').toUpperCase();
+
+  const customerEmail =
+    orderUserData?.email ||
+    orderShippingAddr?.email ||
+    orderShippingAddr?.shipping_email ||
+    orderShippingAddr?.billing_email ||
+    orderBillingAddr?.email ||
+    '';
+
+  const customerPhone =
+    orderUserData?.phone ||
+    orderShippingAddr?.phone ||
+    orderShippingAddr?.mobile ||
+    orderShippingAddr?.contact ||
+    orderShippingAddr?.shipping_phone ||
+    orderShippingAddr?.billing_phone ||
+    orderBillingAddr?.phone ||
+    '';
+
+  // Shipping address lines - Strictly authentic from customer's actual order
+  const addressLine1 =
+    orderShippingAddr?.line1 ||
+    orderShippingAddr?.address ||
+    orderShippingAddr?.shipping_address ||
+    orderShippingAddr?.street ||
+    orderShippingAddr?.address1 ||
+    '';
+
+  const addressLine2 =
+    orderShippingAddr?.line2 ||
+    orderShippingAddr?.shipping_address_2 ||
+    orderShippingAddr?.address2 ||
+    orderShippingAddr?.landmark ||
+    '';
+
+  const addressCity =
+    orderShippingAddr?.city ||
+    orderShippingAddr?.shipping_city ||
+    orderShippingAddr?.district ||
+    '';
+
+  const addressState =
+    orderShippingAddr?.state ||
+    orderShippingAddr?.shipping_state ||
+    '';
+
+  const addressPostal =
+    orderShippingAddr?.postalCode ||
+    orderShippingAddr?.postal_code ||
+    orderShippingAddr?.pincode ||
+    orderShippingAddr?.shipping_pincode ||
+    orderShippingAddr?.zip ||
+    '';
+
+  const addressCountry =
+    orderShippingAddr?.country ||
+    orderShippingAddr?.shipping_country ||
+    'India';
+
+  // Billing address lines
+  const billingLine1 =
+    orderBillingAddr?.line1 ||
+    orderBillingAddr?.address ||
+    orderBillingAddr?.billing_address ||
+    orderBillingAddr?.street ||
+    addressLine1;
+
+  const billingCity =
+    orderBillingAddr?.city ||
+    orderBillingAddr?.billing_city ||
+    addressCity;
+
+  const billingState =
+    orderBillingAddr?.state ||
+    orderBillingAddr?.billing_state ||
+    addressState;
+
+  const billingPostal =
+    orderBillingAddr?.postalCode ||
+    orderBillingAddr?.postal_code ||
+    orderBillingAddr?.pincode ||
+    orderBillingAddr?.billing_pincode ||
+    addressPostal;
+
+  const billingCountry =
+    orderBillingAddr?.country ||
+    orderBillingAddr?.billing_country ||
+    addressCountry;
+
+  // Payment Method & Status - Dynamic display
+  const paymentMethodRaw = (
+    (tracking as any)?.order?.payments?.[0]?.method ||
+    (tracking as any)?.payments?.[0]?.method ||
+    (tracking as any)?.paymentMethod ||
+    'COD'
+  ).toString().toUpperCase();
+
+  const isCod =
+    paymentMethodRaw.includes('COD') ||
+    paymentMethodRaw.includes('CASH') ||
+    paymentMethodRaw.includes('DELIVERY');
+
+  const paymentMethodLabel = isCod
+    ? 'Cash on Delivery (COD)'
+    : paymentMethodRaw.includes('UPI')
+    ? 'UPI'
+    : paymentMethodRaw.includes('CARD')
+    ? 'Credit / Debit Card'
+    : paymentMethodRaw.includes('NET')
+    ? 'Net Banking'
+    : paymentMethodRaw.includes('WALLET')
+    ? 'Wallet'
+    : 'Online Payment';
+
+  const paymentStatusLabel = isCod
+    ? 'Payment Pending – COD'
+    : 'Verified & Paid';
 
   // Ordered Items
   const itemsList =
-    (tracking as any)?.items && (tracking as any).items.length > 0
+    (tracking as any)?.order?.items && (tracking as any).order.items.length > 0
+      ? (tracking as any).order.items
+      : (tracking as any)?.items && (tracking as any).items.length > 0
       ? (tracking as any).items
       : confirmedItems.length > 0
       ? confirmedItems
-      : [
-          {
-            name: 'APEX Clean Energy Drinks',
-            flavor: 'Apex',
-            packSize: 6,
-            quantity: 1,
-            unitPrice: 1149,
-            pricePerUnit: 1149,
-            totalPrice: 1149,
-            image: '/brand/APEX.webp',
-          },
-        ];
+      : [];
 
   // Pricing
   const totalAmount = (tracking as any)?.total || itemsList.reduce((sum: number, it: any) => sum + (Number(it.totalPrice) || (Number(it.unitPrice || it.pricePerUnit || 1149) * (Number(it.quantity) || 1))), 0);
@@ -453,13 +545,19 @@ function OrderConfirmationContent() {
                   </h3>
                   <div className="text-neutral-300 leading-relaxed font-sans">
                     <p className="font-medium text-white">{customerFullName}</p>
-                    <p>{addressLine1}</p>
-                    {addressLine2 && <p>{addressLine2}</p>}
-                    <p>
-                      {addressPostal} {addressCity} {addressState}
-                    </p>
-                    <p>{addressCountry}</p>
-                    <p className="font-mono text-neutral-400 pt-0.5">{customerPhone}</p>
+                    {addressLine1 ? (
+                      <>
+                        <p>{addressLine1}</p>
+                        {addressLine2 && <p>{addressLine2}</p>}
+                        <p>
+                          {[addressCity, addressState, addressPostal].filter(Boolean).join(', ')}
+                        </p>
+                        <p>{addressCountry}</p>
+                      </>
+                    ) : (
+                      <p className="text-neutral-400">Order destination confirmed</p>
+                    )}
+                    {customerPhone && <p className="font-mono text-neutral-400 pt-0.5">{customerPhone}</p>}
                   </div>
                 </div>
 
@@ -469,7 +567,7 @@ function OrderConfirmationContent() {
                     Shipping method
                   </h3>
                   <p className="text-white">
-                    Standard <span className="text-neutral-400">(Pan-India Express Free Delivery)</span>
+                    Standard Express
                   </p>
                 </div>
               </div>
@@ -486,10 +584,12 @@ function OrderConfirmationContent() {
                       {isCod ? <Banknote className="w-3.5 h-3.5" /> : <CreditCard className="w-3.5 h-3.5" />}
                     </span>
                     <span className="text-white font-medium">
-                      {isCod ? 'Cash on Delivery (COD)' : 'Prepaid (Fastrr 1-Click)'} · ₹{totalAmount.toLocaleString('en-IN')}
+                      {paymentMethodLabel} · ₹{totalAmount.toLocaleString('en-IN')}
                     </span>
                   </div>
-                  <p className="text-[11px] text-neutral-500 font-mono">INR</p>
+                  <p className="text-[11px] font-mono pt-0.5">
+                    Status: <span className={isCod ? 'text-amber-400 font-semibold' : 'text-emerald-400 font-semibold'}>{paymentStatusLabel}</span>
+                  </p>
                 </div>
 
                 {/* Billing address */}
@@ -499,18 +599,24 @@ function OrderConfirmationContent() {
                   </h3>
                   <div className="text-neutral-300 leading-relaxed font-sans">
                     <p className="font-medium text-white">
-                      {confirmedBillingAddress?.fullName || customerFullName}
+                      {orderBillingAddr?.fullName || orderBillingAddr?.name || customerFullName}
                     </p>
-                    <p>{confirmedBillingAddress?.line1 || addressLine1}</p>
-                    <p>
-                      {confirmedBillingAddress?.postalCode || addressPostal}{' '}
-                      {confirmedBillingAddress?.city || addressCity}{' '}
-                      {confirmedBillingAddress?.state || addressState}
-                    </p>
-                    <p>{confirmedBillingAddress?.country || addressCountry}</p>
-                    <p className="font-mono text-neutral-400 pt-0.5">
-                      {confirmedBillingAddress?.phone || customerPhone}
-                    </p>
+                    {billingLine1 ? (
+                      <>
+                        <p>{billingLine1}</p>
+                        <p>
+                          {[billingCity, billingState, billingPostal].filter(Boolean).join(', ')}
+                        </p>
+                        <p>{billingCountry}</p>
+                      </>
+                    ) : (
+                      <p className="text-neutral-400">Same as shipping address</p>
+                    )}
+                    {(orderBillingAddr?.phone || customerPhone) && (
+                      <p className="font-mono text-neutral-400 pt-0.5">
+                        {orderBillingAddr?.phone || customerPhone}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -646,13 +752,17 @@ function OrderConfirmationContent() {
       <TaxInvoiceModal
         order={{
           orderNumber: displayOrderNumber,
-          createdAt: new Date().toISOString(),
-          status: 'CONFIRMED',
+          createdAt: (tracking as any)?.order?.createdAt || new Date().toISOString(),
+          status: isCod ? 'PENDING' : 'CONFIRMED',
           trackingNumber: (tracking as any)?.trackingNumber || null,
           total: totalAmount,
           items: itemsList,
-          shippingAddress: confirmedAddress || (tracking as any)?.shippingAddress,
-          user: confirmedCustomer || (tracking as any)?.user,
+          shippingAddress: orderShippingAddr,
+          billingAddress: orderBillingAddr,
+          user: orderUserData,
+          payments: (tracking as any)?.order?.payments || (tracking as any)?.payments || [
+            { method: paymentMethodRaw, status: isCod ? 'PENDING' : 'COMPLETED', amount: totalAmount }
+          ],
         }}
         isOpen={isInvoiceOpen}
         onClose={() => setIsInvoiceOpen(false)}

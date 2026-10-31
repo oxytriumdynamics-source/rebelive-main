@@ -115,49 +115,88 @@ export interface ParsedShippingAddress {
 }
 
 export function parseOrderShippingAddress(order: any): ParsedShippingAddress {
-  const addr = order?.shippingAddress || {};
+  let addr: any = order?.shippingAddress || {};
+  if (typeof addr === 'string') {
+    try {
+      addr = JSON.parse(addr);
+    } catch {
+      addr = { line1: addr };
+    }
+  }
+
   const user = order?.user || {};
 
-  // Resolve customer name
+  // Resolve customer name without synthetic dummy fallbacks
   const name =
     addr.shipping_customer_name ||
-    addr.name ||
+    addr.billing_customer_name ||
     addr.fullName ||
+    addr.name ||
     (addr.first_name ? `${addr.first_name} ${addr.last_name || ''}`.trim() : null) ||
     (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : null) ||
-    'Valued Customer';
+    order.customerName ||
+    'Customer';
 
   const company = addr.company || addr.companyName || '';
 
   const line1 =
     addr.shipping_address ||
+    addr.billing_address ||
     addr.line1 ||
+    addr.address1 ||
     addr.address ||
-    'Flat / Street Address';
+    '';
 
   const line2 =
     addr.shipping_address_2 ||
+    addr.billing_address_2 ||
     addr.line2 ||
+    addr.address2 ||
     addr.landmark ||
     '';
 
-  const city = addr.shipping_city || addr.city || 'Bengaluru';
-  const state = addr.shipping_state || addr.state || 'Karnataka';
-  const pincode = addr.shipping_pincode || addr.postalCode || addr.pincode || '560001';
-  const country = addr.shipping_country || addr.country || 'India';
+  const city =
+    addr.shipping_city ||
+    addr.billing_city ||
+    addr.city ||
+    '';
+
+  const state =
+    addr.shipping_state ||
+    addr.billing_state ||
+    addr.state ||
+    addr.province ||
+    '';
+
+  const pincode =
+    addr.shipping_pincode ||
+    addr.billing_pincode ||
+    addr.postalCode ||
+    addr.pincode ||
+    addr.zip ||
+    '';
+
+  const country =
+    addr.shipping_country ||
+    addr.billing_country ||
+    addr.country ||
+    'India';
+
   const stateCode = getGstStateCode(state);
 
   const phone =
     addr.shipping_phone ||
+    addr.billing_phone ||
     addr.phone ||
     user.phone ||
-    '+91 9876543210';
+    '';
 
   const email =
     addr.shipping_email ||
+    addr.billing_email ||
     addr.email ||
     user.email ||
-    'customer@rebelive.com';
+    '';
 
   return {
     name,

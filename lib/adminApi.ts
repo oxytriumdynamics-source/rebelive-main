@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { clearProductsCache } from './productsApi';
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api/v1';
 
@@ -551,7 +552,8 @@ export async function createAdminProduct(productData: any): Promise<AdminProduct
   const res = await adminClient.post('/products', productData);
   if (typeof window !== 'undefined') {
     try {
-      localStorage.removeItem('rebelive_products_cache');
+      clearProductsCache();
+      window.dispatchEvent(new CustomEvent('products-cache-cleared'));
     } catch {}
   }
   return res.data?.data;
@@ -561,7 +563,8 @@ export async function updateAdminProduct(productId: string, productData: any): P
   const res = await adminClient.patch(`/products/${productId}`, productData);
   if (typeof window !== 'undefined') {
     try {
-      localStorage.removeItem('rebelive_products_cache');
+      clearProductsCache();
+      window.dispatchEvent(new CustomEvent('products-cache-cleared'));
     } catch {}
   }
   return res.data?.data;
@@ -571,7 +574,8 @@ export async function deleteAdminProduct(productId: string): Promise<void> {
   await adminClient.delete(`/products/${productId}`);
   if (typeof window !== 'undefined') {
     try {
-      localStorage.removeItem('rebelive_products_cache');
+      clearProductsCache();
+      window.dispatchEvent(new CustomEvent('products-cache-cleared'));
     } catch {}
   }
 }

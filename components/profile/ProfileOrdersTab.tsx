@@ -104,7 +104,7 @@ export default function ProfileOrdersTab({
             Order Dossier
           </h2>
           <p className="font-mono text-[9.5px] uppercase tracking-[0.2em] text-white/50 mt-1">
-            Allocated Energy Drinks Shipments & Live Dispatch Logs
+            Your Orders, Shipments & Delivery Record
           </p>
         </div>
 

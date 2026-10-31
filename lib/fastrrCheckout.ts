@@ -522,15 +522,26 @@ export async function launchFastrrCheckout(
         localStorage.setItem('rebelive_last_order_id', String(oid));
       }
     } else {
-      const err = await res.text();
-      console.warn('⚠️ Fastrr token call returned error:', err);
+      let errMsg = 'Checkout error';
+      try {
+        const errJson = await res.json();
+        errMsg = errJson.message || errJson.error || errMsg;
+      } catch {
+        const errText = await res.text();
+        errMsg = errText || errMsg;
+      }
+      throw new Error(errMsg);
     }
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message && !err.message.includes('fetch')) {
+      throw err;
+    }
     console.warn('⚠️ Network error requesting Fastrr token:', err);
+    throw new Error(err.message || 'Unable to initiate checkout. Please try again.');
   }
 
   if (!token) {
-    throw new Error('Could not initiate Fastrr checkout. Please check your network and try again.');
+    throw new Error('Could not initiate Fastrr checkout. Please try again.');
   }
 
   // 3. Setup window postMessage listener for exit/close and redirect events from Fastrr

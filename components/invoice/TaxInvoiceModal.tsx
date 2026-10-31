@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { X, Printer, Download, FileText, RefreshCw } from 'lucide-react';
 import { parseOrderShippingAddress, numberToIndianWords } from './invoiceUtils';
+import { REBELIVE_LOGO_BASE64 } from './invoiceLogo';
 
 export interface TaxInvoiceModalProps {
   order: any | null;
@@ -29,6 +30,22 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
   const invoiceRef = useRef<HTMLDivElement>(null);
   const [isDownloading, setIsDownloading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const originalOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.body.style.overflow = originalOverflow;
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [isOpen, onClose]);
 
   if (!isOpen || !order) return null;
 
@@ -236,20 +253,59 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
 
     try {
       const html2canvas = (await import('html2canvas')).default;
-      const canvas = await html2canvas(invoiceRef.current, {
+      const element = invoiceRef.current;
+
+      const canvas = await html2canvas(element, {
         scale: 2,
         useCORS: true,
+        allowTaint: true,
         backgroundColor: '#ffffff',
         logging: false,
+        scrollX: 0,
+        scrollY: 0,
+        windowWidth: element.scrollWidth,
+        windowHeight: element.scrollHeight,
       });
 
-      const dataUrl = canvas.toDataURL('image/png');
-      const link = document.createElement('a');
-      link.download = `Tax-Invoice-${orderNumber}.png`;
-      link.href = dataUrl;
-      link.click();
+      const fileName = `Tax-Invoice-${orderNumber}.png`;
+
+      if (canvas.toBlob) {
+        canvas.toBlob((blob) => {
+          if (!blob) {
+            const dataUrl = canvas.toDataURL('image/png');
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+          }
+          const blobUrl = URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.download = fileName;
+          link.href = blobUrl;
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            URL.revokeObjectURL(blobUrl);
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+          }, 1500);
+        }, 'image/png', 1.0);
+      } else {
+        const dataUrl = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.download = fileName;
+        link.href = dataUrl;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
     } catch (err) {
       console.error('Failed to download invoice image:', err);
+      alert('Unable to generate image. Please use "PRINT / SAVE PDF" to save the invoice.');
     } finally {
       setIsDownloading(false);
     }
@@ -312,40 +368,40 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
       {/* ─── Modal Overlay ─── */}
       <div
         id="rebelive-invoice-portal-root"
-        className="fixed inset-0 z-[200] overflow-y-auto bg-black/80 backdrop-blur-md flex items-start justify-center p-3 sm:p-6 md:p-8 animate-in fade-in duration-200"
+        className="fixed inset-0 z-[200] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
       >
         <div
           id="rebelive-invoice-backdrop"
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
-          className="w-full flex justify-center py-4"
+          className="w-full max-w-4xl max-h-[94vh] flex flex-col justify-center my-auto"
         >
           {/* Main Card Container */}
           <div
             id="rebelive-invoice-modal-card"
-            className="w-full max-w-4xl bg-[#111111] border border-white/20 rounded-3xl shadow-2xl overflow-hidden flex flex-col"
+            className="w-full bg-[#111111] border border-white/20 rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
           >
-            {/* Top Toolbar (Hidden during print) */}
-            <div className="rebelive-no-print px-5 sm:px-8 py-4 bg-[#181818] border-b border-white/10 flex items-center justify-between gap-4">
-              <div className="flex items-center gap-2.5">
-                <FileText className="w-5 h-5 text-white" />
-                <div>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-white">
+            {/* Top Toolbar (Sticky at top of modal) */}
+            <div className="rebelive-no-print shrink-0 px-4 sm:px-6 py-3.5 bg-[#181818] border-b border-white/10 flex items-center justify-between gap-3 z-20">
+              <div className="flex items-center gap-2.5 min-w-0">
+                <FileText className="w-5 h-5 text-white shrink-0" />
+                <div className="min-w-0">
+                  <h3 className="text-xs sm:text-sm font-bold uppercase tracking-wider text-white truncate">
                     Invoice Preview
                   </h3>
-                  <p className="text-[10px] font-mono text-white/50">
+                  <p className="text-[9px] sm:text-[10px] font-mono text-white/50 truncate">
                     Official Tax Invoice for Order #{orderNumber}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handleDownload}
                   disabled={isDownloading}
-                  className="px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border border-white/10 disabled:opacity-50"
+                  className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border border-white/10 disabled:opacity-50"
                   title="Download Image Receipt"
                 >
                   {isDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
@@ -356,7 +412,7 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                   type="button"
                   onClick={handlePrint}
                   disabled={isPrinting}
-                  className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                  className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
                   title="Print or Save as PDF"
                 >
                   {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5 text-black" />}
@@ -374,22 +430,21 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
               </div>
             </div>
 
-            {/* Document Wrapper (Styled White Page matching the User's Image) */}
-            <div className="p-3 sm:p-6 bg-neutral-900/60 flex justify-center overflow-x-auto">
+            {/* Document Scroll Area */}
+            <div className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 bg-neutral-950/80 flex justify-center overscroll-contain">
               <div
                 ref={invoiceRef}
                 id="rebelive-tax-invoice-document"
-                className="w-full max-w-[800px] bg-white text-black font-sans p-6 sm:p-8 rounded-lg shadow-xl text-[11px] leading-relaxed border border-neutral-300"
+                className="w-full max-w-[800px] bg-white text-black font-sans p-6 sm:p-8 rounded-lg shadow-xl text-[11px] leading-relaxed border border-neutral-300 mb-4"
                 style={{ fontFamily: "'Poppins', sans-serif" }}
               >
                 {/* ─── Top Brand Header ─── */}
                 <div className="text-center space-y-1 mb-2">
                   <div className="flex justify-center items-center py-1">
                     <img
-                      src="/brand/REBELIVE Logo Black.png"
+                      src={REBELIVE_LOGO_BASE64}
                       alt="REBELIVE"
                       className="h-11 sm:h-13 w-auto object-contain mx-auto"
-                      crossOrigin="anonymous"
                     />
                   </div>
                   <h2 className="text-xs sm:text-sm font-black tracking-[0.2em] uppercase text-neutral-900">
@@ -418,16 +473,20 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                     <div className="text-neutral-700 leading-tight space-y-0.5 pt-0.5">
                       <p className="font-bold text-neutral-900">{addr.name}</p>
                       {addr.company && <p>{addr.company}</p>}
-                      <p>{addr.line1}</p>
+                      {addr.line1 && <p>{addr.line1}</p>}
                       {addr.line2 && <p>{addr.line2}</p>}
-                      <p>{addr.city} {addr.pincode}</p>
-                      <p>{addr.state}</p>
-                      <p>{addr.country}</p>
-                      <p className="font-medium text-neutral-900 pt-0.5">
-                        State Code : {addr.stateCode}
-                      </p>
-                      <p>Ph: {addr.phone}</p>
-                      <p className="break-all">Email: {addr.email}</p>
+                      {(addr.city || addr.pincode) && (
+                        <p>{[addr.city, addr.pincode].filter(Boolean).join(' ')}</p>
+                      )}
+                      {addr.state && <p>{addr.state}</p>}
+                      <p>{addr.country || 'India'}</p>
+                      {addr.stateCode && (
+                        <p className="font-medium text-neutral-900 pt-0.5">
+                          State Code : {addr.stateCode}
+                        </p>
+                      )}
+                      {addr.phone && <p>Ph: {addr.phone}</p>}
+                      {addr.email && <p className="break-all">Email: {addr.email}</p>}
                     </div>
                   </div>
 

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ShoppingBag, X, Plus, Minus, Check, Truck, ShieldCheck, ArrowRight, Zap } from 'lucide-react';
@@ -21,12 +21,40 @@ import {
 export function CartDrawer() {
   const dispatch = useAppDispatch();
   const { items, isOpen } = useAppSelector((state) => state.cart);
+  const catalogProducts = useAppSelector((state) => state.products.products);
   const [isLaunching, setIsLaunching] = useState(false);
   const [checkoutError, setCheckoutError] = useState<string | null>(null);
   const [checkoutStatus, setCheckoutStatus] = useState<CheckoutPublicStatus>({
     enabled: true,
     pauseMessage: 'Instant checkout is temporarily paused for maintenance. Please check back shortly.',
   });
+
+  const checkItemOutOfStock = (item: any) => {
+    if (!catalogProducts || catalogProducts.length === 0) return false;
+    const prod = catalogProducts.find(
+      (p) =>
+        p.id.toLowerCase() === (item.id || '').toLowerCase() ||
+        (p as any).slug?.toLowerCase() === (item.id || '').toLowerCase()
+    );
+    if (!prod || !prod.variants) return false;
+    const pack = Number(item.packSize);
+    const vMatch = prod.variants.find((v) => {
+      return (
+        v.sizeMl === pack * 250 ||
+        v.sizeMl === pack ||
+        (v.sku && (v.sku.toUpperCase().includes(`PACK-${pack}`) || v.sku.toUpperCase().includes(`${pack}PACK`))) ||
+        new RegExp(`\\b${pack}\\b`, 'i').test(v.name)
+      );
+    });
+    if (vMatch) {
+      return vMatch.isActive === false || (vMatch.stockQty !== undefined && vMatch.stockQty !== null && vMatch.stockQty <= 0);
+    }
+    return false;
+  };
+
+  const hasOutOfStockItems = useMemo(() => {
+    return items.some((item) => checkItemOutOfStock(item));
+  }, [items, catalogProducts]);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -59,6 +87,10 @@ export function CartDrawer() {
   const handleInstantCheckout = async (e: React.MouseEvent) => {
     if (isCheckoutDisabled) {
       setCheckoutError(checkoutStatus.pauseMessage || 'Checkout is temporarily paused.');
+      return;
+    }
+    if (hasOutOfStockItems) {
+      setCheckoutError('Please remove out-of-stock items from your crate to proceed.');
       return;
     }
     try {
@@ -194,13 +226,18 @@ export function CartDrawer() {
 
                   {/* Details */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5">
+                    <div className="flex items-center gap-1.5 flex-wrap">
                       <h4 className="font-bold text-xs uppercase truncate text-white">
                         {item.name}
                       </h4>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-white/10 text-white/70 font-mono">
                         {item.packSize} CANS
                       </span>
+                      {checkItemOutOfStock(item) && (
+                        <span className="text-[8px] font-mono font-bold text-red-400 bg-red-500/20 border border-red-500/40 px-1 py-0.2 rounded uppercase">
+                          Out of Stock
+                        </span>
+                      )}
                     </div>
                     <div className="text-[10px] text-white/50 uppercase mt-0.5 truncate">
                       {item.flavor}
@@ -209,7 +246,11 @@ export function CartDrawer() {
                       <span className="text-xs font-bold text-white">
                         ₹{(item.pricePerUnit * item.quantity).toLocaleString('en-IN')}
                       </span>
-                
+                      {checkItemOutOfStock(item) && (
+                        <span className="text-[10px] text-red-400 font-mono font-medium">
+                          (Sold Out)
+                        </span>
+                      )}
                     </div>
                   </div>
 
@@ -293,12 +334,6 @@ export function CartDrawer() {
                   ₹{subtotal.toLocaleString('en-IN')}
                 </span>
               </div>
-              <div className="flex items-center justify-between text-emerald-400 text-[11px]">
-                <span className="flex items-center gap-1">
-                  <Truck className="w-3 h-3" /> Pan-India Express Delivery
-                </span>
-                <span className="font-bold uppercase font-mono">FREE</span>
-              </div>
               <div className="flex items-center justify-between text-white/45 text-[10px]">
                 <span className="flex items-center gap-1">
                   <ShieldCheck className="w-3 h-3 text-white/50" /> Quality Verified & Sealed
@@ -313,34 +348,37 @@ export function CartDrawer() {
               </p>
             )}
 
+            {hasOutOfStockItems && !checkoutError && (
+              <p className="text-[11px] text-red-400 font-mono text-center px-1">
+                Some items in your crate are out of stock. Please remove them to proceed.
+              </p>
+            )}
+
             <button
               id="cart-fastrr-checkout-btn"
-              disabled={isLaunching || isCheckoutDisabled}
+              disabled={isLaunching || isCheckoutDisabled || hasOutOfStockItems}
               onClick={handleInstantCheckout}
               className={`w-full py-3.5 rounded-xl text-xs font-bold tracking-[0.18em] uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-lg shadow-white/10 ${
-                isCheckoutDisabled
+                isCheckoutDisabled || hasOutOfStockItems
                   ? 'bg-white/10 text-white/40 border border-white/10 cursor-not-allowed'
                   : 'bg-white text-black hover:bg-neutral-200 cursor-pointer active:scale-[0.98] disabled:opacity-60'
               }`}
             >
-              <Zap className={`w-4 h-4 ${isCheckoutDisabled ? 'text-white/40 fill-white/40' : 'text-black fill-black'}`} />
+              <Zap className={`w-4 h-4 ${isCheckoutDisabled || hasOutOfStockItems ? 'text-white/40 fill-white/40' : 'text-black fill-black'}`} />
               <span>
                 {isCheckoutDisabled
                   ? 'Checkout Temporarily Paused'
+                  : hasOutOfStockItems
+                  ? 'Remove Out of Stock Items'
                   : isLaunching
                   ? 'Connecting Fastrr...'
                   : `Instant Checkout • ₹${subtotal.toLocaleString('en-IN')}`}
               </span>
             </button>
-            {isCheckoutDisabled ? (
+            {isCheckoutDisabled && (
               <p className="text-[10px] text-amber-400/80 font-mono text-center tracking-wider uppercase px-2 leading-relaxed">
                 {checkoutStatus.pauseMessage || 'Instant checkout is temporarily paused for maintenance'}
               </p>
-            ) : (
-              <div className="flex items-center justify-center gap-1.5 text-[10px] text-white/50 font-mono tracking-wider">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                <span>POWERED BY SHIPROCKET FASTRR 1-CLICK</span>
-              </div>
             )}
           </div>
         )}

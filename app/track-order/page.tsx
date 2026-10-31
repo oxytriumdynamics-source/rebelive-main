@@ -9,6 +9,9 @@ import {
   Truck,
   Clock,
   AlertCircle,
+  AlertTriangle,
+  RotateCcw,
+  XCircle,
   MessageSquare,
   Copy,
   Check,
@@ -87,7 +90,7 @@ function TrackOrderContent() {
           TRACK YOUR CRATE
         </h1>
         <p className="mt-3 text-xs sm:text-sm text-white/60 tracking-wider max-w-lg mx-auto">
-          Enter your Order Number (e.g. RBL-20261015-3867) or Shiprocket AWB to view real-time cold-chain delivery status.
+          Enter your Order Number (e.g. RBL-20261015-3867) or AWB number to view real-time delivery status.
         </p>
 
         {/* Tracking Input Form */}
@@ -139,28 +142,159 @@ function TrackOrderContent() {
         ) : hasSearched && trackingData && trackingData.currentStatus !== 'NOT_FOUND' ? (
           (() => {
             const rawStatus = (trackingData.currentStatus || '').toUpperCase();
-            const isDelivered =
-              rawStatus === 'DELIVERED' ||
-              trackingData.statusText.toLowerCase().includes('deliv') ||
-              trackingData.activities.some((a) => a.status.toLowerCase().includes('deliv'));
-            const isOutForDelivery =
-              rawStatus === 'OUT_FOR_DELIVERY' ||
-              trackingData.statusText.toLowerCase().includes('out for delivery');
-            const isInTransit = isOutForDelivery || rawStatus === 'IN_TRANSIT' || rawStatus === 'SHIPPED';
-            const isPacked = isInTransit || rawStatus === 'PROCESSING';
-            const isConfirmed = isPacked || rawStatus === 'CONFIRMED' || rawStatus === 'PENDING';
+            const rawStatusText = (trackingData.statusText || '').toUpperCase();
+            const rawActivities = trackingData.activities || [];
+            const actStatuses = rawActivities.map((a) => (a.status || '').toUpperCase());
+            const fullStatusUniverse = `${rawStatus} ${rawStatusText} ${actStatuses.join(' ')}`;
 
-            const progressWidth = isDelivered
-              ? '100%'
-              : isOutForDelivery
-              ? '85%'
-              : isInTransit
-              ? '65%'
-              : isPacked
-              ? '35%'
-              : isConfirmed
-              ? '10%'
-              : '0%';
+            // Exception Status Handlers (Separated from normal progression - Requirement 5)
+            const isCancelled = fullStatusUniverse.includes('CANCEL');
+            const isDeliveryFailed =
+              fullStatusUniverse.includes('FAIL') ||
+              fullStatusUniverse.includes('UNDELIVER') ||
+              fullStatusUniverse.includes('UN-DELIVER') ||
+              fullStatusUniverse.includes('NDR');
+            const isRto = fullStatusUniverse.includes('RTO') || fullStatusUniverse.includes('RETURN_TO_ORIGIN');
+
+            // 5 Dynamic Delivery Stages (Requirement 1)
+            const isDelivered =
+              !isCancelled &&
+              !isRto &&
+              (rawStatus.includes('DELIVER') ||
+                rawStatusText.includes('DELIVER') ||
+                actStatuses.some((s) => s.includes('DELIVER')));
+
+            const isOutForDelivery =
+              !isCancelled &&
+              !isRto &&
+              (isDelivered ||
+                rawStatus.includes('OUT FOR DELIVERY') ||
+                rawStatus.includes('OUT_FOR_DELIVERY') ||
+                rawStatus === 'OFD' ||
+                rawStatusText.includes('OUT FOR DELIVERY') ||
+                actStatuses.some((s) => s.includes('OUT FOR DELIVERY') || s === 'OFD'));
+
+            const isInTransit =
+              !isCancelled &&
+              !isRto &&
+              (isOutForDelivery ||
+                rawStatus.includes('IN TRANSIT') ||
+                rawStatus.includes('IN_TRANSIT') ||
+                rawStatus.includes('SHIPPED') ||
+                rawStatus.includes('TRANSIT') ||
+                rawStatusText.includes('TRANSIT') ||
+                actStatuses.some((s) => s.includes('IN TRANSIT') || s.includes('SHIPPED') || s.includes('TRANSIT')));
+
+            const isPickedUp =
+              !isCancelled &&
+              !isRto &&
+              (isInTransit ||
+                rawStatus.includes('PICKED') ||
+                rawStatus.includes('PICKUP') ||
+                rawStatusText.includes('PICKED') ||
+                actStatuses.some((s) => s.includes('PICKED') || s.includes('PICKUP')));
+
+            const isConfirmed = true;
+
+            // 5-Stage Index: 0: CONFIRMED, 1: PICKED UP, 2: IN TRANSIT, 3: OUT FOR DELIVERY, 4: DELIVERED
+            const stageIndex = isDelivered ? 4 : isOutForDelivery ? 3 : isInTransit ? 2 : isPickedUp ? 1 : 0;
+            const progressWidth = `${stageIndex * 25}%`;
+
+            // Customer Friendly Descriptions Mapping (Requirement 2)
+            const FRIENDLY_DESCRIPTIONS: Record<string, string> = {
+              CONFIRMED: 'Your order has been successfully confirmed.',
+              PROCESSING: 'Your order is being prepared for dispatch.',
+              'PICKED UP': 'Your shipment has been picked up by our delivery partner.',
+              'IN TRANSIT': 'Your shipment is on its way to your delivery destination.',
+              'OUT FOR DELIVERY': 'Your order is out for delivery. Get ready to receive it!',
+              DELIVERED: 'Your order has been successfully delivered.',
+              CANCELLED: 'This order has been cancelled.',
+              'DELIVERY FAILED': 'Delivery could not be completed. Our delivery partner may attempt another delivery.',
+              'RTO INITIATED': 'Your shipment is being returned to the fulfilment centre.',
+            };
+
+            const normalizeStatusKey = (sRaw: string): string => {
+              const s = (sRaw || '').toUpperCase().trim();
+              if (s.includes('RTO') || s.includes('RETURN_TO_ORIGIN')) return 'RTO INITIATED';
+              if (s.includes('FAIL') || s.includes('UNDELIVER') || s.includes('UN-DELIVER') || s.includes('NDR')) return 'DELIVERY FAILED';
+              if (s.includes('CANCEL')) return 'CANCELLED';
+              if (s.includes('DELIVERED') || s.includes('DELIVERY COMPLETED') || s.includes('DELIVER')) return 'DELIVERED';
+              if (s.includes('OUT FOR DELIVERY') || s.includes('OUT_FOR_DELIVERY') || s === 'OFD') return 'OUT FOR DELIVERY';
+              if (s.includes('IN TRANSIT') || s.includes('IN_TRANSIT') || s.includes('SHIPPED') || s.includes('TRANSIT') || s.includes('REACHED')) return 'IN TRANSIT';
+              if (s.includes('PICKED UP') || s.includes('PICKED_UP') || s.includes('PICKUP DONE') || s.includes('PICKED')) return 'PICKED UP';
+              if (s.includes('PROCESSING') || s.includes('MANIFEST') || s.includes('READY') || s.includes('PACK') || s.includes('AWB')) return 'PROCESSING';
+              return 'CONFIRMED';
+            };
+
+            // Carrier Partner: Actual assigned courier name or "Awaiting Courier Assignment" (Requirement 4)
+            const courierDisplay =
+              trackingData.courierName &&
+              trackingData.courierName !== 'Shiprocket Express' &&
+              trackingData.courierName !== 'Pending' &&
+              !trackingData.courierName.includes('Awaiting')
+                ? trackingData.courierName
+                : 'Awaiting Courier Assignment';
+
+            // Origin Terminal: Always "REBELIVE WAREHOUSE" (Requirement 4)
+            const originDisplay = 'REBELIVE WAREHOUSE';
+
+            // Actual Dynamic Estimated Delivery Date (Never displays "N/A")
+            const displayEstimatedDelivery = (() => {
+              if (isDelivered) return 'Delivered to Recipient';
+              if (isCancelled) return 'Order Cancelled';
+              const edd = trackingData.estimatedDelivery;
+              if (edd && edd !== 'N/A' && edd !== 'Pending Courier Pickup' && !edd.includes('Available')) {
+                const pDate = new Date(edd);
+                if (!isNaN(pDate.getTime()) && edd.includes('-')) {
+                  return pDate.toLocaleDateString('en-IN', {
+                    weekday: 'short',
+                    day: '2-digit',
+                    month: 'short',
+                    year: 'numeric',
+                  });
+                }
+                return edd;
+              }
+              const baseDate = trackingData.order?.createdAt ? new Date(trackingData.order.createdAt) : new Date();
+              const fallback = new Date(baseDate.getTime() + 4 * 24 * 60 * 60 * 1000);
+              return fallback.toLocaleDateString('en-IN', {
+                weekday: 'short',
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric',
+              });
+            })();
+
+            // Chronological Dispatch Activities with Location Inheritance (Requirement 2 & 3)
+            const chronologicalActivities = [...rawActivities].sort((a, b) => {
+              const tsA = new Date(a.date).getTime() || 0;
+              const tsB = new Date(b.date).getTime() || 0;
+              return tsA - tsB;
+            });
+
+            // Fallback location inheritance
+            let lastConfirmedLocation = 'REBELIVE DISPATCH CENTRE';
+            const mappedActivities = chronologicalActivities.map((act) => {
+              const statusKey = normalizeStatusKey(act.status);
+              const friendlyDesc = FRIENDLY_DESCRIPTIONS[statusKey] || act.activity;
+              let loc = act.location ? act.location.trim() : '';
+
+              if (statusKey === 'CONFIRMED' || statusKey === 'PROCESSING') {
+                loc = 'REBELIVE DISPATCH CENTRE';
+                lastConfirmedLocation = 'REBELIVE DISPATCH CENTRE';
+              } else if (loc && loc !== 'Hub' && loc !== 'Rebelive Fulfillment Center') {
+                lastConfirmedLocation = loc;
+              } else {
+                loc = lastConfirmedLocation;
+              }
+
+              return {
+                ...act,
+                statusKey,
+                friendlyDesc,
+                location: loc,
+              };
+            });
 
             return (
               <div className="border border-white/10 rounded-3xl bg-white/[0.02] p-6 sm:p-8 space-y-8 backdrop-blur-md shadow-[0_0_50px_rgba(0,0,0,0.8)]">
@@ -168,7 +302,7 @@ function TrackOrderContent() {
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-white/10 gap-3">
                   <div>
                     <span className="text-[10px] font-mono text-white/40 uppercase tracking-widest block" style={{ fontFamily: MONO }}>
-                      SHIPROCKET CONSIGNMENT
+                      ORDER CONSIGNMENT
                     </span>
                     <h3 className="text-xl sm:text-2xl font-bold text-white font-mono uppercase tracking-wider">
                       {trackingData.orderNumber}
@@ -178,74 +312,144 @@ function TrackOrderContent() {
                     className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider shrink-0 ${
                       isDelivered
                         ? 'bg-emerald-500/20 border border-emerald-500/50 text-emerald-300 shadow-[0_0_20px_rgba(16,185,129,0.3)]'
+                        : isCancelled
+                        ? 'bg-rose-500/20 border border-rose-500/40 text-rose-300'
+                        : isDeliveryFailed
+                        ? 'bg-amber-500/20 border border-amber-500/40 text-amber-300'
+                        : isRto
+                        ? 'bg-orange-500/20 border border-orange-500/40 text-orange-300'
                         : isOutForDelivery
                         ? 'bg-amber-500/10 border border-amber-500/40 text-amber-300 animate-pulse'
                         : 'bg-emerald-500/10 border border-emerald-500/30 text-emerald-400'
                     }`}
                   >
-                    {isDelivered ? <CheckCircle2 className="w-3.5 h-3.5" /> : <Truck className="w-3.5 h-3.5" />}
+                    {isDelivered ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : isCancelled ? (
+                      <XCircle className="w-3.5 h-3.5" />
+                    ) : isDeliveryFailed ? (
+                      <AlertTriangle className="w-3.5 h-3.5" />
+                    ) : isRto ? (
+                      <RotateCcw className="w-3.5 h-3.5" />
+                    ) : (
+                      <Truck className="w-3.5 h-3.5" />
+                    )}
                     <span>{trackingData.statusText}</span>
                   </div>
                 </div>
 
-                {/* 4-Stage Visual Progress Stepper */}
-                <div className="p-4 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
-                  <div className="flex items-center justify-between text-[10px] sm:text-[11px] font-mono text-white/60 uppercase tracking-wider">
-                    <span className={isConfirmed ? 'text-emerald-400 font-bold' : ''}>1. Confirmed</span>
-                    <span className={isPacked ? 'text-emerald-400 font-bold' : ''}>2. Cold Packed</span>
-                    <span className={isInTransit ? 'text-emerald-400 font-bold' : ''}>3. In Transit</span>
-                    <span className={isDelivered ? 'text-emerald-400 font-bold' : ''}>4. Delivered</span>
-                  </div>
-                  <div className="relative flex items-center justify-between">
-                    <div className="absolute left-0 top-1/2 -translate-y-1/2 w-full h-1 bg-white/10 -z-0" />
-                    <div
-                      className="absolute left-0 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700 -z-0"
-                      style={{ width: progressWidth }}
-                    />
-                    {/* Step 1 */}
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
-                        isConfirmed
-                          ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
-                          : 'bg-[#141414] border border-white/20 text-white/40'
-                      }`}
-                    >
-                      <Check className="w-4 h-4" />
+                {/* 5-Stage Visual Progress Stepper (Requirement 1 & 5) */}
+                {isCancelled ? (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-rose-500/10 border border-rose-500/30 flex items-start gap-4 shadow-[0_0_30px_rgba(244,63,94,0.15)]">
+                    <div className="w-10 h-10 rounded-xl bg-rose-500 text-white flex items-center justify-center shrink-0">
+                      <XCircle className="w-5 h-5" />
                     </div>
-                    {/* Step 2 */}
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
-                        isPacked
-                          ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
-                          : 'bg-[#141414] border border-white/20 text-white/40'
-                      }`}
-                    >
-                      <Package className="w-4 h-4" />
-                    </div>
-                    {/* Step 3 */}
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
-                        isDelivered || isOutForDelivery
-                          ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
-                          : isInTransit
-                          ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500 animate-pulse'
-                          : 'bg-[#141414] border border-white/20 text-white/40'
-                      }`}
-                    >
-                      <Truck className="w-4 h-4" />
-                    </div>
-                    {/* Step 4 */}
-                    <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 ${
-                        isDelivered
-                          ? 'bg-emerald-500 text-black shadow-[0_0_25px_rgba(16,185,129,0.8)] scale-110'
-                          : 'bg-[#141414] border border-white/20 text-white/40'
-                      }`}
-                    >
-                      <ShieldCheck className="w-4 h-4" />
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Order Cancelled</h4>
+                      <p className="text-xs text-rose-200/80 mt-1">This order has been cancelled.</p>
                     </div>
                   </div>
-                </div>
+                ) : isDeliveryFailed ? (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-amber-500/10 border border-amber-500/40 flex items-start gap-4 shadow-[0_0_30px_rgba(245,158,11,0.15)]">
+                    <div className="w-10 h-10 rounded-xl bg-amber-500 text-black flex items-center justify-center shrink-0">
+                      <AlertTriangle className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">Delivery Attempt Failed</h4>
+                      <p className="text-xs text-amber-200/80 mt-1">
+                        Delivery could not be completed. Our delivery partner may attempt another delivery.
+                      </p>
+                    </div>
+                  </div>
+                ) : isRto ? (
+                  <div className="p-5 sm:p-6 rounded-2xl bg-orange-500/10 border border-orange-500/40 flex items-start gap-4 shadow-[0_0_30px_rgba(249,115,22,0.15)]">
+                    <div className="w-10 h-10 rounded-xl bg-orange-500 text-white flex items-center justify-center shrink-0">
+                      <RotateCcw className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h4 className="text-sm font-bold text-white uppercase tracking-wider">RTO Initiated</h4>
+                      <p className="text-xs text-orange-200/80 mt-1">
+                        Your shipment is being returned to the fulfilment centre.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="p-4 sm:p-6 rounded-2xl bg-white/[0.03] border border-white/10 space-y-4">
+                    <div className="grid grid-cols-5 text-center text-[9px] sm:text-[11px] font-mono text-white/60 uppercase tracking-wider">
+                      <span className={stageIndex >= 0 ? 'text-emerald-400 font-bold' : ''}>1. Confirmed</span>
+                      <span className={stageIndex >= 1 ? 'text-emerald-400 font-bold' : ''}>2. Picked Up</span>
+                      <span className={stageIndex >= 2 ? 'text-emerald-400 font-bold' : ''}>3. In Transit</span>
+                      <span className={stageIndex >= 3 ? 'text-emerald-400 font-bold' : ''}>4. Out for Delivery</span>
+                      <span className={stageIndex >= 4 ? 'text-emerald-400 font-bold' : ''}>5. Delivered</span>
+                    </div>
+                    <div className="relative flex items-center justify-between px-2">
+                      <div className="absolute left-2 right-2 top-1/2 -translate-y-1/2 h-1 bg-white/10 -z-0" />
+                      <div
+                        className="absolute left-2 top-1/2 -translate-y-1/2 h-1 bg-gradient-to-r from-emerald-500 to-emerald-400 transition-all duration-700 -z-0"
+                        style={{ width: progressWidth }}
+                      />
+                      {/* Step 1: Confirmed */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 transition-all ${
+                          stageIndex >= 0
+                            ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                            : 'bg-[#141414] border border-white/20 text-white/40'
+                        }`}
+                        title="1. Confirmed"
+                      >
+                        <Check className="w-4 h-4" />
+                      </div>
+                      {/* Step 2: Picked Up */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 transition-all ${
+                          stageIndex >= 1
+                            ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                            : 'bg-[#141414] border border-white/20 text-white/40'
+                        }`}
+                        title="2. Picked Up"
+                      >
+                        <Package className="w-4 h-4" />
+                      </div>
+                      {/* Step 3: In Transit */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 transition-all ${
+                          stageIndex > 2
+                            ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                            : stageIndex === 2
+                            ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500 animate-pulse'
+                            : 'bg-[#141414] border border-white/20 text-white/40'
+                        }`}
+                        title="3. In Transit"
+                      >
+                        <Truck className="w-4 h-4" />
+                      </div>
+                      {/* Step 4: Out for Delivery */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 transition-all ${
+                          stageIndex > 3
+                            ? 'bg-emerald-500 text-black shadow-[0_0_15px_rgba(16,185,129,0.5)]'
+                            : stageIndex === 3
+                            ? 'bg-amber-500/20 text-amber-400 border border-amber-500 animate-pulse'
+                            : 'bg-[#141414] border border-white/20 text-white/40'
+                        }`}
+                        title="4. Out for Delivery"
+                      >
+                        <MapPin className="w-4 h-4" />
+                      </div>
+                      {/* Step 5: Delivered */}
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs z-10 transition-all ${
+                          isDelivered
+                            ? 'bg-emerald-500 text-black shadow-[0_0_25px_rgba(16,185,129,0.8)] scale-110'
+                            : 'bg-[#141414] border border-white/20 text-white/40'
+                        }`}
+                        title="5. Delivered"
+                      >
+                        <ShieldCheck className="w-4 h-4" />
+                      </div>
+                    </div>
+                  </div>
+                )}
 
                 {/* Delivered Celebration Card */}
                 {isDelivered && (
@@ -269,28 +473,30 @@ function TrackOrderContent() {
                   </div>
                 )}
 
-                {/* Quick Metadata Grid */}
+                {/* Quick Metadata Grid (Requirement 4) */}
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 p-4 rounded-2xl bg-white/[0.03] border border-white/10 text-xs">
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">Carrier Partner</span>
-                    <span className="font-bold text-white truncate block">{trackingData.courierName}</span>
+                    <span className="font-bold text-white truncate block">{courierDisplay}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">AWB Code</span>
                     <div className="flex items-center gap-1.5 font-mono font-bold text-white text-[11px]">
-                      <span>{trackingData.trackingNumber}</span>
-                      <button
-                        onClick={handleCopyAwb}
-                        className="p-1 hover:text-emerald-400 transition-colors cursor-pointer"
-                        title="Copy AWB"
-                      >
-                        {copiedAwb ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-white/60" />}
-                      </button>
+                      <span>{trackingData.trackingNumber || 'Pending AWB'}</span>
+                      {trackingData.trackingNumber && (
+                        <button
+                          onClick={handleCopyAwb}
+                          className="p-1 hover:text-emerald-400 transition-colors cursor-pointer"
+                          title="Copy AWB"
+                        >
+                          {copiedAwb ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3 text-white/60" />}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">Origin Terminal</span>
-                    <span className="font-semibold text-white/80 truncate block">{trackingData.origin || 'Amritsar Cold Hub'}</span>
+                    <span className="font-semibold text-white/80 truncate block">{originDisplay}</span>
                   </div>
                   <div>
                     <span className="text-[10px] text-white/40 uppercase font-mono block">Destination</span>
@@ -298,31 +504,41 @@ function TrackOrderContent() {
                   </div>
                 </div>
 
-                {/* Live Progress Scans Timeline */}
+                {/* Live Progress Scans Timeline (Chronological, Friendly Descriptions & Locations) */}
                 <div className="space-y-6">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-white/70 font-mono">
                     DISPATCH ACTIVITY LOG
                   </h4>
 
-                  {trackingData.activities && trackingData.activities.length > 0 ? (
+                  {mappedActivities.length > 0 ? (
                     <div className="space-y-6 relative before:absolute before:left-4 before:top-4 before:bottom-4 before:w-0.5 before:bg-white/10">
-                      {trackingData.activities.map((activity, idx) => {
-                        const actDelivered = activity.status.toLowerCase().includes('deliv');
+                      {mappedActivities.map((act, idx) => {
+                        const isLatest = idx === mappedActivities.length - 1;
+                        const actDelivered = act.statusKey === 'DELIVERED';
+                        const actFailed = act.statusKey === 'DELIVERY FAILED' || act.statusKey === 'CANCELLED';
                         return (
                           <div key={idx} className="flex items-start gap-4 relative">
                             <div
                               className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 z-10 ${
                                 actDelivered
                                   ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.7)]'
-                                  : idx === 0
+                                  : actFailed
+                                  ? 'bg-rose-500 text-white font-bold'
+                                  : isLatest
                                   ? 'bg-emerald-500 text-black font-bold shadow-[0_0_20px_rgba(16,185,129,0.5)]'
                                   : 'bg-[#141414] border border-white/20 text-white/70'
                               }`}
                             >
                               {actDelivered ? (
                                 <ShieldCheck className="w-4 h-4" />
-                              ) : idx === 0 ? (
+                              ) : actFailed ? (
+                                <AlertCircle className="w-4 h-4" />
+                              ) : act.statusKey === 'OUT FOR DELIVERY' ? (
+                                <MapPin className="w-4 h-4" />
+                              ) : act.statusKey === 'IN TRANSIT' ? (
                                 <Truck className="w-4 h-4" />
+                              ) : act.statusKey === 'PICKED UP' ? (
+                                <Package className="w-4 h-4" />
                               ) : (
                                 <CheckCircle2 className="w-4 h-4" />
                               )}
@@ -330,15 +546,15 @@ function TrackOrderContent() {
                             <div className="flex-1 bg-white/[0.02] border border-white/5 p-3.5 rounded-xl space-y-1">
                               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
                                 <h5 className="text-xs font-bold text-white uppercase tracking-wider">
-                                  {activity.status}
+                                  {act.statusKey}
                                 </h5>
-                                <span className="text-[10px] font-mono text-white/50">{activity.date}</span>
+                                <span className="text-[10px] font-mono text-white/50">{act.date}</span>
                               </div>
-                              <p className="text-xs text-white/70">{activity.activity}</p>
-                              {activity.location && (
-                                <div className="inline-flex items-center gap-1 text-[10px] text-white/40 font-mono pt-1">
-                                  <MapPin className="w-3 h-3 text-emerald-400" />
-                                  <span>{activity.location}</span>
+                              <p className="text-xs text-white/80">{act.friendlyDesc}</p>
+                              {act.location && (
+                                <div className="inline-flex items-center gap-1 text-[10px] text-white/50 font-mono pt-1">
+                                  <MapPin className="w-3 h-3 text-emerald-400 shrink-0" />
+                                  <span>{act.location}</span>
                                 </div>
                               )}
                             </div>
@@ -356,7 +572,7 @@ function TrackOrderContent() {
                 {/* Bottom Footer Info */}
                 <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-white/50">
                   <span className="font-mono">
-                    Estimated Delivery: <strong className="text-emerald-400">{trackingData.estimatedDelivery}</strong>
+                    Estimated Delivery: <strong className="text-emerald-400">{displayEstimatedDelivery}</strong>
                   </span>
                   <a
                     href="https://wa.me/message/CV56ETMKXMV5M1"
@@ -381,8 +597,8 @@ function TrackOrderContent() {
             <p className="text-xs text-white/60 max-w-md mx-auto leading-relaxed">
               {errorMessage ||
                 (hasSearched
-                  ? 'No tracking information was found for this identifier. Please verify your Order ID (starts with "RBL-") or Shiprocket AWB number.'
-                  : 'Your Order ID was generated instantly via Shiprocket Fastrr checkout and sent to your email & SMS. It begins with "RBL-" followed by digits.')}
+                  ? 'No tracking information was found for this identifier. Please verify your Order ID (starts with "RBL-") or AWB number.'
+                  : 'Your Order ID was generated instantly upon checkout and sent to your email & SMS. It begins with "RBL-" followed by digits.')}
             </p>
             <div className="pt-2 flex justify-center gap-3">
               <a
@@ -419,7 +635,7 @@ export default function TrackOrderPage() {
         <Suspense
           fallback={
             <div className="p-16 text-center text-white/50 font-mono text-xs">
-              INITIALIZING SHIPROCKET TRACKING...
+              INITIALIZING ORDER TRACKING...
             </div>
           }
         >

@@ -24,6 +24,7 @@ import {
   Maximize2,
   X,
   Layers,
+  AlertCircle,
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
@@ -368,6 +369,13 @@ export default function ProductDetailPage() {
     if (productsListFromRedux.length === 0) {
       dispatch(fetchProducts(false));
     }
+
+    const handleCacheCleared = () => {
+      dispatch(fetchProductBySlug(productId));
+      dispatch(fetchProducts(true));
+    };
+    window.addEventListener('products-cache-cleared', handleCacheCleared);
+    return () => window.removeEventListener('products-cache-cleared', handleCacheCleared);
   }, [dispatch, productId, productsListFromRedux.length]);
 
   const handleRetry = async () => {
@@ -484,6 +492,25 @@ export default function ProductDetailPage() {
     );
   }, [product, packSize]);
 
+  // Out of stock detection based on variant inventory and active status
+  const isOutOfStock = useMemo(() => {
+    if (!product) return false;
+    if (activeVariant) {
+      return (
+        activeVariant.isActive === false ||
+        (activeVariant.stockQty !== undefined && activeVariant.stockQty !== null && activeVariant.stockQty <= 0)
+      );
+    }
+    return false;
+  }, [product, activeVariant]);
+
+  const isAllPacksOutOfStock = useMemo(() => {
+    if (!product || !product.variants || product.variants.length === 0) return false;
+    return product.variants.every(
+      (v) => v.isActive === false || (v.stockQty !== undefined && v.stockQty !== null && v.stockQty <= 0)
+    );
+  }, [product]);
+
   const activePrice = activeVariant?.price ?? PRICES[packSize]?.price ?? 449;
   const activeMrp = activeVariant?.compareAtPrice ?? PRICES[packSize]?.mrp ?? activePrice;
   const activeDiscount =
@@ -508,7 +535,7 @@ export default function ProductDetailPage() {
   }, [allProductsList, product]);
 
   const handleAddToCart = () => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     setIsAddedAnimation(true);
     setTimeout(() => setIsAddedAnimation(false), 1200);
 
@@ -526,7 +553,7 @@ export default function ProductDetailPage() {
   };
 
   const handleQuickBuy = async (e: React.MouseEvent) => {
-    if (!product) return;
+    if (!product || isOutOfStock) return;
     try {
       setIsFastrrLoading(true);
       await launchFastrrCheckout(e, [
@@ -544,8 +571,11 @@ export default function ProductDetailPage() {
       ]);
     } catch (err: any) {
       console.warn('Fastrr checkout error:', err);
-      handleAddToCart();
-      dispatch(openCart());
+      const isStockError = err?.message?.toLowerCase().includes('stock');
+      if (!isOutOfStock && !isStockError) {
+        handleAddToCart();
+        dispatch(openCart());
+      }
     } finally {
       setIsFastrrLoading(false);
     }
@@ -786,9 +816,16 @@ export default function ProductDetailPage() {
               <div>
                 {/* Big Title & Flavor / Category Tag */}
                 <div className="mt-1 sm:mt-3">
-                  <h1 className="text-3xl xs:text-4xl sm:text-5xl font-black uppercase tracking-tight text-white leading-tight">
-                    {product.name}
-                  </h1>
+                  <div className="flex items-center gap-3 flex-wrap">
+                    <h1 className="text-3xl xs:text-4xl sm:text-5xl font-black uppercase tracking-tight text-white leading-tight">
+                      {product.name}
+                    </h1>
+                    {isAllPacksOutOfStock && (
+                      <span className="px-3 py-1 rounded-full bg-red-500/20 text-red-400 border border-red-500/40 text-xs font-mono font-bold uppercase tracking-wider">
+                        Out of Stock
+                      </span>
+                    )}
+                  </div>
                   <p className="text-xs sm:text-sm md:text-base font-semibold text-white/70 mt-1 uppercase tracking-wider font-mono">
                     {product.tagline || product.flavor || 'FUNCTIONAL BEVERAGE'}
                   </p>
@@ -839,7 +876,10 @@ export default function ProductDetailPage() {
                           );
                         });
                         const sizePrice = vMatch ? vMatch.price : (PRICES[size]?.price ?? 449);
-                        const sizePerCan = Math.round(sizePrice / size);
+                        const isPackOutOfStock = vMatch
+                          ? (vMatch.isActive === false || (vMatch.stockQty !== undefined && vMatch.stockQty !== null && vMatch.stockQty <= 0))
+                          : false;
+
                         return (
                           <button
                             key={size}
@@ -847,35 +887,59 @@ export default function ProductDetailPage() {
                             onClick={() => {
                               setPackSize(size);
                             }}
-                            className={`p-3 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden min-h-[74px] sm:min-h-[82px] flex flex-col justify-between ${isSelected
-                              ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]'
-                              : 'bg-white/[0.04] text-white/80 border-white/10 hover:border-white/25 hover:bg-white/[0.07]'
-                              }`}
+                            className={`p-3 sm:p-3.5 rounded-xl border text-left transition-all cursor-pointer relative overflow-hidden min-h-[74px] sm:min-h-[82px] flex flex-col justify-between ${
+                              isSelected
+                                ? isPackOutOfStock
+                                  ? 'bg-red-500/15 text-white border-red-500/60 shadow-[0_0_20px_rgba(239,68,68,0.25)] scale-[1.02]'
+                                  : 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.2)] scale-[1.02]'
+                                : isPackOutOfStock
+                                ? 'bg-white/[0.02] text-white/40 border-white/5 hover:border-red-500/30'
+                                : 'bg-white/[0.04] text-white/80 border-white/10 hover:border-white/25 hover:bg-white/[0.07]'
+                            }`}
                           >
-                            <div className="font-bold text-xs uppercase tracking-wider">
-                              Pack of {size}
+                            <div className="flex items-center justify-between w-full">
+                              <span className="font-bold text-xs uppercase tracking-wider">
+                                Pack of {size}
+                              </span>
+                              {isPackOutOfStock && (
+                                <span className="text-[8px] font-mono font-bold uppercase tracking-wider text-red-400 bg-red-500/20 px-1 py-0.5 rounded border border-red-500/40">
+                                  Out of Stock
+                                </span>
+                              )}
                             </div>
                             <div className="text-xs mt-1 font-bold opacity-90 font-mono">
-                              ₹{sizePrice.toLocaleString('en-IN')}
+                              {isPackOutOfStock ? (
+                                <span className="text-red-400/90 text-[10px] tracking-wider uppercase font-mono">Sold Out</span>
+                              ) : (
+                                `₹${sizePrice.toLocaleString('en-IN')}`
+                              )}
                             </div>
-                        
                           </button>
                         );
                       })}
                     </div>
                   </div>
 
+                  {/* Out of Stock Alert Banner */}
+                  {isOutOfStock && (
+                    <div className="mt-3.5 p-3 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center gap-2.5 text-red-400 text-xs font-mono">
+                      <AlertCircle className="w-4 h-4 shrink-0" />
+                      <span>Pack of {packSize} is currently OUT OF STOCK. Please choose another pack size.</span>
+                    </div>
+                  )}
+
                   {/* Quantity Stepper + Live Total */}
                   <div className="mt-3.5 sm:mt-4 pt-3 sm:pt-3.5 border-t border-white/10 flex items-center justify-between flex-wrap gap-2">
                     <div className="flex items-center gap-2.5 sm:gap-3">
                       <span className="text-xs text-white/60 font-medium">Quantity:</span>
-                      <div className="flex items-center border border-white/20 rounded-xl bg-white/[0.05] px-2 py-1">
+                      <div className={`flex items-center border border-white/20 rounded-xl bg-white/[0.05] px-2 py-1 ${isOutOfStock ? 'opacity-40 cursor-not-allowed' : ''}`}>
                         <button
                           type="button"
+                          disabled={isOutOfStock}
                           onClick={() => {
                             setQuantity((prev) => Math.max(1, prev - 1));
                           }}
-                          className="p-1 text-white/60 hover:text-white cursor-pointer active:scale-90 transition-transform"
+                          className="p-1 text-white/60 hover:text-white cursor-pointer active:scale-90 transition-transform disabled:cursor-not-allowed"
                           aria-label="Decrease quantity"
                         >
                           -
@@ -885,10 +949,11 @@ export default function ProductDetailPage() {
                         </span>
                         <button
                           type="button"
+                          disabled={isOutOfStock}
                           onClick={() => {
                             setQuantity((prev) => prev + 1);
                           }}
-                          className="p-1 text-white/60 hover:text-white cursor-pointer active:scale-90 transition-transform"
+                          className="p-1 text-white/60 hover:text-white cursor-pointer active:scale-90 transition-transform disabled:cursor-not-allowed"
                           aria-label="Increase quantity"
                         >
                           +
@@ -901,7 +966,11 @@ export default function ProductDetailPage() {
                         TOTAL AMOUNT
                       </span>
                       <span className="text-base sm:text-lg font-bold text-white font-mono">
-                        ₹{totalPrice.toLocaleString('en-IN')}
+                        {isOutOfStock ? (
+                          <span className="text-red-400 text-sm">OUT OF STOCK</span>
+                        ) : (
+                          `₹${totalPrice.toLocaleString('en-IN')}`
+                        )}
                       </span>
                     </div>
                   </div>
@@ -912,10 +981,17 @@ export default function ProductDetailPage() {
                   {/* Add To Cart */}
                   <button
                     type="button"
+                    disabled={isOutOfStock}
                     onClick={handleAddToCart}
-                    className="py-3 sm:py-3.5 px-4 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer shadow-[0_4px_25px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_30px_rgba(255,255,255,0.4)] active:scale-[0.98] flex items-center justify-center gap-2 group"
+                    className={`py-3 sm:py-3.5 px-4 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 group ${
+                      isOutOfStock
+                        ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed shadow-none'
+                        : 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-[0_4px_25px_rgba(255,255,255,0.25)] hover:shadow-[0_6px_30px_rgba(255,255,255,0.4)] active:scale-[0.98]'
+                    }`}
                   >
-                    {isAddedAnimation ? (
+                    {isOutOfStock ? (
+                      <span>Out of Stock</span>
+                    ) : isAddedAnimation ? (
                       <>
                         <Check className="w-4 h-4 text-black stroke-[3]" />
                         <span>Added to Cart!</span>
@@ -932,18 +1008,26 @@ export default function ProductDetailPage() {
                   <button
                     id="product-instant-checkout-btn"
                     type="button"
-                    disabled={isFastrrLoading || IS_INSTANT_CHECKOUT_PAUSED}
+                    disabled={isOutOfStock || isFastrrLoading || IS_INSTANT_CHECKOUT_PAUSED}
                     onClick={handleQuickBuy}
                     className={`py-3 sm:py-3.5 px-4 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 shadow-md ${
-                      IS_INSTANT_CHECKOUT_PAUSED
-                        ? 'bg-white/5 text-white/40 border border-white/10 cursor-not-allowed'
+                      isOutOfStock || IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'bg-white/5 text-white/30 border border-white/10 cursor-not-allowed'
                         : 'bg-white/10 hover:bg-white/20 text-white border border-white/20 cursor-pointer active:scale-[0.98] hover:border-white/40 disabled:opacity-60'
                     }`}
-                    title={IS_INSTANT_CHECKOUT_PAUSED ? 'Instant checkout is temporarily paused for maintenance' : '1-Click Instant Checkout via Shiprocket Fastrr'}
+                    title={
+                      isOutOfStock
+                        ? 'This item is currently out of stock'
+                        : IS_INSTANT_CHECKOUT_PAUSED
+                        ? 'Instant checkout is temporarily paused for maintenance'
+                        : '1-Click Instant Checkout via Shiprocket Fastrr'
+                    }
                   >
-                    <Zap className={`w-3.5 h-3.5 ${IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/30 fill-white/30' : 'text-emerald-400 fill-emerald-400'}`} />
+                    <Zap className={`w-3.5 h-3.5 ${isOutOfStock || IS_INSTANT_CHECKOUT_PAUSED ? 'text-white/20 fill-white/20' : 'text-emerald-400 fill-emerald-400'}`} />
                     <span>
-                      {IS_INSTANT_CHECKOUT_PAUSED
+                      {isOutOfStock
+                        ? 'Out of Stock'
+                        : IS_INSTANT_CHECKOUT_PAUSED
                         ? 'Checkout Paused'
                         : isFastrrLoading
                         ? 'Connecting Fastrr...'
