@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useEffect, useRef } from 'react';
+import React, { useState, useMemo, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
@@ -13,6 +13,7 @@ import {
   Zap,
   Star,
   Sparkles,
+  ChevronUp,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
@@ -454,6 +455,47 @@ export default function ProductDetailPage() {
     setSelectedPhotoIndex((prev) => (prev - 1 + galleryList.length) % galleryList.length);
   };
 
+  // ── Vertical Thumbnails Scroll Controls & Gradient Fades ──
+  const thumbnailContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollUp, setCanScrollUp] = useState<boolean>(false);
+  const [canScrollDown, setCanScrollDown] = useState<boolean>(false);
+
+  const updateThumbnailScrollState = useCallback(() => {
+    const el = thumbnailContainerRef.current;
+    if (!el) return;
+    setCanScrollUp(el.scrollTop > 6);
+    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
+  }, []);
+
+  const handleScrollThumbnails = (direction: 'up' | 'down') => {
+    const el = thumbnailContainerRef.current;
+    if (!el) return;
+    const scrollDelta = direction === 'up' ? -130 : 130;
+    el.scrollBy({ top: scrollDelta, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const el = thumbnailContainerRef.current;
+    if (!el) return;
+    updateThumbnailScrollState();
+    el.addEventListener('scroll', updateThumbnailScrollState, { passive: true });
+    window.addEventListener('resize', updateThumbnailScrollState);
+    return () => {
+      el.removeEventListener('scroll', updateThumbnailScrollState);
+      window.removeEventListener('resize', updateThumbnailScrollState);
+    };
+  }, [updateThumbnailScrollState, galleryList.length]);
+
+  // Keep selected photo visible in thumbnail scroll list
+  useEffect(() => {
+    const el = thumbnailContainerRef.current;
+    if (!el) return;
+    const activeThumbnail = el.children[selectedPhotoIndex] as HTMLElement;
+    if (activeThumbnail && typeof activeThumbnail.scrollIntoView === 'function') {
+      activeThumbnail.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+  }, [selectedPhotoIndex]);
+
   // Keyboard navigation for photo gallery / lightbox
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -638,37 +680,80 @@ export default function ProductDetailPage() {
             {/* ── Left Column: Showcase & Photo Options (Expanded & Balanced) ── */}
             <div className="md:col-span-6 lg:col-span-6 flex flex-col md:sticky md:top-24 md:z-20 self-start w-full">
               {/* Flex wrapper holding Thumbnails on the left-top side and Main Showcase on the right */}
-              <div className="flex flex-row gap-2.5 sm:gap-3.5 lg:gap-4 items-start w-full justify-center md:justify-start">
-                {/* ── Photo Options Thumbnails (Hidden on mobile/small screen, prominent on desktop) ── */}
+              <div className="flex flex-row gap-2.5 sm:gap-3.5 lg:gap-4 items-stretch w-full justify-center md:justify-start">
+                {/* ── Photo Options Thumbnails (Equal height to main showcase card with Top/Bottom scroll arrows & gradient fades) ── */}
                 {galleryList.length > 1 && (
-                  <div className="hidden md:flex flex-col gap-2.5 sm:gap-3 shrink-0 py-0.5 max-h-[440px] md:max-h-[500px] lg:max-h-[540px] xl:max-h-[580px] overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-                    {galleryList.map((item, idx) => {
-                      const isSelected = selectedPhotoIndex === idx;
-                      return (
-                        <button
-                          key={item.id}
-                          type="button"
-                          onClick={() => setSelectedPhotoIndex(idx)}
-                          className={`group relative rounded-xl lg:rounded-2xl w-16 h-16 md:w-[72px] md:h-[72px] lg:w-[82px] lg:h-[82px] shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${
-                            isSelected
-                              ? 'border-2 border-white scale-[1.03] shadow-[0_0_14px_rgba(255,255,255,0.35)] opacity-100'
-                              : 'border border-white/20 hover:border-white/50 opacity-60 hover:opacity-100 hover:scale-[1.01]'
-                          }`}
-                          title={item.label}
-                        >
-                          <div className="relative w-full h-full">
-                            <Image
-                              src={item.src}
-                              alt={item.label}
-                              fill
-                              sizes="(max-width: 1024px) 72px, 84px"
-                              className="object-cover group-hover:scale-105 transition-transform duration-300"
-                              unoptimized={item.src.startsWith('http')}
-                            />
-                          </div>
-                        </button>
-                      );
-                    })}
+                  <div className="hidden md:flex flex-col relative shrink-0 self-stretch w-16 md:w-[72px] lg:w-[82px] py-1">
+                    {/* Top Gradient & Up Arrow Button */}
+                    <div
+                      className={`absolute top-0 inset-x-0 h-14 z-20 pointer-events-none flex items-start justify-center pt-1 transition-all duration-300 bg-gradient-to-b from-black via-black/85 to-transparent ${
+                        canScrollUp ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleScrollThumbnails('up')}
+                        disabled={!canScrollUp}
+                        className="p-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800 text-white border border-white/25 shadow-lg transition-all cursor-pointer pointer-events-auto active:scale-90 hover:scale-110 disabled:pointer-events-none"
+                        title="Scroll images up"
+                        aria-label="Scroll images up"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+
+                    {/* Scrollable Thumbnails List (Equal height to the Big Image showcase) */}
+                    <div
+                      ref={thumbnailContainerRef}
+                      className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
+                      style={{ scrollBehavior: 'smooth' }}
+                    >
+                      {galleryList.map((item, idx) => {
+                        const isSelected = selectedPhotoIndex === idx;
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => setSelectedPhotoIndex(idx)}
+                            className={`group relative rounded-xl lg:rounded-2xl w-16 h-16 md:w-[72px] md:h-[72px] lg:w-[82px] lg:h-[82px] shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${
+                              isSelected
+                                ? 'border-2 border-white scale-[1.03] shadow-[0_0_14px_rgba(255,255,255,0.35)] opacity-100'
+                                : 'border border-white/20 hover:border-white/50 opacity-60 hover:opacity-100 hover:scale-[1.01]'
+                            }`}
+                            title={item.label}
+                          >
+                            <div className="relative w-full h-full bg-[#141414]">
+                              <Image
+                                src={item.src}
+                                alt={item.label}
+                                fill
+                                sizes="(max-width: 1024px) 72px, 84px"
+                                className="object-cover group-hover:scale-105 transition-transform duration-300"
+                                unoptimized={item.src.startsWith('http')}
+                              />
+                            </div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Bottom Gradient & Down Arrow Button */}
+                    <div
+                      className={`absolute bottom-0 inset-x-0 h-14 z-20 pointer-events-none flex items-end justify-center pb-1 transition-all duration-300 bg-gradient-to-t from-black via-black/85 to-transparent ${
+                        canScrollDown ? 'opacity-100' : 'opacity-0'
+                      }`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => handleScrollThumbnails('down')}
+                        disabled={!canScrollDown}
+                        className="p-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800 text-white border border-white/25 shadow-lg transition-all cursor-pointer pointer-events-auto active:scale-90 hover:scale-110 disabled:pointer-events-none"
+                        title="Scroll images down"
+                        aria-label="Scroll images down"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
                 )}
 
