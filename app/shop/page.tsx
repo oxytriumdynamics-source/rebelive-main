@@ -280,51 +280,58 @@ export default function ShopPage() {
                         : 'PACK OF 3, 6, 9, 12';
 
                       return (
-                        <div className="flex items-baseline justify-between mb-3">
-                          <div>
-                            <span className="text-[9.5px] text-white/40 uppercase font-mono block">
-                              {isEntireProductOutOfStock ? 'STATUS' : 'STARTING AT'}
-                            </span>
-                            <div className="flex items-baseline gap-1.5">
-                              {isEntireProductOutOfStock ? (
-                                <span className="text-sm font-bold text-red-400 font-mono tracking-wider">
-                                  SOLD OUT
-                                </span>
-                              ) : (
-                                <>
-                                  <span className="text-lg font-bold text-white tracking-tight font-mono">
-                                    ₹{startingPrice.toLocaleString('en-IN')}
+                        <>
+                          <div className="flex items-baseline justify-between mb-3">
+                            <div>
+                              <span className="text-[9.5px] text-white/40 uppercase font-mono block">
+                                {isEntireProductOutOfStock ? 'STATUS' : 'STARTING AT'}
+                              </span>
+                              <div className="flex items-baseline gap-1.5">
+                                {isEntireProductOutOfStock ? (
+                                  <span className="text-sm font-bold text-red-400 font-mono tracking-wider">
+                                    SOLD OUT
                                   </span>
-                                  {startingMrp && startingMrp > startingPrice && (
-                                    <span className="text-[11px] text-white/35 line-through font-mono">
-                                      ₹{startingMrp.toLocaleString('en-IN')}
+                                ) : (
+                                  <>
+                                    <span className="text-lg font-bold text-white tracking-tight font-mono">
+                                      ₹{startingPrice.toLocaleString('en-IN')}
                                     </span>
-                                  )}
-                                </>
-                              )}
+                                    {startingMrp && startingMrp > startingPrice && (
+                                      <span className="text-[11px] text-white/35 line-through font-mono">
+                                        ₹{startingMrp.toLocaleString('en-IN')}
+                                      </span>
+                                    )}
+                                  </>
+                                )}
+                              </div>
                             </div>
+
+                            <span className={`text-[9.5px] font-mono font-medium px-2 py-0.5 rounded-full border ${
+                              isEntireProductOutOfStock
+                                ? 'text-red-400 bg-white/[0.05] border-white/10'
+                                : 'text-white/70 bg-white/[0.05] border-white/10'
+                            }`}>
+                              {packBadgeLabel}
+                            </span>
                           </div>
 
-                          <span className={`text-[9.5px] font-mono font-medium px-2 py-0.5 rounded-full border ${
-                            isEntireProductOutOfStock
-                              ? 'bg-red-500/20 text-red-400 border-red-500/40'
-                              : 'text-white/70 bg-white/[0.05] border-white/10'
-                          }`}>
-                            {packBadgeLabel}
-                          </span>
-                        </div>
+                          {/* Action Button: Click to Open Quick-Add Popup */}
+                          <button
+                            type="button"
+                            disabled={isEntireProductOutOfStock}
+                            onClick={() => handleOpenQuickAdd(p, 3)}
+                            className={`w-full py-2.5 rounded-xl font-bold text-xs tracking-wider uppercase transition-all duration-200 flex items-center justify-center gap-2 group/btn ${
+                              isEntireProductOutOfStock
+                                ? 'bg-white/10 text-white/30 border border-white/10 cursor-not-allowed'
+                                : 'bg-white text-black hover:bg-neutral-200 cursor-pointer shadow-[0_2px_15px_rgba(255,255,255,0.2)] hover:shadow-[0_4px_25px_rgba(255,255,255,0.35)] active:scale-[0.98]'
+                            }`}
+                          >
+                            <ShoppingBag className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-110" />
+                            <span>{isEntireProductOutOfStock ? 'Out of Stock' : 'Add to Cart'}</span>
+                          </button>
+                        </>
                       );
                     })()}
-
-                    {/* Action Button: Click to Open Quick-Add Popup */}
-                    <button
-                      type="button"
-                      onClick={() => handleOpenQuickAdd(p, 3)}
-                      className="w-full py-2.5 rounded-xl bg-white text-black hover:bg-neutral-200 font-bold text-xs tracking-wider uppercase transition-all duration-200 cursor-pointer shadow-[0_2px_15px_rgba(255,255,255,0.2)] hover:shadow-[0_4px_25px_rgba(255,255,255,0.35)] active:scale-[0.98] flex items-center justify-center gap-2 group/btn"
-                    >
-                      <ShoppingBag className="w-3.5 h-3.5 transition-transform group-hover/btn:scale-110" />
-                      <span>Configure & Buy</span>
-                    </button>
                   </div>
                 </div>
               );
@@ -418,10 +425,10 @@ export default function ShopPage() {
                               className={`py-4 px-2.5 sm:px-3 sm:py-5 min-h-[105px] sm:min-h-[116px] rounded-2xl text-center transition-all cursor-pointer flex flex-col justify-between items-center ${
                                 isSelected
                                   ? isPackOutOfStock
-                                    ? 'bg-red-500/15 text-white font-bold ring-2 ring-red-500/60 scale-[1.03]'
+                                    ? 'bg-white/10 text-white font-bold ring-2 ring-white/60 border border-white/40 scale-[1.03]'
                                     : 'bg-white text-black font-bold shadow-[0_0_24px_rgba(255,255,255,0.35)] ring-2 ring-white scale-[1.03]'
                                   : isPackOutOfStock
-                                  ? 'bg-white/[0.02] text-white/30 border border-white/5'
+                                  ? 'bg-white/[0.02] text-white/35 border border-white/5'
                                   : 'bg-white/[0.04] text-white/80 hover:bg-white/[0.08] hover:text-white border border-white/10'
                               }`}
                             >
@@ -432,7 +439,7 @@ export default function ShopPage() {
                               </div>
                               <div className="my-auto py-1 flex flex-col items-center justify-center">
                                 {isPackOutOfStock ? (
-                                  <span className="text-[10px] uppercase font-mono font-bold text-red-400 bg-red-500/20 px-1.5 py-0.5 rounded border border-red-500/40">
+                                  <span className="text-[10px] sm:text-[11px] uppercase font-mono font-bold text-red-400 tracking-wider">
                                     Out of Stock
                                   </span>
                                 ) : (
