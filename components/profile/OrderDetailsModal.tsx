@@ -152,10 +152,10 @@ export default function OrderDetailsModal({
               type="button"
               onClick={() => setIsInvoiceOpen(true)}
               className="flex items-center gap-1.5 rounded-xl border border-white/20 bg-white/10 hover:bg-white/20 px-3 py-1.5 font-mono text-[10px] font-bold uppercase tracking-wider text-white transition-all cursor-pointer shadow-sm active:scale-95"
-              title="View & Download Tax Invoice"
+              title="View & Download Invoice"
             >
               <FileText className="h-3.5 w-3.5 text-white" />
-              <span>Tax Invoice</span>
+              <span>Invoice</span>
             </button>
             <button
               onClick={() => {

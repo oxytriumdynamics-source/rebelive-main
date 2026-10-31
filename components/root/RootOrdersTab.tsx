@@ -461,7 +461,7 @@ export function RootOrdersTab() {
                           <button
                             onClick={() => setInvoiceOrder(order)}
                             className="p-1.5 rounded-lg bg-white/5 hover:bg-white/15 text-white/70 hover:text-white transition-colors cursor-pointer inline-flex items-center gap-1 text-[11px]"
-                            title="View & Print Tax Invoice"
+                            title="View & Print Invoice"
                           >
                             <FileText className="w-3.5 h-3.5 text-white/80" />
                             <span className="hidden sm:inline">Invoice</span>

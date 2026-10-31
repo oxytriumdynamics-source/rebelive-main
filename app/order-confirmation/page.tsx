@@ -639,7 +639,7 @@ function OrderConfirmationContent() {
                 className="px-4 py-2.5 rounded-xl border border-white/20 bg-neutral-900 hover:bg-neutral-800 text-white font-mono text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95"
               >
                 <FileText className="w-3.5 h-3.5" />
-                <span>Tax Invoice</span>
+                <span>Invoice</span>
               </button>
 
               <Link
@@ -739,11 +739,7 @@ function OrderConfirmationContent() {
               </div>
             </div>
 
-            {/* Safe & Authentic Badge */}
-            <div className="pt-2 border-t border-white/5 flex items-center gap-2 text-[11px] text-neutral-400">
-              <ShieldCheck className="w-4 h-4 text-white shrink-0" />
-              <span>Official 100% genuine Rebelive functional nutrition guaranteed</span>
-            </div>
+           
           </div>
         </div>
       </div>

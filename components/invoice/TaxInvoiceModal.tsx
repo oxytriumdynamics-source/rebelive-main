@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useState, useEffect } from 'react';
-import { X, Printer, Download, FileText, RefreshCw } from 'lucide-react';
+import { X, Printer, FileText, RefreshCw } from 'lucide-react';
 import { parseOrderShippingAddress, numberToIndianWords } from './invoiceUtils';
 import { REBELIVE_LOGO_BASE64 } from './invoiceLogo';
 
@@ -28,7 +28,6 @@ interface CalculatedInvoiceItem {
 
 export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
   const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
@@ -180,7 +179,7 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
           <head>
             <meta charset="utf-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Tax Invoice - ${orderNumber}</title>
+            <title>Invoice - ${orderNumber}</title>
             <link rel="preconnect" href="https://fonts.googleapis.com">
             <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
             <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -241,73 +240,6 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
       console.warn('Iframe print failed, falling back to window.print():', err);
       window.print();
       setIsPrinting(false);
-    }
-  };
-
-  /**
-   * Direct Download of Invoice as High-Resolution Image/PNG
-   */
-  const handleDownload = async () => {
-    if (!invoiceRef.current) return;
-    setIsDownloading(true);
-
-    try {
-      const html2canvas = (await import('html2canvas')).default;
-      const element = invoiceRef.current;
-
-      const canvas = await html2canvas(element, {
-        scale: 2,
-        useCORS: true,
-        allowTaint: true,
-        backgroundColor: '#ffffff',
-        logging: false,
-        scrollX: 0,
-        scrollY: 0,
-        windowWidth: element.scrollWidth,
-        windowHeight: element.scrollHeight,
-      });
-
-      const fileName = `Tax-Invoice-${orderNumber}.png`;
-
-      if (canvas.toBlob) {
-        canvas.toBlob((blob) => {
-          if (!blob) {
-            const dataUrl = canvas.toDataURL('image/png');
-            const link = document.createElement('a');
-            link.download = fileName;
-            link.href = dataUrl;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            return;
-          }
-          const blobUrl = URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.download = fileName;
-          link.href = blobUrl;
-          document.body.appendChild(link);
-          link.click();
-          setTimeout(() => {
-            URL.revokeObjectURL(blobUrl);
-            if (document.body.contains(link)) {
-              document.body.removeChild(link);
-            }
-          }, 1500);
-        }, 'image/png', 1.0);
-      } else {
-        const dataUrl = canvas.toDataURL('image/png');
-        const link = document.createElement('a');
-        link.download = fileName;
-        link.href = dataUrl;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch (err) {
-      console.error('Failed to download invoice image:', err);
-      alert('Unable to generate image. Please use "PRINT / SAVE PDF" to save the invoice.');
-    } finally {
-      setIsDownloading(false);
     }
   };
 
@@ -375,12 +307,12 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
-          className="w-full max-w-4xl max-h-[94vh] flex flex-col justify-center my-auto"
+          className="w-full max-w-4xl h-[92vh] flex flex-col my-auto min-h-0"
         >
           {/* Main Card Container */}
           <div
             id="rebelive-invoice-modal-card"
-            className="w-full bg-[#111111] border border-white/20 rounded-3xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden"
+            className="w-full h-full bg-[#111111] border border-white/20 rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-0"
           >
             {/* Top Toolbar (Sticky at top of modal) */}
             <div className="rebelive-no-print shrink-0 px-4 sm:px-6 py-3.5 bg-[#181818] border-b border-white/10 flex items-center justify-between gap-3 z-20">
@@ -391,28 +323,17 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                     Invoice Preview
                   </h3>
                   <p className="text-[9px] sm:text-[10px] font-mono text-white/50 truncate">
-                    Official Tax Invoice for Order #{orderNumber}
+                    Official Invoice for Order #{orderNumber}
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer border border-white/10 disabled:opacity-50"
-                  title="Download Image Receipt"
-                >
-                  {isDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                  <span>{isDownloading ? 'Saving...' : 'Download Image'}</span>
-                </button>
-
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={handlePrint}
                   disabled={isPrinting}
-                  className="px-2.5 sm:px-3.5 py-1.5 rounded-xl bg-white hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
+                  className="px-3 sm:px-4 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black text-[11px] sm:text-xs font-mono font-bold uppercase tracking-wider flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 disabled:opacity-50"
                   title="Print or Save as PDF"
                 >
                   {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5 text-black" />}
@@ -431,11 +352,14 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
             </div>
 
             {/* Document Scroll Area */}
-            <div className="flex-1 overflow-y-auto overflow-x-auto p-3 sm:p-6 bg-neutral-950/80 flex justify-center overscroll-contain">
+            <div
+              className="flex-1 min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-6 bg-neutral-950/80 flex justify-center [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent]"
+              style={{ WebkitOverflowScrolling: 'touch' }}
+            >
               <div
                 ref={invoiceRef}
                 id="rebelive-tax-invoice-document"
-                className="w-full max-w-[800px] bg-white text-black font-sans p-6 sm:p-8 rounded-lg shadow-xl text-[11px] leading-relaxed border border-neutral-300 mb-4"
+                className="w-full max-w-[800px] bg-white text-black font-sans p-6 sm:p-8 rounded-lg shadow-xl text-[11px] leading-relaxed border border-neutral-300 mb-6 shrink-0 self-start"
                 style={{ fontFamily: "'Poppins', sans-serif" }}
               >
                 {/* ─── Top Brand Header ─── */}
@@ -713,36 +637,23 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
             </div>
 
             {/* Bottom Modal Actions (Hidden on Print) */}
-            <div className="rebelive-no-print p-4 bg-[#141414] border-t border-white/10 flex items-center justify-between gap-3">
-              <span className="text-[10px] font-mono text-white/40">
-                Format complies with Indian GST E-Commerce invoicing rules
-              </span>
-              <div className="flex items-center gap-2">
+            <div className="rebelive-no-print shrink-0 p-4 bg-[#141414] border-t border-white/10 flex items-center justify-end gap-3">
+              <div className="flex items-center gap-2.5">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs uppercase cursor-pointer"
+                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs uppercase cursor-pointer transition-colors"
                 >
                   Close
                 </button>
 
                 <button
                   type="button"
-                  onClick={handleDownload}
-                  disabled={isDownloading}
-                  className="px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 text-white font-mono text-xs uppercase cursor-pointer flex items-center gap-1.5 border border-white/10 disabled:opacity-50"
-                >
-                  {isDownloading ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Download className="w-3.5 h-3.5" />}
-                  <span>{isDownloading ? 'Saving...' : 'Download Image'}</span>
-                </button>
-
-                <button
-                  type="button"
                   onClick={handlePrint}
                   disabled={isPrinting}
-                  className="px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50"
+                  className="px-5 py-2 rounded-xl bg-white hover:bg-neutral-200 text-black font-mono font-bold text-xs uppercase cursor-pointer flex items-center gap-1.5 shadow-md disabled:opacity-50 transition-all active:scale-95"
                 >
-                  {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5" />}
+                  {isPrinting ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Printer className="w-3.5 h-3.5 text-black" />}
                   <span>{isPrinting ? 'Opening...' : 'Print / Save PDF'}</span>
                 </button>
               </div>

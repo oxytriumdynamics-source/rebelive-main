@@ -190,7 +190,7 @@ export default function OrderDetailsPage() {
                 className="px-3.5 py-1.5 rounded-xl bg-white text-black hover:bg-neutral-200 text-xs font-mono font-bold border border-white/20 transition-all flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <FileText className="w-3.5 h-3.5 text-black" />
-                <span>Tax Invoice</span>
+                <span>Invoice</span>
               </button>
 
               {currentAdmin?.role === 'SUPERADMIN' && (

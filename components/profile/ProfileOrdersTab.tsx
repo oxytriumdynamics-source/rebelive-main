@@ -286,7 +286,7 @@ export default function ProfileOrdersTab({
                       type="button"
                       onClick={() => setInvoiceOrder(order)}
                       className="flex items-center gap-1.5 rounded-lg border border-white/15 bg-white/[0.05] px-3.5 py-1.5 font-mono text-[10px] uppercase tracking-wider text-white hover:bg-white/15 transition-all cursor-pointer"
-                      title="View & Print Official Tax Invoice"
+                      title="View & Print Official Invoice"
                     >
                       <FileText className="h-3 w-3" />
                       <span>Invoice</span>
