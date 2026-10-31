@@ -28,6 +28,7 @@ interface CalculatedInvoiceItem {
 
 export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps) {
   const invoiceRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [isPrinting, setIsPrinting] = useState(false);
 
   useEffect(() => {
@@ -35,14 +36,38 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
     const originalOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
 
+    // Pause global Lenis smooth scroll while invoice modal is open
+    const lenis = (window as any).__lenis;
+    if (lenis && typeof lenis.stop === 'function') {
+      lenis.stop();
+    }
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape') onClose();
     };
     window.addEventListener('keydown', handleKeyDown);
 
+    // Direct native wheel listener to ensure mouse wheel scrolling always operates smoothly
+    const scrollEl = scrollContainerRef.current;
+    const handleNativeWheel = (e: WheelEvent) => {
+      if (!scrollEl) return;
+      e.stopPropagation();
+      scrollEl.scrollTop += e.deltaY;
+    };
+
+    if (scrollEl) {
+      scrollEl.addEventListener('wheel', handleNativeWheel, { passive: true });
+    }
+
     return () => {
       document.body.style.overflow = originalOverflow;
+      if (lenis && typeof lenis.start === 'function') {
+        lenis.start();
+      }
       window.removeEventListener('keydown', handleKeyDown);
+      if (scrollEl) {
+        scrollEl.removeEventListener('wheel', handleNativeWheel);
+      }
     };
   }, [isOpen, onClose]);
 
@@ -300,10 +325,12 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
       {/* ─── Modal Overlay ─── */}
       <div
         id="rebelive-invoice-portal-root"
-        className="fixed inset-0 z-[200] overflow-y-auto bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
+        data-lenis-prevent
+        className="fixed inset-0 z-[200] overflow-hidden bg-black/85 backdrop-blur-md flex items-center justify-center p-2 sm:p-4 md:p-6 animate-in fade-in duration-200"
       >
         <div
           id="rebelive-invoice-backdrop"
+          data-lenis-prevent
           onClick={(e) => {
             if (e.target === e.currentTarget) onClose();
           }}
@@ -312,6 +339,7 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
           {/* Main Card Container */}
           <div
             id="rebelive-invoice-modal-card"
+            data-lenis-prevent
             className="w-full h-full bg-[#111111] border border-white/20 rounded-3xl shadow-2xl flex flex-col overflow-hidden min-h-0"
           >
             {/* Top Toolbar (Sticky at top of modal) */}
@@ -353,11 +381,21 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
 
             {/* Document Scroll Area */}
             <div
-              className="flex-1 min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-6 bg-neutral-950/80 flex justify-center [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent]"
-              style={{ WebkitOverflowScrolling: 'touch' }}
+              ref={scrollContainerRef}
+              data-lenis-prevent
+              tabIndex={0}
+              onWheel={(e) => {
+                if (scrollContainerRef.current) {
+                  e.stopPropagation();
+                  scrollContainerRef.current.scrollTop += e.deltaY;
+                }
+              }}
+              className="flex-1 min-h-0 overflow-y-auto overflow-x-auto p-3 sm:p-6 bg-neutral-950/80 flex justify-center [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.25)_transparent] outline-none"
+              style={{ WebkitOverflowScrolling: 'touch', overscrollBehavior: 'contain' }}
             >
               <div
                 ref={invoiceRef}
+                data-lenis-prevent
                 id="rebelive-tax-invoice-document"
                 className="w-full max-w-[800px] bg-white text-black font-sans p-6 sm:p-8 rounded-lg shadow-xl text-[11px] leading-relaxed border border-neutral-300 mb-6 shrink-0 self-start"
                 style={{ fontFamily: "'Poppins', sans-serif" }}
@@ -387,7 +425,7 @@ export function TaxInvoiceModal({ order, isOpen, onClose }: TaxInvoiceModalProps
                 {/* Thin divider */}
                 <div className="border-t border-neutral-400 my-2" />
 
-                {/* ─── 3 Columns Section: Shipping Address | Sold By | Invoice Details ─── */}
+        
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 py-2 border-b border-neutral-300 text-[10.5px]">
                   {/* Column 1: SHIPPING ADDRESS */}
                   <div className="space-y-1 pr-2">
