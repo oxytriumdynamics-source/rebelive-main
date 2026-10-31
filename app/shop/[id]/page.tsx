@@ -458,13 +458,14 @@ export default function ProductDetailPage() {
   // ── Vertical Thumbnails Scroll Controls & Gradient Fades ──
   const thumbnailContainerRef = useRef<HTMLDivElement>(null);
   const [canScrollUp, setCanScrollUp] = useState<boolean>(false);
-  const [canScrollDown, setCanScrollDown] = useState<boolean>(false);
+  const [canScrollDown, setCanScrollDown] = useState<boolean>(true);
 
   const updateThumbnailScrollState = useCallback(() => {
     const el = thumbnailContainerRef.current;
     if (!el) return;
+    const hasOverflow = el.scrollHeight > el.clientHeight + 4;
     setCanScrollUp(el.scrollTop > 6);
-    setCanScrollDown(el.scrollTop + el.clientHeight < el.scrollHeight - 6);
+    setCanScrollDown(hasOverflow && el.scrollTop + el.clientHeight < el.scrollHeight - 6);
   }, []);
 
   const handleScrollThumbnails = (direction: 'up' | 'down') => {
@@ -472,15 +473,21 @@ export default function ProductDetailPage() {
     if (!el) return;
     const scrollDelta = direction === 'up' ? -130 : 130;
     el.scrollBy({ top: scrollDelta, behavior: 'smooth' });
+    setTimeout(updateThumbnailScrollState, 200);
   };
 
   useEffect(() => {
     const el = thumbnailContainerRef.current;
     if (!el) return;
     updateThumbnailScrollState();
+    const rafId = requestAnimationFrame(updateThumbnailScrollState);
+    const timer = setTimeout(updateThumbnailScrollState, 150);
+
     el.addEventListener('scroll', updateThumbnailScrollState, { passive: true });
     window.addEventListener('resize', updateThumbnailScrollState);
     return () => {
+      cancelAnimationFrame(rafId);
+      clearTimeout(timer);
       el.removeEventListener('scroll', updateThumbnailScrollState);
       window.removeEventListener('resize', updateThumbnailScrollState);
     };
@@ -683,29 +690,32 @@ export default function ProductDetailPage() {
               <div className="flex flex-row gap-2.5 sm:gap-3.5 lg:gap-4 items-stretch w-full justify-center md:justify-start">
                 {/* ── Photo Options Thumbnails (Equal height to main showcase card with Top/Bottom scroll arrows & gradient fades) ── */}
                 {galleryList.length > 1 && (
-                  <div className="hidden md:flex flex-col relative shrink-0 self-stretch w-16 md:w-[72px] lg:w-[82px] py-1">
-                    {/* Top Gradient & Up Arrow Button */}
-                    <div
-                      className={`absolute top-0 inset-x-0 h-14 z-20 pointer-events-none flex items-start justify-center pt-1 transition-all duration-300 bg-gradient-to-b from-black via-black/85 to-transparent ${
-                        canScrollUp ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleScrollThumbnails('up')}
-                        disabled={!canScrollUp}
-                        className="p-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800 text-white border border-white/25 shadow-lg transition-all cursor-pointer pointer-events-auto active:scale-90 hover:scale-110 disabled:pointer-events-none"
-                        title="Scroll images up"
-                        aria-label="Scroll images up"
-                      >
-                        <ChevronUp className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                  <div className="hidden md:flex flex-col relative shrink-0 self-stretch w-[74px] lg:w-[84px] py-1 select-none">
+                    {/* Top Gradient & Up Arrow Button (Visible when gallery has > 3 items) */}
+                    {galleryList.length > 3 && (
+                      <div className="absolute top-0 inset-x-0 h-14 z-20 pointer-events-none flex items-start justify-center pt-1 transition-all duration-300 bg-gradient-to-b from-black via-black/85 to-transparent">
+                        <button
+                          type="button"
+                          onClick={() => handleScrollThumbnails('up')}
+                          disabled={!canScrollUp}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center border shadow-xl transition-all pointer-events-auto cursor-pointer active:scale-90 hover:scale-110 ${
+                            canScrollUp
+                              ? 'bg-neutral-900/95 hover:bg-white text-white hover:text-black border-white/30 hover:border-white shadow-[0_4px_16px_rgba(0,0,0,0.8)] opacity-100'
+                              : 'bg-neutral-950/70 text-white/30 border-white/10 opacity-30 cursor-not-allowed hover:scale-100'
+                          }`}
+                          title="Scroll images up"
+                          aria-label="Scroll images up"
+                        >
+                          <ChevronUp className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
 
                     {/* Scrollable Thumbnails List (Equal height to the Big Image showcase) */}
                     <div
                       ref={thumbnailContainerRef}
-                      className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 py-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
+                      data-lenis-prevent
+                      className="flex-1 min-h-0 overflow-y-auto flex flex-col gap-2.5 sm:gap-3 py-6 px-0.5 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden overscroll-contain"
                       style={{ scrollBehavior: 'smooth' }}
                     >
                       {galleryList.map((item, idx) => {
@@ -715,10 +725,10 @@ export default function ProductDetailPage() {
                             key={item.id}
                             type="button"
                             onClick={() => setSelectedPhotoIndex(idx)}
-                            className={`group relative rounded-xl lg:rounded-2xl w-16 h-16 md:w-[72px] md:h-[72px] lg:w-[82px] lg:h-[82px] shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${
+                            className={`group relative rounded-xl lg:rounded-2xl w-full aspect-square shrink-0 flex items-center justify-center transition-all duration-200 overflow-hidden cursor-pointer ${
                               isSelected
-                                ? 'border-2 border-white scale-[1.03] shadow-[0_0_14px_rgba(255,255,255,0.35)] opacity-100'
-                                : 'border border-white/20 hover:border-white/50 opacity-60 hover:opacity-100 hover:scale-[1.01]'
+                                ? 'border-2 border-white scale-[1.03] shadow-[0_0_14px_rgba(255,255,255,0.35)] opacity-100 ring-2 ring-white/20'
+                                : 'border border-white/20 hover:border-white/50 opacity-60 hover:opacity-100 hover:scale-[1.02]'
                             }`}
                             title={item.label}
                           >
@@ -727,7 +737,7 @@ export default function ProductDetailPage() {
                                 src={item.src}
                                 alt={item.label}
                                 fill
-                                sizes="(max-width: 1024px) 72px, 84px"
+                                sizes="(max-width: 1024px) 74px, 84px"
                                 className="object-cover group-hover:scale-105 transition-transform duration-300"
                                 unoptimized={item.src.startsWith('http')}
                               />
@@ -737,27 +747,29 @@ export default function ProductDetailPage() {
                       })}
                     </div>
 
-                    {/* Bottom Gradient & Down Arrow Button */}
-                    <div
-                      className={`absolute bottom-0 inset-x-0 h-14 z-20 pointer-events-none flex items-end justify-center pb-1 transition-all duration-300 bg-gradient-to-t from-black via-black/85 to-transparent ${
-                        canScrollDown ? 'opacity-100' : 'opacity-0'
-                      }`}
-                    >
-                      <button
-                        type="button"
-                        onClick={() => handleScrollThumbnails('down')}
-                        disabled={!canScrollDown}
-                        className="p-1 rounded-full bg-neutral-900/90 hover:bg-neutral-800 text-white border border-white/25 shadow-lg transition-all cursor-pointer pointer-events-auto active:scale-90 hover:scale-110 disabled:pointer-events-none"
-                        title="Scroll images down"
-                        aria-label="Scroll images down"
-                      >
-                        <ChevronDown className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
+                    {/* Bottom Gradient & Down Arrow Button (Visible when gallery has > 3 items) */}
+                    {galleryList.length > 3 && (
+                      <div className="absolute bottom-0 inset-x-0 h-14 z-20 pointer-events-none flex items-end justify-center pb-1 transition-all duration-300 bg-gradient-to-t from-black via-black/85 to-transparent">
+                        <button
+                          type="button"
+                          onClick={() => handleScrollThumbnails('down')}
+                          disabled={!canScrollDown}
+                          className={`w-7 h-7 rounded-full flex items-center justify-center border shadow-xl transition-all pointer-events-auto cursor-pointer active:scale-90 hover:scale-110 ${
+                            canScrollDown
+                              ? 'bg-neutral-900/95 hover:bg-white text-white hover:text-black border-white/30 hover:border-white shadow-[0_4px_16px_rgba(0,0,0,0.8)] opacity-100'
+                              : 'bg-neutral-950/70 text-white/30 border-white/10 opacity-30 cursor-not-allowed hover:scale-100'
+                          }`}
+                          title="Scroll images down"
+                          aria-label="Scroll images down"
+                        >
+                          <ChevronDown className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    )}
                   </div>
                 )}
 
-                {/* Main Can Showcase Card (Expanded size, with mobile swipe gestures) */}
+                {/* Main Can Showcase Card (Decreased height, balanced with thumbnails & info column, with mobile swipe gestures) */}
                 <div
                   onTouchStart={(e) => {
                     touchStartXRef.current = e.touches[0].clientX;
@@ -774,7 +786,7 @@ export default function ProductDetailPage() {
                     }
                     touchStartXRef.current = null;
                   }}
-                  className="relative flex-1 min-w-0 w-full max-w-[400px] xs:max-w-[440px] sm:max-w-[500px] md:max-w-none aspect-square rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_14px_50px_rgba(0,0,0,0.75)]"
+                  className="relative flex-1 min-w-0 w-full max-w-[360px] xs:max-w-[400px] sm:max-w-[430px] md:max-w-[450px] lg:max-w-[470px] h-[340px] xs:h-[380px] sm:h-[410px] md:h-[430px] lg:h-[450px] rounded-2xl sm:rounded-3xl bg-[#0e0e0e] border border-white/10 flex items-center justify-center overflow-hidden group shadow-[0_14px_50px_rgba(0,0,0,0.75)]"
                 >
                   {/* Edge Highlights */}
                   <div className="absolute inset-x-0 top-0 h-[1px] bg-gradient-to-r from-transparent via-white/30 to-transparent pointer-events-none z-20" />
